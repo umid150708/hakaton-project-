@@ -2,10 +2,10 @@ import { useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   RadialBarChart, RadialBar, PolarAngleAxis, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from 'recharts';
 import { useAppStore } from '../stores/appStore';
 import { computeScore } from '../lib/scoring';
+import { assessDataQuality } from '../lib/answerQuality';
 import type { AIResult } from '../lib/schema';
 import type { ScoreResult } from '../lib/scoring';
 
@@ -89,6 +89,86 @@ function PlanSection({ title, content }: { title: string; content: string }) {
         </div>
       )}
     </div>
+  );
+}
+
+function ScoreRecommendations({ score, facts }: { score: ScoreResult; facts: AIResult['facts'] }) {
+  const issues = assessDataQuality(facts);
+  const weakComponents = score.breakdown.filter(c => c.points / c.max < 0.6);
+
+  // Nothing to show for high scorers with clean data
+  if (score.total >= 70 && issues.length === 0) return null;
+
+  return (
+    <section className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+      <div className="px-5 py-4 border-b border-slate-800 flex items-center gap-2">
+        <span className="text-lg">
+          {score.color === 'red' ? '🔴' : score.color === 'amber' ? '🟡' : '🟢'}
+        </span>
+        <div>
+          <h2 className="text-white font-semibold text-sm">Ball nima uchun shunday chiqdi?</h2>
+          <p className="text-slate-500 text-xs mt-0.5">Qanday qilib oshirish mumkin</p>
+        </div>
+      </div>
+
+      <div className="divide-y divide-slate-800">
+        {/* Per-component personalized advice */}
+        {weakComponents.map(comp => {
+          const pct = comp.points / comp.max;
+          const color = pct === 0 ? '#ef4444' : '#f59e0b';
+          return (
+            <div key={comp.label} className="px-5 py-4">
+              <div className="flex items-start gap-3">
+                <div
+                  className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 font-bold"
+                  style={{ backgroundColor: color + '20', color }}
+                >
+                  {pct === 0 ? '!' : '↑'}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-white text-sm font-medium">{comp.label}</span>
+                    <span className="text-xs" style={{ color }}>{comp.points}/{comp.max} ball</span>
+                  </div>
+                  <p className="text-slate-400 text-xs leading-relaxed">{comp.note}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Data quality issues */}
+        {issues.map(issue => (
+          <div key={issue.field} className="px-5 py-4">
+            <div className="flex items-start gap-3">
+              <div
+                className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 font-bold"
+                style={{
+                  backgroundColor: issue.severity === 'error' ? '#ef444420' : '#f59e0b20',
+                  color: issue.severity === 'error' ? '#ef4444' : '#f59e0b',
+                }}
+              >
+                {issue.severity === 'error' ? '✕' : '!'}
+              </div>
+              <div className="flex-1">
+                <span className="text-white text-sm font-medium">{issue.label}</span>
+                <p className="text-slate-400 text-xs mt-1 leading-relaxed">{issue.message}</p>
+                <p className="text-emerald-500 text-xs mt-1 leading-relaxed">→ {issue.fix}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Action CTA */}
+        <div className="px-5 py-4 bg-slate-950/40">
+          <p className="text-slate-500 text-xs leading-relaxed">
+            {score.color === 'red'
+              ? '💡 Intervyuni qayta o\'tib, aniq raqamlar va to\'liq javoblar bering — ball sezilarli oshadi.'
+              : '💡 Yuqoridagi 1–2 ta zaif tomonni kuchaytirsangiz, kredit olish imkoniyatingiz oshadi.'}
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -176,6 +256,9 @@ export default function Result() {
             </div>
           </div>
         </section>
+
+        {/* Personalized score recommendations */}
+        <ScoreRecommendations score={score} facts={result.facts} />
 
         {/* Business plan */}
         <section>

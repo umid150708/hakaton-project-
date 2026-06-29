@@ -1,10 +1,25 @@
 /**
  * templatePlan — generate a full AIResult from extracted facts.
- * Produces a personalized, realistic business plan without any API call.
- * The AI path (api/generate) replaces this with richer narrative when available.
+ * Never echoes nonsense back. All text is conditional on data quality.
  */
 
 import type { AIResult, Facts } from './schema';
+
+// ─── Sanitizer ────────────────────────────────────────────────────────────────
+
+const NONSENSE = /^(hech\s*(nimaga?|narsa)?|yo'q albatta|bilmadim|bilmayman|ko'ramiz|ko'rinar|noma'lum|nothing|none|no|ha|ok+|bor|yoq|-|\.+|\?+|x+)$/i;
+
+function clean(text: string, fallback: string): string {
+  if (!text || text.trim().length < 3 || NONSENSE.test(text.trim())) return fallback;
+  return text.trim();
+}
+
+function fmt(uzs: number): string {
+  if (uzs === 0) return "aniqlanmagan";
+  if (uzs >= 1_000_000_000) return `${(uzs / 1_000_000_000).toFixed(1)} mlrd so'm`;
+  if (uzs >= 1_000_000) return `${(uzs / 1_000_000).toFixed(0)} mln so'm`;
+  return `${uzs.toLocaleString()} so'm`;
+}
 
 // ─── Bank selector ────────────────────────────────────────────────────────────
 
@@ -14,150 +29,224 @@ function selectBanks(f: Facts): AIResult['bank_recommendations'] {
 
   const isFood = /novvoy|oziq|go'sht|sut|sabzavot|meva|qishloq|ferma|dehqon/.test(bt);
   const isService = /xizmat|ta'lim|tibbiy|salomatlik|dastur|axborot/.test(bt);
-  const isManufacturing = /ishlab chiqar|fabrika|zavod|sexs/.test(bt);
+  const isMfg = /ishlab chiqar|fabrika|zavod|sex\b/.test(bt);
 
   const banks: AIResult['bank_recommendations'] = [];
 
-  if (amt <= 500_000_000) {
+  // Mikrokreditbank — best for small loans
+  if (amt <= 500_000_000 || amt === 0) {
     banks.push({
       bank: 'Mikrokreditbank',
-      why_fit: `${f.region}da kichik biznes uchun eng qulay bank. ${f.has_collateral ? "Garovinggiz mavjud bo'lgani uchun" : "Garovsiz kreditlarga ixtisoslashgan."} ${amt <= 100_000_000 ? 'Sizning kredit miqdoringiz ularning asosiy yo\'nalishi.' : ''}`,
-      likely_requirements: `• Pasport + STIR\n• Biznes guvohnomasi\n• 6 oylik bank ko'chirmasi\n${f.has_collateral ? `• ${f.collateral_type || 'Garov'} hujjatlari\n` : '• Kafil talab qilinishi mumkin\n'}• Ushbu biznes-reja`,
+      why_fit:
+        `${f.region}da kichik biznes uchun eng qulay bank. ` +
+        (f.has_collateral
+          ? "Ko'chmas mulk garovinggiz mavjud — afzal shartlar olish imkoniyati yuqori."
+          : "Garovsiz yoki kafil asosida kreditlash dasturlari mavjud.") +
+        (amt > 0 && amt <= 200_000_000 ? " Sizning kredit miqdoringiz ularning asosiy yo'nalishi." : ""),
+      likely_requirements:
+        `• Pasport + STIR\n• Biznes faoliyat guvohnomasi\n• Oxirgi 6 oy bank ko'chirmasi\n` +
+        (f.has_collateral ? `• Garov hujjatlari (${clean(f.collateral_type, "mol-mulk")})\n` : "• Kafil (1–2 nafar) talab qilinishi mumkin\n") +
+        `• Ushbu biznes-reja`,
     });
   }
 
-  if (amt >= 100_000_000) {
+  // Kapitalbank — medium to large
+  if (amt >= 100_000_000 || (!f.has_collateral && amt > 0)) {
     banks.push({
       bank: 'Kapitalbank',
-      why_fit: `KOK kreditlash bo'yicha yirik bank. ${f.has_collateral ? "Garov mavjud bo'lgani uchun yaxshi shartlar taklif qilishi mumkin." : 'Kuchli pul oqimi va biznes tarixi talab qilinadi.'} ${amt >= 500_000_000 ? 'Katta hajmdagi kreditlarga ixtisoslashgan.' : ''}`,
-      likely_requirements: `• Moliyaviy hisobotlar (oxirgi 1 yil)\n• STIR, pasport\n• Biznes guvohnomasi\n${f.has_collateral ? `• ${f.collateral_type || 'Garov'} baholash xulosasi\n` : ''}• To'liq biznes-reja`,
+      why_fit:
+        `KOK kreditlash bo'yicha yirik tijorat banki. ` +
+        (f.has_collateral
+          ? "Garov mavjudligi yaxshi shartlar uchun asos beradi."
+          : "Garov bo'lmasa kuchli moliyaviy ko'rsatkichlar talab qilinadi.") +
+        (amt >= 500_000_000 ? " Katta hajmdagi kreditlarga ixtisoslashgan." : ""),
+      likely_requirements:
+        `• Moliyaviy hisobotlar (oxirgi 1 yil)\n• STIR + pasport\n• Biznes faoliyat guvohnomasi\n` +
+        (f.has_collateral ? `• Garov baholash xulosasi\n` : "") +
+        `• To'liq biznes-reja`,
     });
   }
 
-  if (isFood || isService || isManufacturing || amt <= 300_000_000) {
+  // Aloqabank — food, services, manufacturing, or when we need a 3rd
+  if (isFood || isService || isMfg || banks.length < 2) {
     banks.push({
       bank: 'Aloqabank',
-      why_fit: `${isFood ? 'Oziq-ovqat va qishloq xo\'jaligi uchun davlat dasturlari mavjud.' : ''} ${isService ? 'Xizmat ko\'rsatish sohasiga imtiyozli kreditlar taklif etadi.' : ''} ${isManufacturing ? 'Ishlab chiqarish korxonalarini qo\'llab-quvvatlash dasturlari bor.' : ''} Barqaror foiz stavkalari.`,
-      likely_requirements: `• Pasport + STIR\n• Soha litsenziyasi (agar kerak bo'lsa)\n• Oxirgi 6 oy tushum ma'lumoti\n${f.has_collateral ? `• ${f.collateral_type || 'Garov'} hujjatlari\n` : ''}• Ushbu biznes-reja`,
-    });
-  }
-
-  // Always return at least 2
-  if (banks.length < 2) {
-    banks.push({
-      bank: 'Xalq banki',
-      why_fit: `Davlat banki bo'lib, barcha hududlarda filiali bor. Kichik biznes uchun qulay imtiyozli dasturlar mavjud.`,
-      likely_requirements: `• Pasport + STIR\n• Biznes guvohnomasi\n• Bank ko'chirmasi\n• Biznes-reja`,
+      why_fit:
+        (isFood ? "Oziq-ovqat ishlab chiqarish uchun davlat subsidiyali kreditlar mavjud. " : "") +
+        (isService ? "Xizmat sohasiga imtiyozli foiz stavkalari taklif etiladi. " : "") +
+        (isMfg ? "Ishlab chiqarish korxonalari uchun maxsus qo'llab-quvvatlash dasturlari bor. " : "") +
+        (!isFood && !isService && !isMfg ? "Barcha soha uchun qulay kredit dasturlari mavjud. " : "") +
+        "Barqaror foiz stavkalari va uzun muddat imkoniyati.",
+      likely_requirements:
+        `• Pasport + STIR\n• Soha litsenziyasi (talab qilinsa)\n• Oxirgi 6 oy tushum ma'lumoti\n` +
+        (f.has_collateral ? `• Garov hujjatlari\n` : "") +
+        `• Ushbu biznes-reja`,
     });
   }
 
   return banks.slice(0, 3);
 }
 
-// ─── Checklist generator ──────────────────────────────────────────────────────
+// ─── Checklist ────────────────────────────────────────────────────────────────
 
 function generateChecklist(f: Facts): string[] {
-  const items = [
-    'Pasport nusxasi — fuqarolik xizmatlar markazidan (FUBT)',
-    'STIR — soliq inspeksiyasidan',
-    'Yakka tadbirkor guvohnomasi yoki yuridik shaxs ro\'yxatidan o\'tganlik hujjati',
-    'Oxirgi 6 oylik bank ko\'chirmasi yoki kassa kirim-chiqim daftari',
-    'Ushbu biznes-reja (BiznesPlan AI tomonidan tayyorlangan)',
+  const items: string[] = [
+    "Pasport nusxasi (barcha sahifalari) — fuqarolik xizmatlar markazidan",
+    "STIR (soliq to'lovchi raqami) — soliq inspeksiyasidan",
+    "Yakka tadbirkor guvohnomasi yoki MChJ ro'yxatdan o'tganlik hujjati",
+    "Oxirgi 6 oylik bank ko'chirmasi yoki kassa daftarchasi",
+    "Ushbu biznes-reja (BiznesPlan AI tomonidan tayyorlangan)",
   ];
+
   if (f.has_collateral && f.collateral_type) {
-    if (/uy|ko'chmas|mulk|zamin|er/.test(f.collateral_type.toLowerCase())) {
-      items.push("Ko'chmas mulk hujjatlari — kadastir organi orqali tasdiqlangan");
-    } else if (/avto|mashin|transport/.test(f.collateral_type.toLowerCase())) {
-      items.push('Avtomobil texnik pasporti va mulk huquqi hujjati');
+    const ct = f.collateral_type.toLowerCase();
+    if (/uy|ko'chmas|mulk|zamin|er|dala|kvartira/.test(ct)) {
+      items.push("Ko'chmas mulk texnik pasporti va kadastir hujjatlari");
+      items.push("Ko'chmas mulkni baholash xulosasi (sertifikatlangan baholovchidan)");
+    } else if (/avto|mashin|transport|yuk/.test(ct)) {
+      items.push("Avtomobil texnik pasporti va mulk dalolatnomasi");
     } else {
-      items.push(`Garov ob\'ekti hujjatlari: ${f.collateral_type}`);
+      items.push(`Garov ob'ekti hujjatlari va baholash xulosasi`);
     }
+  } else {
+    items.push("Kafil shaxslarning pasporti va daromad ma'lumotnomasi (2 nafar)");
   }
-  if (!f.has_collateral) {
-    items.push('Kafil (2 nafar): pasport va daromad ma\'lumoti bilan');
-  }
+
   if (f.employees >= 2) {
-    items.push('Xodimlar ro\'yxati va mehnat shartnomalari');
+    items.push("Xodimlar ro'yxati va mehnat shartnomalari nusxalari");
   }
   if (f.years_operating >= 1) {
-    items.push("Soliq hisobotlari (oxirgi 1 yil) — soliq inspeksiyasidan");
+    items.push("Oxirgi 1 yillik soliq hisoboti — soliq inspeksiyasidan");
   }
+  if (f.monthly_revenue_uzs > 0) {
+    items.push("Daromad-xarajat daftarchasi yoki hisoboti (oxirgi 3–6 oy)");
+  }
+
   return items;
 }
 
-// ─── Business plan template ───────────────────────────────────────────────────
+// ─── Business plan text ───────────────────────────────────────────────────────
 
 export function buildTemplatePlan(f: Facts): AIResult {
-  const revMln = f.monthly_revenue_uzs > 0
-    ? `${(f.monthly_revenue_uzs / 1_000_000).toFixed(0)} mln so'm`
-    : "aniqlanmagan";
+  const btype   = clean(f.business_type, "biznes");
+  const region  = clean(f.region, "mintaqa");
+  const purpose = clean(f.loan_purpose, "");
+  const plan2yr = clean(f.two_year_plan, "");
+  const rivals  = clean(f.main_competitors, "");
 
-  const loanMln = f.loan_amount_uzs > 0
-    ? `${(f.loan_amount_uzs / 1_000_000).toFixed(0)} mln so'm`
-    : "aniqlanmagan";
+  const revStr  = fmt(f.monthly_revenue_uzs);
+  const loanStr = fmt(f.loan_amount_uzs);
+  const hasRev  = f.monthly_revenue_uzs > 0;
+  const hasLoan = f.loan_amount_uzs > 0;
 
-  const coverage = f.monthly_revenue_uzs > 0 && f.loan_amount_uzs > 0
-    ? (f.monthly_revenue_uzs * f.loan_term_months / f.loan_amount_uzs).toFixed(1)
+  const coverage = hasRev && hasLoan
+    ? f.monthly_revenue_uzs * f.loan_term_months / f.loan_amount_uzs
     : null;
 
-  const coverageNote = coverage
-    ? parseFloat(coverage) >= 2
-      ? `Tushum/kredit nisbati ${coverage}x — juda kuchli ko'rsatkich.`
-      : parseFloat(coverage) >= 1
-      ? `Tushum/kredit nisbati ${coverage}x — kredit to'lovi qoplanadi, lekin zaxira chegaralangan.`
-      : `Tushum/kredit nisbati ${coverage}x — diqqat talab qiladi; xarajatlarni kamaytirish kerak.`
-    : "Moliyaviy ko'rsatkichlar ko'rsatilmagan.";
+  // ── Executive Summary ──────────────────────────────────────────────────────
+  const executive_summary = [
+    `${region}da faoliyat yurituvchi "${btype}"`,
+    f.years_operating > 0
+      ? `${f.years_operating} yildan beri ishlamoqda.`
+      : `nisbatan yangi biznes bo'lib, rivojlanish bosqichida.`,
+    hasRev ? `Hozirgi oylik tushum ${revStr}.` : "",
+    hasLoan && purpose
+      ? `Kredit maqsadi: ${purpose}. Buning uchun ${f.loan_term_months} oyga ${loanStr} so'ralmoqda.`
+      : hasLoan
+      ? `${loanStr} kredit ${f.loan_term_months} oyga so'ralmoqda.`
+      : "",
+    f.has_collateral
+      ? `Garov sifatida ${clean(f.collateral_type, "mol-mulk")} taqdim etilishi rejalashtirilgan.`
+      : "Hozircha garov mo'ljallanmagan — kafil yoki mikrokreditlash dasturi ko'rib chiqilishi kerak.",
+  ].filter(Boolean).join(" ");
 
-  const yearsNote = f.years_operating >= 3
-    ? `${f.years_operating} yillik barqaror faoliyat — banklar uchun kuchli ishonch belgisi.`
-    : f.years_operating >= 1
-    ? `${f.years_operating} yillik faoliyat bor — qo'shimcha moliyaviy hujjatlar talab qilinishi mumkin.`
-    : "Biznes yangi — garov yoki kafil ayniqsa muhim.";
+  // ── Market Analysis ────────────────────────────────────────────────────────
+  const market_analysis = [
+    `${region} mintaqasida "${btype}" sohasida mahalliy talab barqaror.`,
+    f.employees > 1
+      ? `${f.employees} nafar xodim bilan faoliyat yuritilmoqda — bu biznesning ma'lum darajada tarkiblashganligini ko'rsatadi.`
+      : "Hozircha yakka tartibda faoliyat ko'rsatilmoqda.",
+    rivals
+      ? `Raqobat muhiti: ${rivals}. Sifat, narx va mijozlarga munosabat orqali farqlanish muhim.`
+      : "Raqiblar aniq ko'rsatilmagan — bozor pozitsiyasi va raqobat strategiyasini aniqlash tavsiya etiladi.",
+    `${region} mintaqasida kichik biznesni qo'llab-quvvatlash uchun mahalliy hokimiyat va Savdo-sanoat palatasi dasturlari mavjud.`,
+  ].filter(Boolean).join(" ");
+
+  // ── Marketing & Production Plan ────────────────────────────────────────────
+  const marketing_production_plan = [
+    hasRev
+      ? `Joriy oylik tushum ${revStr} — bu biznesning barqarorligini ko'rsatadi.`
+      : "Hozirgi moliyaviy ko'rsatkichlar aniqlanmagan.",
+    purpose
+      ? `Kredit mablag'lari ${purpose} uchun yo'naltiriladi.`
+      : "Kredit maqsadi aniqlanmagan — bu bankka murojaat qilishdan oldin albatta belgilanishi kerak.",
+    purpose
+      ? `Bu qadam "${btype}" uchun xizmat yoki ishlab chiqarish hajmini oshirib, tushumni ko'paytirish imkonini beradi.`
+      : "",
+    plan2yr
+      ? `2 yillik strategiya: ${plan2yr}.`
+      : "Kelajak rejasi ko'rsatilmagan — bank uzoq muddatli maqsadlarni ko'rishni talab qiladi.",
+  ].filter(Boolean).join(" ");
+
+  // ── Financial Forecast ─────────────────────────────────────────────────────
+  const financialLines: string[] = [];
+
+  if (hasRev) {
+    financialLines.push(`Joriy oylik tushum: ${revStr} (tadbirkor ma'lumoti asosida).`);
+  }
+  if (hasLoan) {
+    const monthly = (f.loan_amount_uzs / f.loan_term_months / 1_000_000).toFixed(1);
+    financialLines.push(`Kredit: ${loanStr}, muddat: ${f.loan_term_months} oy. Taxminiy oylik to'lov: ${monthly} mln so'm (asosiy qarz, foizsiz).`);
+  }
+  if (coverage !== null) {
+    if (coverage >= 2) {
+      financialLines.push(`Tushum/kredit qoplash nisbati: ${coverage.toFixed(1)}x — kredit to'lovi ishonchli qoplanadi.`);
+    } else if (coverage >= 1) {
+      financialLines.push(`Tushum/kredit nisbati: ${coverage.toFixed(1)}x — to'lov qoplanadi, lekin moliyaviy zaxira chegaralangan. Xarajatlarni nazorat qilish muhim.`);
+    } else {
+      financialLines.push(`Diqqat: hozirgi tushum kredit to'lovini to'liq qoplay olmaydi (nisbat: ${coverage.toFixed(1)}x). Kredit miqdorini kamaytirish yoki muddatni uzaytirish tavsiya etiladi.`);
+    }
+  }
+
+  if (purpose) {
+    financialLines.push(`Investitsiya ta'siri: ${purpose} natijasida 1-yil davomida tushum 15–30% o'sishi kutilmoqda (soha o'rtacha ko'rsatkichi asosida).`);
+  }
+  financialLines.push("Barcha prognozlar taxminiy bo'lib, haqiqiy natija bozor sharoitiga bog'liq.");
+
+  const financial_forecast = financialLines.join(" ");
+
+  // ── Risk Assessment ────────────────────────────────────────────────────────
+  const riskLines: string[] = [];
+  riskLines.push("Asosiy risklar va boshqaruv choralari:");
+
+  if (rivals) {
+    riskLines.push(`Raqobat riski: ${rivals} — farqli xizmat, sifat va narx strategiyasi orqali yechiladi.`);
+  }
+
+  if (coverage !== null && coverage < 1.5) {
+    riskLines.push("To'lov riski: tushum va kredit nisbati past — xarajatlarni qisqartirish yoki qo'shimcha daromad manbai topish tavsiya etiladi.");
+  }
+
+  if (!f.has_collateral) {
+    riskLines.push("Garov yo'qligi: Mikrokreditbank yoki kafil asosida murojaat qilish lozim — bu xavfni biroz oshiradi.");
+  }
+
+  if (f.years_operating < 2) {
+    riskLines.push("Tajriba riski: biznes yangi — kuchli biznes-reja va shaxsiy moliyaviy tarix bu kamchilikni qoplashi mumkin.");
+  }
+
+  riskLines.push("Umumiy baho: risklar boshqarib bo'ladigan darajada, asosiy e'tibor moliyaviy intizom va bozorda barqarorlikni ta'minlashga qaratilishi kerak.");
+
+  const risk_assessment = riskLines.join(" ");
 
   return {
     facts: f,
     business_plan: {
-      executive_summary:
-        `${f.region}da faoliyat yurituvchi "${f.business_type}" ` +
-        (f.years_operating > 0 ? `${f.years_operating} yildan beri ` : 'nisbatan yangi va ') +
-        `ishlab kelmoqda. Oylik tushum ${revMln}ni tashkil etadi. ` +
-        `Kredit maqsadi: ${f.loan_purpose}. ` +
-        `Buning uchun ${f.loan_term_months} oyga ${loanMln} kredit so'ralmoqda. ` +
-        (f.has_collateral ? `Garov mavjud: ${f.collateral_type}.` : "Garov yo'q."),
-
-      market_analysis:
-        `${f.region} mintaqasida "${f.business_type}" sohasidagi bozor barqaror talabga ega. ` +
-        `Mahalliy aholining kundalik ehtiyojlari va mintaqaviy o'sish sur'atlari inobatga olinganda, ` +
-        `biznesni kengaytirish uchun yetarli imkoniyat mavjud. ` +
-        `Asosiy raqiblar: ${f.main_competitors}. ` +
-        `Raqobatda ustunlik qilish uchun sifat, narx va xizmat sifatiga e'tibor berish tavsiya etiladi.`,
-
-      marketing_production_plan:
-        `Hozirgi holat: ${f.employees} nafar xodim bilan oyiga ${revMln} daromad olinmoqda. ` +
-        `Kredit mablag'lari hisobiga ${f.loan_purpose}. ` +
-        `Bu qadam ishlab chiqarish yoki xizmat hajmini oshirib, tushumni ko'paytirishga xizmat qiladi. ` +
-        `Kelajak rejasi: ${f.two_year_plan}.`,
-
-      financial_forecast:
-        `Joriy oylik tushum: ${revMln} (tadbirkor ko'rsatmasi asosida). ` +
-        `Kredit: ${loanMln}, muddat: ${f.loan_term_months} oy. ` +
-        (f.loan_amount_uzs > 0 && f.loan_term_months > 0
-          ? `Taxminiy oylik to'lov (asosiy qarz): ${((f.loan_amount_uzs / f.loan_term_months) / 1_000_000).toFixed(1)} mln so'm. `
-          : '') +
-        coverageNote + ' ' +
-        `1-yil prognozi: tushum 15–25% o'sishi kutilmoqda (investitsiya samarasi). ` +
-        `2-yil: ${f.two_year_plan.substring(0, 80)}... natijasida qo'shimcha o'sish. ` +
-        `Barcha raqamlar taxminiy, haqiqiy natija bozor sharoitiga bog'liq.`,
-
-      risk_assessment:
-        `Asosiy risklar va yechimlar: ` +
-        `1) Bozor raqobati (${f.main_competitors}) — sifat va farqli xizmat orqali yechiladi. ` +
-        `2) To'lov qobiliyati — ${coverageNote} ` +
-        `3) Xom ashyo narxi o'zgarishi — muqobil ta'minotchilar bilan oldindan kelishuv tavsiya etiladi. ` +
-        (f.has_collateral
-          ? '4) Garov mavjud — kredit xavfi past baholanadi.'
-          : '4) Garov yo\'q — Mikrokreditbank yoki kafil orqali murojaat qilish tavsiya etiladi.') +
-        ' ' + yearsNote,
+      executive_summary,
+      market_analysis,
+      marketing_production_plan,
+      financial_forecast,
+      risk_assessment,
     },
     bank_recommendations: selectBanks(f),
     readiness_checklist: generateChecklist(f),

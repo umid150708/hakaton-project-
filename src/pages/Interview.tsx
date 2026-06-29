@@ -5,6 +5,7 @@ import { useAppStore } from '../stores/appStore';
 import { AIResultSchema } from '../lib/schema';
 import { extractFacts } from '../lib/extractFacts';
 import { buildTemplatePlan } from '../lib/templatePlan';
+import { checkAnswerQuality } from '../lib/answerQuality';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -105,6 +106,7 @@ export default function Interview() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStage, setLoadingStage] = useState(0);
   const [showTyping, setShowTyping] = useState(false);
+  const [warnedAt, setWarnedAt] = useState<number | null>(null); // track if we already warned for this question
   const [chat, setChat] = useState<ChatMsg[]>([
     { role: 'bot', text: QUESTIONS[0].text, key: 'bot-0' },
   ]);
@@ -151,13 +153,36 @@ export default function Interview() {
     const text = answer.trim();
     if (!text || text.length < 2) return;
 
-    // Add user bubble
+    // ── Quality check — warn once, then let them proceed ──
+    const alreadyWarned = warnedAt === currentIndex;
+    if (!alreadyWarned) {
+      const warning = checkAnswerQuality(currentIndex, text);
+      if (warning) {
+        // Show user bubble, then bot warning — don't advance
+        setChat(c => [
+          ...c,
+          { role: 'user', text, qIndex: currentIndex, key: `user-${currentIndex}-warn` },
+        ]);
+        setInputValue('');
+        setWarnedAt(currentIndex);
+        setShowTyping(true);
+        await new Promise(r => setTimeout(r, 600));
+        setShowTyping(false);
+        setChat(c => [
+          ...c,
+          { role: 'bot', text: warning, key: `warn-${currentIndex}` },
+          { role: 'bot', text: currentQ.text, key: `bot-${currentIndex}-retry` },
+        ]);
+        return; // stay on same question
+      }
+    }
+
+    // ── Good answer (or already warned) — advance ──
     setChat(c => [...c, { role: 'user', text, qIndex: currentIndex, key: `user-${currentIndex}` }]);
     setAnswer(currentIndex, currentQ.text, text);
     setInputValue('');
 
     if (!isLast) {
-      // Show typing indicator briefly, then next question
       setShowTyping(true);
       await new Promise(r => setTimeout(r, 600));
       setShowTyping(false);
@@ -167,7 +192,7 @@ export default function Interview() {
     } else {
       await submitToAPI(text);
     }
-  }, [currentIndex, currentQ, isLast]);
+  }, [currentIndex, currentQ, isLast, warnedAt]);
 
   // ── Submit all answers ────────────────────────────────────────────────────
 
