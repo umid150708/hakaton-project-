@@ -2,10 +2,14 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QUESTIONS } from '../lib/questions';
 import { useAppStore } from '../stores/appStore';
+import type { StoredPrice } from '../stores/appStore';
 import { AIResultSchema } from '../lib/schema';
 import { extractFacts } from '../lib/extractFacts';
 import { buildTemplatePlan } from '../lib/templatePlan';
 import { checkAnswerQuality } from '../lib/answerQuality';
+import { detectCategory } from '../lib/categoryMap';
+import { getFallbackPrices } from '../lib/pricesFallback';
+import { checkRevenue } from '../lib/revenueCheck';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -99,7 +103,7 @@ function LoadingScreen({ stage }: { stage: number }) {
 
 export default function Interview() {
   const navigate = useNavigate();
-  const { setAnswer, setResult, setStatus, answers } = useAppStore();
+  const { setAnswer, setResult, setPrices, setStatus, answers } = useAppStore();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState('');
@@ -207,37 +211,69 @@ export default function Interview() {
     setLoadingStage(0);
     setStatus('loading');
 
-    // ── Step 1: Extract facts from actual answers (client-side, instant) ──
+    // ── A: Extract facts (instant, client-side) ─────────────────────────────
     const facts = extractFacts(allAnswers);
+    const category = detectCategory(facts.business_type);
 
-    // ── Step 2: Try the AI API for richer narrative ──
-    try {
+    // ── B: Fire plan + prices in parallel — prices add ZERO wait time ───────
+    const planPromise = (async () => {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 90_000);
+      const timer = setTimeout(() => controller.abort(), 90_000);
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers: allAnswers }),
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return AIResultSchema.parse(JSON.parse(await res.text()));
+      } catch {
+        clearTimeout(timer);
+        return null; // signals fallback
+      }
+    })();
 
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers: allAnswers }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
+    const pricesPromise = (async (): Promise<Record<string, StoredPrice>> => {
+      if (category.queries.length === 0) return {};
+      try {
+        const res = await fetch('/api/prices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queries: category.queries }),
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json() as Record<string, StoredPrice & { error?: string }>;
+        // Drop any entries that came back as errors
+        return Object.fromEntries(
+          Object.entries(data).filter(([, v]) => !v.error && v.avg > 0)
+        );
+      } catch {
+        // OLX unreachable — use curated offline dataset
+        return getFallbackPrices(category.queries) as Record<string, StoredPrice>;
+      }
+    })();
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // ── C: Wait for both to settle ──────────────────────────────────────────
+    const [planResult, fetchedPrices] = await Promise.all([planPromise, pricesPromise]);
 
-      const raw = await res.text();
-      const result = AIResultSchema.parse(JSON.parse(raw));
-      setResult(result);
-      navigate('/result');
-      return;
-    } catch (err) {
-      console.warn('API unavailable — using client-side plan generation:', err);
-    }
+    // ── D: Build final plan (AI or template fallback) ───────────────────────
+    const result = planResult ?? buildTemplatePlan(facts);
 
-    // ── Step 3: Fallback — build plan from extracted facts (always real data) ──
-    const result = buildTemplatePlan(facts);
+    // ── E: Compute revenue check against actual price data ──────────────────
+    // Use fetched prices if we got them, otherwise offline fallback
+    const pricesForCheck = Object.keys(fetchedPrices).length > 0
+      ? fetchedPrices
+      : getFallbackPrices(category.queries) as Record<string, StoredPrice>;
+
+    const revenueCheck = checkRevenue(facts, pricesForCheck, category);
+
+    // ── F: Store everything and navigate ────────────────────────────────────
+    setPrices(fetchedPrices, revenueCheck);
     setResult(result);
-    navigate('/result'); // no ?demo=1 — this is based on THEIR answers
+    navigate('/result');
   };
 
   // ── Go back to previous question ──────────────────────────────────────────
