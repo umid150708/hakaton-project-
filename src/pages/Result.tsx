@@ -6,6 +6,9 @@ import {
 import { useAppStore } from '../stores/appStore';
 import { computeScore } from '../lib/scoring';
 import { assessDataQuality } from '../lib/answerQuality';
+import { detectCategory } from '../lib/categoryMap';
+import PriceTable from '../components/PriceTable';
+import RevenueCheck from '../components/RevenueCheck';
 import type { AIResult } from '../lib/schema';
 import type { ScoreResult } from '../lib/scoring';
 
@@ -178,7 +181,7 @@ export default function Result() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isDemo = searchParams.get('demo') === '1';
-  const { result, reset } = useAppStore();
+  const { result, prices, revenueCheck, reset } = useAppStore();
   const resultRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
 
@@ -188,6 +191,7 @@ export default function Result() {
   }
 
   const score = computeScore(result.facts);
+  const category = detectCategory(result.facts.business_type);
 
   const handleExportPDF = async () => {
     setExporting(true);
@@ -260,6 +264,11 @@ export default function Result() {
         {/* Personalized score recommendations */}
         <ScoreRecommendations score={score} facts={result.facts} />
 
+        {/* Revenue analysis — only shown when status ≠ ok */}
+        {revenueCheck && (
+          <RevenueCheck result={revenueCheck} />
+        )}
+
         {/* Business plan */}
         <section>
           <h2 className="text-slate-400 text-xs uppercase tracking-wider mb-4">Biznes-reja bo'limlari</h2>
@@ -271,6 +280,15 @@ export default function Result() {
             <PlanSection title="Risklar va yechimlar" content={result.business_plan.risk_assessment} />
           </div>
         </section>
+
+        {/* Market prices — shown when price data was fetched */}
+        {Object.keys(prices).length > 0 && revenueCheck && (
+          <PriceTable
+            prices={prices}
+            revenueCheck={revenueCheck}
+            category={category}
+          />
+        )}
 
         {/* Bank recommendations */}
         <section>
