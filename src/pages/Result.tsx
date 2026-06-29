@@ -190,7 +190,7 @@ export default function Result() {
     return null;
   }
 
-  const score = computeScore(result.facts);
+  const score = computeScore(result.facts, revenueCheck ?? undefined);
   const category = detectCategory(result.facts.business_type);
 
   const handleExportPDF = async () => {

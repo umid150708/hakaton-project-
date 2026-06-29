@@ -1,4 +1,5 @@
 import type { Facts } from './schema';
+import type { RevenueCheckResult } from './revenueCheck';
 
 export interface ScoreComponent {
   label: string;       // Uzbek label
@@ -130,7 +131,7 @@ function sectorOutlook(facts: Facts): ScoreComponent {
 }
 
 function digitalFootprint(facts: Facts): ScoreComponent {
-  // Proxy for Dec-2026 AI scoring readiness
+  // Proxy for 2026 AI scoring readiness — max reduced to 5 (bozorTahlili takes remaining 5)
   const hasRevenue = facts.monthly_revenue_uzs > 0;
   const hasHistory = facts.years_operating > 0;
   const hasTeam = facts.employees > 0;
@@ -139,20 +140,68 @@ function digitalFootprint(facts: Facts): ScoreComponent {
   let note = '';
 
   if (hasRevenue && hasHistory && hasTeam) {
-    points = 10;
+    points = 5;
     note = "Yaxshi: aylanma, ish tajribasi va xodimlar mavjud — 2026-yil AI scoring uchun tayyor.";
   } else if (hasRevenue && hasHistory) {
-    points = 6;
+    points = 3;
     note = "O'rtacha: xodimlarni rasmiy ro'yxatdan o'tkaring — AI scoring uchun muhim.";
   } else {
-    points = 2;
+    points = 1;
     note = "Kam: soliq va kommunal to'lovlarni rasmiy hisob orqali o'tkazing — AI scoring bu ma'lumotlarni tekshiradi.";
   }
 
-  return { label: "Raqamli iz (2026 AI scoring)", points, max: 10, note };
+  return { label: "Raqamli iz (2026 AI scoring)", points, max: 5, note };
 }
 
-export function computeScore(facts: Facts): ScoreResult {
+function bozorTahlili(revenueCheck?: RevenueCheckResult): ScoreComponent {
+  // 5 pts — does stated revenue match real market price data?
+  // This is what separates BiznesPlan AI from any other business plan tool.
+
+  if (!revenueCheck || revenueCheck.status === 'unverifiable') {
+    return {
+      label: "Bozor tahlili",
+      points: 3,
+      max: 5,
+      note: "Bu turdagi biznes uchun narx ma'lumotlari topilmadi. Ball neytral.",
+    };
+  }
+
+  switch (revenueCheck.status) {
+    case 'ok':
+      return {
+        label: "Bozor tahlili",
+        points: 5,
+        max: 5,
+        note: `Daromad bozor narxlariga mos (nisbat: ${revenueCheck.ratio.toFixed(1)}×). Bank uchun ishonchli ko'rsatkich.`,
+      };
+    case 'ok_high':
+      return {
+        label: "Bozor tahlili",
+        points: 3,
+        max: 5,
+        note: `Daromad taxminiy chegaradan biroz yuqori (${revenueCheck.ratio.toFixed(1)}×). Bank isbotini so'rashi mumkin.`,
+      };
+    case 'too_low':
+      return {
+        label: "Bozor tahlili",
+        points: 2,
+        max: 5,
+        note: `Daromad juda past ko'rinadi (${revenueCheck.ratio.toFixed(1)}× taxmindan past). Raqamni yoki hujjatni tekshiring.`,
+      };
+    case 'too_high':
+      return {
+        label: "Bozor tahlili",
+        points: 0,
+        max: 5,
+        note: `Daromad bozor narxlariga mos emas (${revenueCheck.ratio.toFixed(1)}×). Bank bu raqamni qabul qilmaydi.`,
+      };
+  }
+}
+
+export function computeScore(
+  facts: Facts,
+  revenueCheck?: RevenueCheckResult,
+): ScoreResult {
   const components: ScoreComponent[] = [
     trackRecord(facts),
     repaymentCapacity(facts),
@@ -160,6 +209,7 @@ export function computeScore(facts: Facts): ScoreResult {
     businessScale(facts),
     sectorOutlook(facts),
     digitalFootprint(facts),
+    bozorTahlili(revenueCheck),   // 7th component — market price alignment
   ];
 
   const total = components.reduce((sum, c) => sum + c.points, 0);
