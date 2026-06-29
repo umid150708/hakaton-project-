@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { QUESTIONS } from '../lib/questions';
 import { useAppStore } from '../stores/appStore';
 import { AIResultSchema } from '../lib/schema';
-import { DEMO_FIXTURE } from '../lib/demoFixture';
+import { extractFacts } from '../lib/extractFacts';
+import { buildTemplatePlan } from '../lib/templatePlan';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -168,7 +169,7 @@ export default function Interview() {
     }
   }, [currentIndex, currentQ, isLast]);
 
-  // ── Submit all answers to API ─────────────────────────────────────────────
+  // ── Submit all answers ────────────────────────────────────────────────────
 
   const submitToAPI = async (finalAnswer: string) => {
     const allAnswers = QUESTIONS.map((q, i) => {
@@ -181,6 +182,10 @@ export default function Interview() {
     setLoadingStage(0);
     setStatus('loading');
 
+    // ── Step 1: Extract facts from actual answers (client-side, instant) ──
+    const facts = extractFacts(allAnswers);
+
+    // ── Step 2: Try the AI API for richer narrative ──
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 90_000);
@@ -199,11 +204,15 @@ export default function Interview() {
       const result = AIResultSchema.parse(JSON.parse(raw));
       setResult(result);
       navigate('/result');
+      return;
     } catch (err) {
-      console.error('API failed — falling back to demo:', err);
-      setResult(DEMO_FIXTURE);
-      navigate('/result?demo=1');
+      console.warn('API unavailable — using client-side plan generation:', err);
     }
+
+    // ── Step 3: Fallback — build plan from extracted facts (always real data) ──
+    const result = buildTemplatePlan(facts);
+    setResult(result);
+    navigate('/result'); // no ?demo=1 — this is based on THEIR answers
   };
 
   // ── Go back to previous question ──────────────────────────────────────────
