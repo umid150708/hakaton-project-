@@ -42,7 +42,7 @@ export async function sbSelect<T>(table: string, query = ''): Promise<T[]> {
  * Insert or merge a single row (upsert on the table's primary key).
  * Returns the stored row.
  */
-export async function sbUpsert<T>(table: string, row: Record<string, unknown>): Promise<T | null> {
+export async function sbUpsert<T extends object>(table: string, row: T): Promise<T | null> {
   const { url, key } = assertConfig();
   const res = await fetch(`${url}/rest/v1/${table}`, {
     method: 'POST',
