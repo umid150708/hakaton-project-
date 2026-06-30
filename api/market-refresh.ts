@@ -57,7 +57,9 @@ Faqat JSON qaytaring:
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      // 8b-instant: separate 500k/day token pool from the 70b AIStrip analysis,
+      // and JSON mode constrains output so the smaller model is reliable here
+      model: 'llama-3.1-8b-instant',
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       max_tokens: 1500,
