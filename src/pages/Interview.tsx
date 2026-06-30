@@ -172,14 +172,14 @@ export default function ChatBot() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-zinc-950 flex flex-col">
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur border-b border-slate-800 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur border-b border-zinc-800 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="text-slate-500 hover:text-white text-xl leading-none"
+            className="text-zinc-500 hover:text-white text-xl leading-none"
           >←</button>
           <div className="flex items-center gap-2 flex-1">
             <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center text-sm">🤖</div>
@@ -217,13 +217,13 @@ export default function ChatBot() {
                 className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-emerald-700 text-white rounded-tr-sm'
-                    : 'bg-slate-800 text-slate-100 rounded-tl-sm'
+                    : 'bg-zinc-800 text-zinc-100 rounded-tl-sm'
                 }`}
               >
                 {formatText(msg.text)}
               </div>
               {msg.role === 'user' && (
-                <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
+                <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
                   👤
                 </div>
               )}
@@ -236,10 +236,10 @@ export default function ChatBot() {
               <div className="w-8 h-8 bg-emerald-700 rounded-full flex items-center justify-center text-sm shrink-0">
                 🤖
               </div>
-              <div className="bg-slate-800 px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="bg-zinc-800 px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
+                <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           )}
@@ -251,14 +251,14 @@ export default function ChatBot() {
       {/* ── Quick question chips (always visible) ── */}
       <div className="px-4 pb-2">
         <div className="max-w-2xl mx-auto">
-          <p className="text-slate-600 text-xs mb-2">Tez savollar:</p>
+          <p className="text-zinc-600 text-xs mb-2">Tez savollar:</p>
           <div className="flex gap-2 flex-wrap">
             {chips.map((q, i) => (
               <button
                 key={i}
                 onClick={() => sendMessage(q)}
                 disabled={loading}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs rounded-full transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs rounded-full transition-colors disabled:opacity-50"
               >
                 {q}
               </button>
@@ -268,7 +268,7 @@ export default function ChatBot() {
       </div>
 
       {/* ── Input ── */}
-      <div className="border-t border-slate-800 bg-slate-950 px-4 py-3">
+      <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto flex gap-2">
           <input
             ref={inputRef}
@@ -276,12 +276,12 @@ export default function ChatBot() {
             onChange={e => setInput(e.target.value)}
             placeholder="Savolingizni yozing..."
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 focus:border-emerald-600 rounded-xl text-white text-sm placeholder-slate-500 outline-none transition-colors disabled:opacity-60"
+            className="flex-1 px-4 py-3 bg-zinc-800 border border-zinc-700 focus:border-emerald-600 rounded-xl text-white text-sm placeholder-zinc-500 outline-none transition-colors disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl transition-colors"
+            className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white rounded-xl transition-colors"
           >
             {loading
               ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin block" />
@@ -289,7 +289,7 @@ export default function ChatBot() {
             }
           </button>
         </form>
-        <p className="text-center text-slate-700 text-xs mt-2">
+        <p className="text-center text-zinc-700 text-xs mt-2">
           Savdo-sanoat palatasi · soliq.uz · lex.uz · Ijtimoiy himoya milliy agentligi
         </p>
       </div>
