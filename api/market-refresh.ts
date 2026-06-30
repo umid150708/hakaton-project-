@@ -85,7 +85,8 @@ function buildSnapshot(
   const data: PriceEntry[] = TRACKED_PRODUCTS.map(p => {
     const g = genMap.get(p.key);
     const uzPrice = Math.round(g?.uzPrice ?? prevMap.get(p.key) ?? p.anchor);
-    const last = prevMap.get(p.key) ?? uzPrice;
+    // Compare to previous snapshot; on day 1 (no prev) compare to baseline anchor
+    const last = prevMap.get(p.key) ?? p.anchor;
     const changePct = last > 0 ? +(((uzPrice - last) / last) * 100).toFixed(1) : 0;
     const trend: PriceEntry['trend'] = changePct > 0.05 ? 'up' : changePct < -0.05 ? 'down' : 'flat';
     return {
