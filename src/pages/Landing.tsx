@@ -16,7 +16,7 @@ export default function Landing() {
           </div>
 
           {/* Links */}
-          <div className="hidden md:flex items-center gap-7">
+          <div className="hidden lg:flex items-center gap-7">
             <Link to="/bozor"     className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">B2B Bozor</Link>
             <Link to="/interview" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">AI Maslahat</Link>
             <Link to="/pricing"   className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">Narxlar</Link>
@@ -31,7 +31,7 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="relative pt-40 pb-24 px-6 overflow-hidden">
+      <section className="relative pt-36 pb-16 px-6 overflow-hidden">
         {/* Dot grid */}
         <div className="dot-grid absolute inset-0" />
         {/* Radial glow */}
@@ -86,12 +86,12 @@ export default function Landing() {
       </div>
 
       {/* ── Two product cards — asymmetric 3:2 ── */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-5 gap-4">
+      <section className="py-16 px-6">
+        <div className="max-w-5xl mx-auto grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
           {/* B2B Bozor — big (3/5) */}
           <Link to="/bozor"
-            className="group md:col-span-3 relative flex flex-col bg-zinc-900 hover:bg-zinc-800/70 border border-zinc-800 rounded-3xl p-8 transition-all overflow-hidden">
+            className="group lg:col-span-3 relative flex flex-col bg-zinc-900 hover:bg-zinc-800/70 border border-zinc-800 rounded-3xl p-8 transition-all overflow-hidden">
             {/* Subtle blue tint */}
             <div className="absolute inset-0 bg-gradient-to-br from-blue-950/25 via-transparent to-transparent pointer-events-none" />
             <div className="relative flex flex-col flex-1">
@@ -128,7 +128,7 @@ export default function Landing() {
 
           {/* AI Maslahat — smaller (2/5) */}
           <div onClick={() => navigate('/interview')}
-            className="group md:col-span-2 relative flex flex-col bg-zinc-900 hover:bg-zinc-800/70 border border-zinc-800 rounded-3xl p-8 transition-all cursor-pointer overflow-hidden">
+            className="group lg:col-span-2 relative flex flex-col bg-zinc-900 hover:bg-zinc-800/70 border border-zinc-800 rounded-3xl p-8 transition-all cursor-pointer overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/25 via-transparent to-transparent pointer-events-none" />
             <div className="relative flex flex-col flex-1">
               <div className="flex items-start justify-between mb-8">
@@ -164,11 +164,11 @@ export default function Landing() {
       </section>
 
       {/* ── How it works ── */}
-      <section className="py-24 px-6 border-t border-zinc-800/50">
+      <section className="py-16 px-6 border-t border-zinc-800/50">
         <div className="max-w-5xl mx-auto">
-          <p className="text-xs text-zinc-600 uppercase tracking-widest text-center mb-16 font-medium">Qanday ishlaydi</p>
+          <p className="text-xs text-zinc-600 uppercase tracking-widest text-center mb-12 font-medium">Qanday ishlaydi</p>
 
-          <div className="grid md:grid-cols-2 gap-16">
+          <div className="grid sm:grid-cols-2 gap-12">
 
             {/* B2B steps */}
             <div>
@@ -220,10 +220,10 @@ export default function Landing() {
       </section>
 
       {/* ── AI knowledge areas ── */}
-      <section className="py-24 px-6 border-t border-zinc-800/50">
+      <section className="py-16 px-6 border-t border-zinc-800/50">
         <div className="max-w-5xl mx-auto">
-          <p className="text-xs text-zinc-600 uppercase tracking-widest text-center mb-16 font-medium">AI maslahatchi nimalарni biladi</p>
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <p className="text-xs text-zinc-600 uppercase tracking-widest text-center mb-10 font-medium">AI maslahatchi nimalarni biladi</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { icon: '🏦', title: 'Kredit olish',           body: "Bank talablari, hujjatlar ro'yxati, garovsiz mikrokreditlar (PQ-4862)" },
               { icon: '♿', title: 'Nogironlik imtiyozlari', body: "Soliq yengilliklari, pensiya, bepul xizmatlar — I/II/III guruh bo'yicha" },
