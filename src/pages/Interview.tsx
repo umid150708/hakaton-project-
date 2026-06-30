@@ -11,6 +11,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getUser } from '../lib/auth';
+import { learnFromMessage, profileSummary, hydrateProfile } from '../lib/profile';
 
 interface ChatMessage {
   role: 'user' | 'bot';
@@ -101,6 +103,12 @@ export default function ChatBot() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  // On mount, pull any cross-device context from Supabase into localStorage
+  useEffect(() => {
+    const u = getUser();
+    if (u?.phone) hydrateProfile(u.phone);
+  }, []);
+
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
@@ -109,6 +117,9 @@ export default function ChatBot() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+
+    // Learn facts about the user from this message (disability, location, etc.)
+    learnFromMessage(trimmed);
 
     const newHistory: HistoryItem[] = [
       ...history,
@@ -119,7 +130,7 @@ export default function ChatBot() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ history: newHistory }),
+        body: JSON.stringify({ history: newHistory, profile: profileSummary(getUser()) }),
         signal: AbortSignal.timeout(30_000),
       });
 

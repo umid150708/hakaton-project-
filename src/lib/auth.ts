@@ -19,6 +19,12 @@ export interface UserProfile {
   plan: Plan;
   dealContactsUsed: number;   // free contacts consumed
   joinedAt: string;
+
+  // ── Learned context (built up from chat, powers tailored AI advice) ──
+  disability?: 'I' | 'II' | 'III';   // nogironlik guruhi
+  location?: string;                  // viloyat / shahar
+  revenueBand?: '<500mln' | '500mln-1mlrd' | '>1mlrd';
+  employees?: '0' | '1-5' | '5-20' | '20+';
 }
 
 const KEY = 'biznesplan_user_v1';
@@ -55,6 +61,15 @@ export function useDealContact(): 'ok' | 'paywall' {
 export function upgradePlan(plan: Plan): void {
   const u = getUser();
   if (u) saveUser({ ...u, plan });
+}
+
+/** Merge learned fields into the stored profile. Returns the updated profile (or null if not signed up). */
+export function updateProfile(patch: Partial<UserProfile>): UserProfile | null {
+  const u = getUser();
+  if (!u) return null;
+  const next = { ...u, ...patch };
+  saveUser(next);
+  return next;
 }
 
 export const FREE_LIMIT = 3;

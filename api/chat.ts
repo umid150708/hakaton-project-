@@ -11,6 +11,7 @@
  */
 
 import { withGemini } from './_gemini';
+import { sbSelect } from './_supabase';
 
 export const config = { runtime: 'edge' };
 
@@ -57,9 +58,45 @@ const FALLBACK_MSG =
   "Hozirda xizmat vaqtincha ishlamayapti. Iltimos, bir daqiqadan so'ng urinib ko'ring. " +
   "Tezroq javob: INSON markazi 1140 yoki soliq.uz";
 
+// ── Context injection (per-user profile + today's market) ─────────────────────
+
+interface PriceEntry { name: string; unit: string; uzPrice: number; changePct: number; trend: string }
+
+/** Compact one-line summary of today's most-moved commodities (Uzbek). */
+async function getMarketLine(): Promise<string> {
+  try {
+    const rows = await sbSelect<{ data: PriceEntry[] }>('market_snapshots', 'order=date.desc&limit=1');
+    const data = rows[0]?.data ?? [];
+    if (!data.length) return '';
+    const movers = [...data]
+      .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct))
+      .slice(0, 4)
+      .map(p => {
+        const sign = p.changePct > 0 ? '+' : '';
+        return `${p.name} ${p.uzPrice.toLocaleString('ru-RU')} so'm/${p.unit} (${sign}${p.changePct}%)`;
+      })
+      .join(', ');
+    return movers;
+  } catch {
+    return '';
+  }
+}
+
+/** Build the per-request system prompt: base rules + who the user is + market today. */
+function buildSystem(profile: string, marketLine: string): string {
+  let s = SYSTEM_PROMPT;
+  if (profile) {
+    s += `\n\nFOYDALANUVCHI HAQIDA (javobni shu kishiga moslang, qayta so'ramang): ${profile}.`;
+  }
+  if (marketLine) {
+    s += `\n\nBUGUNGI BOZOR NARXLARI (kerak bo'lsa maslahatda ishlating): ${marketLine}.`;
+  }
+  return s;
+}
+
 // ── Groq ─────────────────────────────────────────────────────────────────────
 
-async function callGroq(history: Message[]): Promise<string> {
+async function callGroq(history: Message[], system: string): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new Error('No GROQ_API_KEY');
 
@@ -69,7 +106,7 @@ async function callGroq(history: Message[]): Promise<string> {
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant', // 500k tokens/day free — 5× capacity vs 70b
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: system },
         ...history.map(m => ({
           role: m.role === 'model' ? 'assistant' : 'user',
           content: m.content,
@@ -89,11 +126,11 @@ async function callGroq(history: Message[]): Promise<string> {
 
 // ── Gemini fallback ───────────────────────────────────────────────────────────
 
-async function callGemini(history: Message[]): Promise<string> {
+async function callGemini(history: Message[], system: string): Promise<string> {
   return withGemini(async (genAI) => {
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash',  // 1500 RPD free tier (vs 2.5-flash's 20 RPD)
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: system,
       generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
     });
     const chat = model.startChat({
@@ -115,13 +152,19 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST')   return new Response('Method not allowed', { status: 405 });
 
   let history: Message[];
+  let profile = '';
   try {
     const body = await req.json();
     history = body.history ?? [];
+    profile = typeof body.profile === 'string' ? body.profile : '';
     if (!Array.isArray(history) || history.length === 0) throw new Error('empty');
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid body' }), { status: 400, headers: cors });
   }
+
+  // Build the per-request system prompt: base rules + who the user is + today's market
+  const marketLine = await getMarketLine();
+  const system = buildSystem(profile, marketLine);
 
   let text = '';
   let provider = '';
@@ -129,13 +172,13 @@ export default async function handler(req: Request): Promise<Response> {
   // Gemini primary (better instruction-following for conversational logic)
   // Groq as fallback if Gemini is rate-limited
   try {
-    text = await callGemini(history);
+    text = await callGemini(history, system);
     provider = 'gemini';
   } catch (e1) {
     console.warn('Gemini failed:', String(e1));
     if (process.env.GROQ_API_KEY) {
       try {
-        text = await callGroq(history);
+        text = await callGroq(history, system);
         provider = 'groq-fallback';
       } catch (e2) {
         console.error('Both failed:', String(e2));
