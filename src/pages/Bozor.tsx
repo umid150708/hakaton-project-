@@ -111,25 +111,66 @@ function AdCard({ ad }: { ad: Ad }) {
   );
 }
 
+// ── Unit of measure groups ────────────────────────────────────────────────────
+const UNIT_GROUPS = [
+  {
+    label: '⚖️ Og\'irlik',
+    units: ['kg', 'tonna', 'gramm', 'sentner', 'kvintal'],
+  },
+  {
+    label: '🪣 Hajm',
+    units: ['litr', 'm³', 'sm³'],
+  },
+  {
+    label: '📏 Uzunlik',
+    units: ['metr', 'sm', 'km'],
+  },
+  {
+    label: '📐 Maydon',
+    units: ['m²', 'gektar', 'sotix'],
+  },
+  {
+    label: '🔢 Sanoq',
+    units: ['dona', 'ta', 'juft', 'o\'ram', 'qop', 'blok', 'quti', 'pallet', 'komplekt', 'to\'plam'],
+  },
+];
+
+const FREQ_OPTIONS = [
+  { value: '', label: '(bir marta)' },
+  { value: '/kun', label: '/kun' },
+  { value: '/hafta', label: '/hafta' },
+  { value: '/oy', label: '/oy' },
+  { value: '/yil', label: '/yil' },
+];
+
 function PostAdModal({ type, onClose, onPost }: { type: 'buy'|'sell'; onClose: () => void; onPost: (ad: Ad) => void }) {
   const [product, setProduct]   = useState('');
-  const [quantity, setQuantity] = useState('');
+  const [amount, setAmount]     = useState('');
+  const [unit, setUnit]         = useState('kg');
+  const [freq, setFreq]         = useState('');
   const [location, setLocation] = useState('');
   const [price, setPrice]       = useState('');
+  const [priceUnit, setPriceUnit] = useState('kg');
   const [contact, setContact]   = useState('');
   const [done, setDone]         = useState(false);
   const isBuy = type === 'buy';
-  const canSubmit = product.trim() && quantity.trim() && location.trim();
+
+  // Build the quantity string e.g. "20 tonna/oy"
+  const quantityStr = amount.trim() ? `${amount.trim()} ${unit}${freq}` : '';
+  const canSubmit = product.trim() && quantityStr && location.trim();
 
   const submit = () => {
     if (!canSubmit) return;
+    const priceStr = price.trim()
+      ? `${price.trim()} so'm/${priceUnit}`
+      : '';
     const ad: Ad = {
       id: Date.now().toString(),
       type,
       product: product.trim(),
-      quantity: quantity.trim(),
+      quantity: quantityStr,
       location: location.trim(),
-      price: price.trim(),
+      price: priceStr,
       contact: contact.trim(),
       date: new Date().toLocaleDateString('uz-UZ'),
     };
@@ -139,37 +180,115 @@ function PostAdModal({ type, onClose, onPost }: { type: 'buy'|'sell'; onClose: (
     setTimeout(() => { setDone(false); onClose(); }, 1500);
   };
 
+  // All flat units for price-per selector
+  const allUnits = UNIT_GROUPS.flatMap(g => g.units);
+
+  const focusRing = isBuy ? 'focus:border-blue-500' : 'focus:border-emerald-500';
+  const inputCls = `bg-slate-800 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 outline-none transition-colors ${focusRing}`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 px-4 pb-4 sm:pb-0" onClick={onClose}>
       <div className="w-full max-w-md bg-slate-900 rounded-2xl border border-slate-700 overflow-hidden" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
         <div className={`px-4 py-3 border-b border-slate-800 flex items-center justify-between ${isBuy ? 'bg-blue-900/20' : 'bg-emerald-900/20'}`}>
           <p className={`font-semibold text-sm ${isBuy ? 'text-blue-400' : 'text-emerald-400'}`}>
             {isBuy ? "🛒 Xarid e'loni" : "💰 Sotuv e'loni"}
           </p>
           <button onClick={onClose} className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
         </div>
-        <div className="p-4 space-y-2">
-          <input value={product} onChange={e => setProduct(e.target.value)}
-            placeholder={isBuy ? "Nima kerak? (sement, un, go'sht...)" : "Nima sotasiz? (armitura, kartoshka...)"}
-            className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm placeholder-slate-500 outline-none focus:border-blue-600" />
-          <div className="grid grid-cols-2 gap-2">
-            <input value={quantity} onChange={e => setQuantity(e.target.value)}
-              placeholder="Miqdor (10 tonna, 500 kg)"
-              className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-blue-600" />
-            <input value={location} onChange={e => setLocation(e.target.value)}
-              placeholder={isBuy ? "Qayerga? (Jizzax...)" : "Qayerdan? (Toshkent...)"}
-              className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-blue-600" />
-            {!isBuy && (
-              <input value={price} onChange={e => setPrice(e.target.value)}
-                placeholder="Narx (9 500 so'm/kg)"
-                className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-emerald-600" />
-            )}
-            <input value={contact} onChange={e => setContact(e.target.value)}
-              placeholder="Telefon raqam"
-              className={`px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-blue-600 ${isBuy ? 'col-span-2' : ''}`} />
+
+        <div className="p-4 space-y-3">
+
+          {/* Product name */}
+          <div>
+            <label className="text-slate-500 text-xs mb-1 block">Mahsulot nomi *</label>
+            <input value={product} onChange={e => setProduct(e.target.value)}
+              placeholder={isBuy ? "Sement, un, go'sht, armitura..." : "Kartoshka, gazlama, yog'och..."}
+              className={`w-full px-3 py-2.5 ${inputCls}`} />
           </div>
+
+          {/* Quantity row: amount + unit + frequency */}
+          <div>
+            <label className="text-slate-500 text-xs mb-1 block">Miqdor *</label>
+            <div className="flex gap-2">
+              {/* Numeric amount */}
+              <input
+                type="number"
+                min="0"
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
+                placeholder="Raqam"
+                className={`w-24 px-3 py-2 ${inputCls} shrink-0`}
+              />
+
+              {/* Unit selector */}
+              <select value={unit} onChange={e => setUnit(e.target.value)}
+                className={`flex-1 px-2 py-2 ${inputCls}`}>
+                {UNIT_GROUPS.map(g => (
+                  <optgroup key={g.label} label={g.label}>
+                    {g.units.map(u => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+
+              {/* Frequency */}
+              <select value={freq} onChange={e => setFreq(e.target.value)}
+                className={`w-28 px-2 py-2 ${inputCls} shrink-0`}>
+                {FREQ_OPTIONS.map(f => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+            </div>
+            {/* Preview */}
+            {quantityStr && (
+              <p className="text-xs text-slate-500 mt-1">
+                Ko'rinishi: <span className={isBuy ? 'text-blue-400' : 'text-emerald-400'}>📦 {quantityStr}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="text-slate-500 text-xs mb-1 block">
+              {isBuy ? 'Qayerga yetkazish kerak? *' : 'Qayerdan olish mumkin? *'}
+            </label>
+            <input value={location} onChange={e => setLocation(e.target.value)}
+              placeholder={isBuy ? "Toshkent, Samarqand, Andijon..." : "Chorsu, Ipodrom, ombor manzili..."}
+              className={`w-full px-3 py-2.5 ${inputCls}`} />
+          </div>
+
+          {/* Price — sellers + buyers can both set a target price */}
+          <div>
+            <label className="text-slate-500 text-xs mb-1 block">
+              {isBuy ? 'Maqsadli narx (ixtiyoriy)' : 'Sotuv narxi (ixtiyoriy)'}
+            </label>
+            <div className="flex gap-2">
+              <input value={price} onChange={e => setPrice(e.target.value)}
+                placeholder={isBuy ? "9 000" : "9 500"}
+                className={`flex-1 px-3 py-2 ${inputCls}`} />
+              <span className="flex items-center text-slate-500 text-xs shrink-0">so'm/</span>
+              <select value={priceUnit} onChange={e => setPriceUnit(e.target.value)}
+                className={`w-24 px-2 py-2 ${inputCls} shrink-0`}>
+                {allUnits.map(u => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <label className="text-slate-500 text-xs mb-1 block">Telefon raqam</label>
+            <input value={contact} onChange={e => setContact(e.target.value)}
+              placeholder="+998 90 123 45 67"
+              className={`w-full px-3 py-2.5 ${inputCls}`} />
+          </div>
+
           <button onClick={submit} disabled={!canSubmit}
-            className={`w-full py-2.5 text-white text-sm font-medium rounded-lg transition-colors disabled:bg-slate-800 disabled:text-slate-600 ${isBuy ? 'bg-blue-700 hover:bg-blue-600' : 'bg-emerald-700 hover:bg-emerald-600'}`}>
+            className={`w-full py-2.5 text-white text-sm font-semibold rounded-lg transition-colors disabled:bg-slate-800 disabled:text-slate-600 ${isBuy ? 'bg-blue-700 hover:bg-blue-600' : 'bg-emerald-700 hover:bg-emerald-600'}`}>
             {done ? "✓ E'lon joylashtirildi!" : isBuy ? "🛒 Xarid e'lonini joylash" : "💰 Sotuv e'lonini joylash"}
           </button>
         </div>
