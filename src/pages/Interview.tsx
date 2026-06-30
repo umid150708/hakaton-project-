@@ -107,8 +107,8 @@ export default function ChatBot() {
         signal: AbortSignal.timeout(30_000),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      // Server always returns a message (even on error it returns friendly fallback)
       const botText = data.message || "Javob olinmadi. Qaytadan urinib ko'ring.";
 
       const botMsg: ChatMessage = {

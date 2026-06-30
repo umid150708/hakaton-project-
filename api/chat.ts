@@ -1,16 +1,22 @@
 /**
  * api/chat.ts — AI business advisor chatbot for Uzbekistan entrepreneurs
  *
- * Knows about:
- *  - All disability benefits & tax incentives (from official Uzbekistan sources)
- *  - How to get credit from banks
- *  - Tax regimes (Patent, SST, VAT)
- *  - Government support programs
- *  - General SME business advice
+ * Provider priority:
+ *   1. Groq  (llama-3.3-70b, free 14,400 req/day) — if GROQ_API_KEY is set
+ *   2. Gemini (gemini-2.5-flash)                   — automatic fallback
+ *
+ * If both fail, returns a friendly Uzbek fallback message — never a 500.
  */
+
 import { withGemini } from './_gemini';
 
 export const config = { runtime: 'edge' };
+
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 const SYSTEM_PROMPT = `Siz O'zbekiston kichik va o'rta biznes (KOB) tadbirkorlari uchun maslahatchi chatbotsiz. O'zbekiston Savdo-sanoat palatasi va Ijtimoiy himoya milliy agentligi nomidan ish ko'rasiz.
 
@@ -19,7 +25,7 @@ VAZIFANGIZ: Tadbirkorlarga quyidagi yo'nalishlarda bepul, ishonchli va aniq masl
 2. Nogironligi bo'lgan tadbirkorlar uchun imtiyozlar
 3. Soliq rejimlari bo'yicha maslahat
 4. Davlat dasturlari va qo'llab-quvvatlash
-5. Biznesni rivojlantirish bo'yicha umumiy savollarga javob
+5. Biznesni rivojlantirish bo'yicha umumiy savollar
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 BANKDAN KREDIT OLISH:
@@ -89,7 +95,6 @@ SOLIQ IMTIYOZLARI:
 
 6. Aylanma soliq 0% (Soliq kodeksi 467-modda):
    • Nogironlar jamoat tashkilotlari (ish haqi fondining 50%+ nogironlarga to'lansa)
-   • "Nuroniy" va Chernobyl jamoat tashkilotlari ham kiritilgan
 
 7. O'zini o'zi band — daromad soliqi bo'yicha chegara:
    • Yillik 100 000 000 so'mgacha daromad soliqqa tortilmaydi
@@ -119,26 +124,13 @@ TRANSPORT IMTIYOZLARI:
 TA'LIM IMTIYOZLARI:
 • Oliy ta'limda qo'shimcha 2% davlat granti kvotasi (I va II guruh)
 • Kolej/texnikumda davlat hisobidan bepul ta'lim
-• Zarur bo'lganda uyda ta'lim
 • Qonuniy asos: O'RQ-641 (6-bob)
 
 MA'MURIY IMTIYOZLAR:
 • Davlat xizmatlari markazlarida (DXM) 50% chegirma
 • Navbatsiz xizmat va rasmiy qabul
 • Bepul yuridik yordam
-• Ba'zi davlat yig'imlari bekor qilinadi
 • Qonuniy asos: PQ-74 (27.02.2023)
-
-ISHGA OLGAN KORXONALAR UCHUN (TAKLIF, 2026-may):
-• Loyiha bo'yicha: I/II guruh nogironlarni ishga olgan korxonalarga ijtimoiy soliq 1%
-• Mol-mulk/yer solig'i yengilliklari
-• Ish joyini moslash xarajatlarini soliqdan chegirib tashlash
-• Hali kuchga kirmagan — lex.uz da tekshirish kerak
-
-DAVLAT XARIDLARI IMTIYOZI:
-• Daromadining 30%+ nogironlar uchun protez/ortopedik mahsulotlar ishlab chiqarishdan kelsa
-• Davlat xaridlarida ustunlik va minimal ijara narxining 50%
-• Qonuniy asos: O'RQ-641
 
 NOGIRONLIKNI RASMIYLASH TARTIBI:
 1. TIEK (tibbiy-ijtimoiy ekspert komissiyasi)ga murojaat
@@ -174,68 +166,125 @@ MULOQOT QOIDALARI — MUHIM:
 - O'zbek tilida (lotin yozuvi) gaplashing
 - Javoblar QISQA bo'lsin — 3-5 jumladan oshmasin
 - Hamma narsani bir vaqtda aytmang — faqat eng muhimini ayting
-- Har javob oxirida 1 ta aniqlashtiruvchi savol bering, masalan:
-  "Nogironlik guruhingiz qaysi (I, II yoki III)?"
-  "YaTT sifatida ro'yxatdan o'tganmisiz?"
-  "Qancha miqdorda kredit kerak?"
-  "Garov (ko'chmas mulk yoki avtomobil) bor-yo'qligi?"
+- Har javob oxirida 1 ta aniqlashtiruvchi savol bering
 - Foydalanuvchi javob bergach — o'sha javobga qarab keyingi ma'lumotni bering
 - Markdown belgilarini ISHLATMANG: ### * ** kabi belgilar yozmang
 - Ro'yxat kerak bo'lsa — har qatorni "•" belgisi bilan boshlang
-- Raqamlar bilan birga qonuniy asosini ham ayting (masalan: "Soliq kodeksi 380-modda")
+- Raqamlar bilan birga qonuniy asosini ham ayting
 - HECH QACHON kredit olish ehtimolini foizda (%) aytmang
-- Agar bilmasangiz: soliq.uz, INSON markazi (1140) yoki bank bilan bog'lanishni tavsiya eting`;
+- Agar savol bilim doirangizdan tashqarida bo'lsa — qo'lingizdan kelganini ayting, keyin soliq.uz, INSON markazi (1140) yoki tegishli muassasaga yo'llang
+- Noto'g'ri yoki o'z bilim doirangizdan tashqari haqida hech qachon noto'g'ri ma'lumot bermang`;
 
 interface Message {
   role: 'user' | 'model';
   content: string;
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+// Friendly fallback when all AI providers fail
+const FALLBACK_MSG =
+  "Hozirda texnik muammo yuz berdi. Iltimos, bir oz kutib qaytadan urinib ko'ring. " +
+  "Tezroq javob olish uchun: INSON markazi 1140 raqamiga qo'ng'iroq qiling yoki soliq.uz saytiga kiring.";
+
+// ── Groq ─────────────────────────────────────────────────────────────────────
+
+async function callGroq(history: Message[]): Promise<string> {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) throw new Error('No GROQ_API_KEY');
+
+  // Convert Gemini role names (user/model) → OpenAI role names (user/assistant)
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...history.map(m => ({
+      role: m.role === 'model' ? 'assistant' : 'user',
+      content: m.content,
+    })),
+  ];
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      max_tokens: 1024,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!res.ok) throw new Error(`Groq HTTP ${res.status}: ${await res.text()}`);
+  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
+  const text = data.choices?.[0]?.message?.content ?? '';
+  if (!text) throw new Error('Empty Groq response');
+  return text;
+}
+
+// ── Gemini fallback ───────────────────────────────────────────────────────────
+
+async function callGemini(history: Message[]): Promise<string> {
+  return withGemini(async (genAI) => {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      systemInstruction: SYSTEM_PROMPT,
+      generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+    });
+    const chat = model.startChat({
+      history: history.slice(0, -1).map(m => ({
+        role: m.role,
+        parts: [{ text: m.content }],
+      })),
+    });
+    const last = history[history.length - 1];
+    const result = await chat.sendMessage(last?.content ?? 'Salom');
+    return result.response.text();
+  });
+}
+
+// ── Handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (req.method !== 'POST')   return new Response('Method not allowed', { status: 405 });
 
   let history: Message[];
   try {
     const body = await req.json();
     history = body.history ?? [];
+    if (!Array.isArray(history) || history.length === 0) throw new Error('empty history');
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid body' }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: 'Invalid body' }), { status: 400, headers: cors });
   }
 
-  try {
-    const text = await withGemini(async (genAI) => {
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
-        systemInstruction: SYSTEM_PROMPT,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-      });
-      const chat = model.startChat({
-        history: history.slice(0, -1).map(m => ({
-          role: m.role,
-          parts: [{ text: m.content }],
-        })),
-      });
-      const lastMessage = history[history.length - 1];
-      const result = await chat.sendMessage(lastMessage?.content ?? 'Salom');
-      return result.response.text();
-    });
+  // Try Groq → Gemini → friendly fallback. Never return 500 to the user.
+  let text = '';
+  let provider = '';
 
-    return new Response(
-      JSON.stringify({ message: text }),
-      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    );
-  } catch (err) {
-    console.error('Chat error:', err);
-    return new Response(
-      JSON.stringify({ error: 'AI error', detail: String(err) }),
-      { status: 500, headers: corsHeaders }
-    );
+  if (process.env.GROQ_API_KEY) {
+    try {
+      text = await callGroq(history);
+      provider = 'groq';
+    } catch (e1) {
+      console.warn('Groq failed, trying Gemini:', String(e1));
+      try {
+        text = await callGemini(history);
+        provider = 'gemini-fallback';
+      } catch (e2) {
+        console.error('Both providers failed:', String(e2));
+        text = FALLBACK_MSG;
+        provider = 'fallback';
+      }
+    }
+  } else {
+    try {
+      text = await callGemini(history);
+      provider = 'gemini';
+    } catch (e) {
+      console.error('Gemini failed:', String(e));
+      text = FALLBACK_MSG;
+      provider = 'fallback';
+    }
   }
+
+  return new Response(JSON.stringify({ message: text, provider }), {
+    headers: { 'Content-Type': 'application/json', ...cors },
+  });
 }
