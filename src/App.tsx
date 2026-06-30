@@ -4,18 +4,20 @@ import Landing from './pages/Landing';
 import Interview from './pages/Interview';
 import Result from './pages/Result';
 import { useAppStore } from './stores/appStore';
-import { DEMO_FIXTURE } from './lib/demoFixture';
+import { DEMO_FIXTURE, DEMO_PRICES, DEMO_REVENUE_CHECK } from './lib/demoFixture';
 
-// Handles ?demo=1 — loads fixture and jumps to result
+// Handles ?demo=1 — loads fixture + prices and jumps to result
 function DemoLoader() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setResult } = useAppStore();
+  const { setResult, setPrices } = useAppStore();
 
   useEffect(() => {
     if (searchParams.get('demo') === '1') {
+      // Set prices first so Result page has them before rendering
+      setPrices(DEMO_PRICES, DEMO_REVENUE_CHECK);
       setResult(DEMO_FIXTURE);
-      navigate('/result', { replace: true });
+      navigate('/result?demo=1', { replace: true });
     }
   }, []);
 

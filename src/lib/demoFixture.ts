@@ -1,4 +1,7 @@
 import type { AIResult } from './schema';
+import { detectCategory } from './categoryMap';
+import { getFallbackPrices } from './pricesFallback';
+import { checkRevenue } from './revenueCheck';
 
 /**
  * Hard-coded demo result for the Jizzax novvoyxona scenario.
@@ -79,3 +82,25 @@ export const DEMO_ANSWERS = [
   { question: "Asosiy raqiblaringiz kimlar?", answer: "Mahalliy novvoyxonalar va bozor non sotuvchilari" },
   { question: "Keyingi 2 yilda rejangiz nima?", answer: "Yangi pech qo'shib, supermarketlarga yetkazib berish" },
 ];
+
+// ─── Demo price data (computed from real fallback dataset) ───────────────────
+// These are set in the store by DemoLoader so the Result page renders
+// PriceTable, RevenueCheck, and the Bozor tahlili scoring component.
+
+const _demoCategory = detectCategory(DEMO_FIXTURE.facts.business_type);
+
+/**
+ * Offline market prices for the demo bakery scenario.
+ * Uses the same fallback dataset as a real offline submission.
+ */
+export const DEMO_PRICES = getFallbackPrices(_demoCategory.queries);
+
+/**
+ * Revenue check for the demo facts against demo prices.
+ * Reuses the exact same checkRevenue logic as a real submission.
+ */
+export const DEMO_REVENUE_CHECK = checkRevenue(
+  DEMO_FIXTURE.facts,
+  DEMO_PRICES,
+  _demoCategory,
+);
