@@ -10,6 +10,7 @@ import { checkAnswerQuality } from '../lib/answerQuality';
 import { detectCategory } from '../lib/categoryMap';
 import { getFallbackPrices } from '../lib/pricesFallback';
 import { checkRevenue } from '../lib/revenueCheck';
+import type { PriceContext } from '../lib/templatePlan';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -260,7 +261,16 @@ export default function Interview() {
     const [planResult, fetchedPrices] = await Promise.all([planPromise, pricesPromise]);
 
     // ── D: Build final plan (AI or template fallback) ───────────────────────
-    const result = planResult ?? buildTemplatePlan(facts);
+    const priceCtx: PriceContext | undefined = Object.keys(fetchedPrices).length > 0
+      ? {
+          prices: fetchedPrices,
+          category,
+          source: Object.values(fetchedPrices)[0]?.source,
+          fetchedAt: Object.values(fetchedPrices)[0]?.fetchedAt,
+        }
+      : undefined;
+
+    const result = planResult ?? buildTemplatePlan(facts, priceCtx);
 
     // ── E: Compute revenue check against actual price data ──────────────────
     // Use fetched prices if we got them, otherwise offline fallback

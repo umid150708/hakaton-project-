@@ -1,9 +1,28 @@
 /**
  * templatePlan — generate a full AIResult from extracted facts.
  * Never echoes nonsense back. All text is conditional on data quality.
+ *
+ * Pass a PriceContext to enrich the financial forecast and market analysis
+ * with real OLX.uz prices (avg/min/max for each product the business uses).
  */
 
 import type { AIResult, Facts } from './schema';
+import type { CategoryInfo } from './categoryMap';
+
+// Minimal price entry — compatible with StoredPrice, FallbackPriceResult, PriceResult
+interface PriceEntry {
+  avg: number;
+  min: number;
+  max: number;
+  unit?: string;
+}
+
+export interface PriceContext {
+  prices: Record<string, PriceEntry>;   // keyed by OLX query string
+  category: CategoryInfo;
+  fetchedAt?: string;                   // e.g. "2026-06-30"
+  source?: 'olx' | 'fallback';
+}
 
 // ─── Sanitizer ────────────────────────────────────────────────────────────────
 
@@ -125,9 +144,115 @@ function generateChecklist(f: Facts): string[] {
   return items;
 }
 
+// ─── Price-anchored text helpers ──────────────────────────────────────────────
+
+/**
+ * One or two sentences describing current market prices for the market_analysis section.
+ * Returns empty string if no price data.
+ */
+function marketPriceSentence(ctx: PriceContext): string {
+  const entries = Object.entries(ctx.prices).slice(0, 3);
+  if (entries.length === 0) return '';
+
+  const parts = entries.map(([query, p]) => {
+    const unit = p.unit ? `/${p.unit}` : '';
+    return `${query} — ${(p.avg / 1000).toFixed(0)} ming so'm${unit}`;
+  });
+
+  const src = ctx.source === 'olx' ? 'OLX.uz' : 'joriy bozor';
+  const date = ctx.fetchedAt ? ` (${ctx.fetchedAt})` : '';
+  return `${src} narxlari${date}: ${parts.join('; ')}.`;
+}
+
+/**
+ * Price-anchored financial forecast block.
+ * Generates: price table → margin insight → per-employee revenue note.
+ * Falls back to empty string if price data is insufficient.
+ */
+function priceAnchoredForecast(f: Facts, ctx: PriceContext): string {
+  const entries = Object.entries(ctx.prices);
+  if (entries.length === 0) return '';
+
+  const lines: string[] = [];
+  const src = ctx.source === 'olx' ? 'OLX.uz' : "offline bozor ma'lumotlari";
+  const unit = ctx.category.unit || 'dona';
+  const emp  = Math.max(1, f.employees);
+
+  // ── Price table ──
+  lines.push(`📊 Joriy bozor narxlari (${src}):`);
+  for (const [query, p] of entries.slice(0, 4)) {
+    const unitStr = p.unit ? `/${p.unit}` : '';
+    const avgStr  = (p.avg  / 1_000).toFixed(0);
+    const minStr  = (p.min  / 1_000).toFixed(0);
+    const maxStr  = (p.max  / 1_000).toFixed(0);
+    lines.push(`• ${query}: o'rtacha ${avgStr} ming so'm${unitStr} (${minStr}–${maxStr} ming oralig'ida)`);
+  }
+
+  // ── Identify selling vs input prices ──
+  // "sotiladi" queries are finished-product SELLING prices.
+  // Other queries (uni, o'g'it, furnitura, yog'i, kukuni…) are INPUT costs.
+  const sellingEntries = entries.filter(([q]) => q.includes('sotiladi'));
+  const inputEntries   = entries.filter(([q]) => !q.includes('sotiladi'));
+
+  const [sellQ, sellP] = sellingEntries[0] ?? entries[entries.length - 1];
+  const [inpQ,  inpP]  = inputEntries[0]   ?? [];
+
+  // ── Margin insight (only when we have distinct sell + input prices) ──
+  if (inpQ && inpP && sellP && sellQ !== inpQ && inpP.avg > 0 && sellP.avg > 0) {
+    // Rough margin: assume ~30% of selling price is input cost share
+    const inputSharePct = Math.round((inpP.avg * 0.3) / sellP.avg * 100);
+    const grossMarginPct = 100 - Math.min(80, Math.max(20, inputSharePct));
+    lines.push('');
+    lines.push(
+      `Marja taxmini: sotish narxi "${sellQ}" ${(sellP.avg / 1_000).toFixed(0)} ming so'm, ` +
+      `asosiy xomashyo "${inpQ}" ${(inpP.avg / 1_000).toFixed(0)} ming so'm/${unit} — ` +
+      `yalpi marja ~${grossMarginPct}% atrofida bo'lishi mumkin.`
+    );
+  }
+
+  // ── Per-employee revenue note ──
+  const stated = f.monthly_revenue_uzs;
+  if (stated > 0 && emp > 0) {
+    const perEmp = (stated / emp / 1_000_000).toFixed(1);
+    const empWord = emp === 1 ? '1 xodim' : `${emp} xodim`;
+    lines.push('');
+    lines.push(
+      `Ko'rsatilgan tushum ${fmt(stated)}/oy — ${empWord} bilan har biriga ` +
+      `~${perEmp} mln so'm/oy to'g'ri keladi.`
+    );
+
+    // Sell-price-based sanity check (only when we have a selling price)
+    if (sellP && sellP.avg > 0) {
+      // How many units per day would generate the stated revenue?
+      const DAYS = 26;
+      const unitsNeededPerDay = stated / (sellP.avg * DAYS * emp);
+      // Clean unit for count context: "1 dona (non)" → "dona", "50 kg qop" → "kg"
+      const rawUnit = sellP.unit || unit;
+      const countUnit = rawUnit
+        .replace(/^\d+\s*/, '')       // strip leading "1 " or "50 "
+        .replace(/\s*\(.*?\)$/, '')   // strip trailing "(non)" "(spool)" etc.
+        .split(/\s+/)[0]              // take first word: "kg qop" → "kg"
+        .trim() || 'dona';
+      const displayUnit = sellP.unit
+        ? `${(sellP.avg / 1_000).toFixed(0)} ming so'm/${rawUnit}`
+        : `${(sellP.avg / 1_000).toFixed(0)} ming so'm`;
+      if (unitsNeededPerDay < 500) {
+        lines.push(
+          `Bozor narxi asosida: "${sellQ}" ${displayUnit} bo'lsa, ` +
+          `bu tushum uchun ${empWord} kuniga ~${Math.ceil(unitsNeededPerDay)} ${countUnit} sotishi kifoya.`
+        );
+      }
+    }
+  }
+
+  lines.push('');
+  lines.push("* Narxlar taxminiy va bozor o'zgarishiga bog'liq.");
+  return lines.join('\n');
+}
+
 // ─── Business plan text ───────────────────────────────────────────────────────
 
-export function buildTemplatePlan(f: Facts): AIResult {
+export function buildTemplatePlan(f: Facts, priceCtx?: PriceContext): AIResult {
   const btype   = clean(f.business_type, "biznes");
   const region  = clean(f.region, "mintaqa");
   const purpose = clean(f.loan_purpose, "");
@@ -169,6 +294,7 @@ export function buildTemplatePlan(f: Facts): AIResult {
     rivals
       ? `Raqobat muhiti: ${rivals}. Sifat, narx va mijozlarga munosabat orqali farqlanish muhim.`
       : "Raqiblar aniq ko'rsatilmagan — bozor pozitsiyasi va raqobat strategiyasini aniqlash tavsiya etiladi.",
+    priceCtx ? marketPriceSentence(priceCtx) : "",
     `${region} mintaqasida kichik biznesni qo'llab-quvvatlash uchun mahalliy hokimiyat va Savdo-sanoat palatasi dasturlari mavjud.`,
   ].filter(Boolean).join(" ");
 
@@ -213,7 +339,13 @@ export function buildTemplatePlan(f: Facts): AIResult {
   }
   financialLines.push("Barcha prognozlar taxminiy bo'lib, haqiqiy natija bozor sharoitiga bog'liq.");
 
-  const financial_forecast = financialLines.join(" ");
+  // ── Price-anchored section (appended only when price data is available) ──
+  if (priceCtx && Object.keys(priceCtx.prices).length > 0) {
+    financialLines.push('');
+    financialLines.push(priceAnchoredForecast(f, priceCtx));
+  }
+
+  const financial_forecast = financialLines.join("\n");
 
   // ── Risk Assessment ────────────────────────────────────────────────────────
   const riskLines: string[] = [];
