@@ -38,34 +38,50 @@ const DEFAULT_CHIPS = [
 function detectChips(botText: string): string[] {
   const t = botText.toLowerCase();
 
-  if (t.includes('guruhingiz') || (t.includes('guruh') && t.includes('i, ii')))
+  // Disability group
+  if (t.includes('guruhingiz') || t.includes('guruh — i') || t.includes('i, ii yoki iii') || t.includes('i, ii yoki'))
     return ['I guruh', 'II guruh', 'III guruh', 'Bilmayman'];
 
-  if (t.includes('yatt sifatida') || t.includes("ro'yxatdan o'tgan") || t.includes('yakka tadbirkor'))
-    return ["Ha, YaTT sifatida ro'yxatdan o'tganman", "Yo'q, hali yo'q", "Qanday ro'yxatdan o'taman?"];
+  // Collateral / garov
+  if (t.includes('garovingiz') || t.includes('garov bormi') || (t.includes('garov') && (t.includes('bormi') || t.includes('bor yoki') || t.includes('mavjudmi') || t.includes('avtomobil'))))
+    return ["Ha, ko'chmas mulkim bor", "Ha, avtomobilim bor", "Yo'q, garovsiz kerak"];
 
-  if (t.includes('garov') && (t.includes('bor-yo\'q') || t.includes('bor yoki') || t.includes('mavjudmi')))
-    return ["Ha, garovim bor (ko'chmas mulk)", "Ha, avtomobilim bor", "Yo'q, garovsiz kredit kerak"];
-
-  if (t.includes('qancha miqdor') || t.includes('kredit miqdori') || t.includes('necha million'))
+  // Credit amount
+  if (t.includes('qancha miqdor') || t.includes('kredit miqdori') || t.includes('necha million') || t.includes('qancha kerak'))
     return ['30–100 mln so\'m', '100–500 mln so\'m', '500 mln – 1 mlrd so\'m', '1 mlrd+ so\'m'];
 
+  // Annual income / tax regime
+  if (t.includes('daromadingiz') || t.includes('yillik daromad') || t.includes('500mln') || t.includes('500 mln'))
+    return ['500 mln dan kam', '500 mln – 1 mlrd', '1 mlrd dan ko\'p', 'Bilmayman'];
+
+  // YaTT registration
+  if (t.includes('yatt sifatida') || t.includes("ro'yxatdan o'tganmisiz") || t.includes('yakka tadbirkor'))
+    return ["Ha, YaTT sifatida ro'yxatdanman", "Yo'q, hali yo'q", "Qanday ro'yxatdan o'taman?"];
+
+  // Which bank
   if (t.includes('qaysi bank') || t.includes('bank tanlash') || t.includes('qaysi bankka'))
     return ['Mikrokreditbank', 'Kapitalbank', 'Aloqabank', 'Bilmayman, tavsiya bering'];
 
-  if (t.includes('viloyat') || t.includes('qayerda') || t.includes('shahar'))
+  // Location
+  if (t.includes('viloyatingiz') || t.includes('qayerda') || (t.includes('shahar') && t.includes('qaysi')))
     return ['Toshkent', 'Samarqand', "Farg'ona", 'Boshqa viloyat'];
 
+  // Business type
   if (t.includes('faoliyat turi') || t.includes('biznes turi') || t.includes('nima bilan shug\'ul'))
     return ['Savdo (do\'kon)', 'Ishlab chiqarish', 'Xizmat ko\'rsatish', 'Qishloq xo\'jaligi'];
 
-  if (t.includes('ish staji') || t.includes('staj'))
-    return ["Ha, ish stajim bor", "Yo'q, ish stajim yetarli emas", "Bilmayman"];
+  // Work experience / staj
+  if (t.includes('ish staji') || (t.includes('staj') && !t.includes('staj bilan')))
+    return ["Ha, ish stajim bor", "Yo'q, stajim yetarli emas", "Bilmayman"];
 
-  if (t.includes('xodim') || t.includes('ishchi'))
-    return ['0 (faqat o\'zim)', '1–5 xodim', '5–20 xodim', '20+ xodim'];
+  // Employees
+  if (t.includes('xodim') || t.includes('ishchilar soni'))
+    return ['Faqat o\'zim', '1–5 xodim', '5–20 xodim', '20+ xodim'];
 
-  // No specific follow-up detected — back to defaults
+  // Yes/No follow-ups
+  if (t.includes('bormi?') || t.includes('bormi —') || t.includes('bormisiz'))
+    return ["Ha, bor", "Yo'q, yo'q", "Bilmayman"];
+
   return DEFAULT_CHIPS;
 }
 
