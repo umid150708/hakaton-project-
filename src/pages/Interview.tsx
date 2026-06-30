@@ -1,448 +1,416 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+/**
+ * Interview.tsx — Gemini-powered conversational business advisor
+ *
+ * Gemini drives the conversation naturally, asks follow-up questions,
+ * and when it has enough info, outputs the full business plan JSON.
+ */
+
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QUESTIONS } from '../lib/questions';
 import { useAppStore } from '../stores/appStore';
 import type { StoredPrice } from '../stores/appStore';
 import { AIResultSchema } from '../lib/schema';
-import { extractFacts } from '../lib/extractFacts';
-import { buildTemplatePlan } from '../lib/templatePlan';
-import { checkAnswerQuality } from '../lib/answerQuality';
 import { detectCategory } from '../lib/categoryMap';
 import { getFallbackPrices } from '../lib/pricesFallback';
 import { checkRevenue } from '../lib/revenueCheck';
 import type { PriceContext } from '../lib/templatePlan';
+import { buildTemplatePlan } from '../lib/templatePlan';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-type ChatMsg =
-  | { role: 'bot'; text: string; key: string }
-  | { role: 'user'; text: string; qIndex: number; key: string };
+interface ChatMessage {
+  role: 'user' | 'bot';
+  text: string;
+  id: string;
+}
+
+interface HistoryItem {
+  role: 'user' | 'model';
+  content: string;
+}
 
 // ─── Loading stages ───────────────────────────────────────────────────────────
 
 const STAGES = [
-  { pct: 10,  msg: "Javoblaringiz tahlil qilinmoqda..." },
-  { pct: 25,  msg: "OLX.uz dan joriy narxlar olinmoqda..." },
-  { pct: 42,  msg: "Daromad bozor narxlari bilan solishtirilmoqda..." },
-  { pct: 58,  msg: "Bank talablari tekshirilmoqda..." },
-  { pct: 73,  msg: "Moliyaviy prognoz hisoblanmoqda..." },
-  { pct: 87,  msg: "Biznes-reja yozilmoqda..." },
-  { pct: 97,  msg: "Deyarli tayyor..." },
+  { pct: 10, msg: "Suhbat tahlil qilinmoqda..." },
+  { pct: 25, msg: "Joriy bozor narxlari yuklanmoqda..." },
+  { pct: 42, msg: "Daromad bozor narxlari bilan solishtirilmoqda..." },
+  { pct: 58, msg: "Bank talablari tekshirilmoqda..." },
+  { pct: 73, msg: "Moliyaviy prognoz hisoblanmoqda..." },
+  { pct: 87, msg: "Soliq rejimi aniqlanmoqda..." },
+  { pct: 95, msg: "Biznes-reja yakunlanmoqda..." },
 ];
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Quick reply chips ────────────────────────────────────────────────────────
 
-function TypingIndicator() {
-  return (
-    <div className="flex justify-start items-end gap-2 msg-bot">
-      <BotAvatar />
-      <div className="bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1.5 items-center">
-        <span className="typing-dot w-2 h-2 rounded-full bg-slate-400 inline-block" />
-        <span className="typing-dot w-2 h-2 rounded-full bg-slate-400 inline-block" />
-        <span className="typing-dot w-2 h-2 rounded-full bg-slate-400 inline-block" />
-      </div>
-    </div>
-  );
-}
+const QUICK_REPLIES: Record<number, string[]> = {
+  0: ["Novvoyxona", "Sabzavot do'koni", "Kafe / oshxona", "Qurilish", "Kiyim do'koni"],
+  3: ["Toshkent", "Samarqand", "Andijon", "Namangan", "Farg'ona", "Buxoro", "Jizzax"],
+  5: ["Yangi uskunalar", "Do'konni kengaytirish", "Tovar sotib olish", "Ta'mirlash"],
+  7: ["Ha, kvartira bor", "Ha, avtomobil bor", "Yo'q, garovim yo'q"],
+};
 
-function BotAvatar() {
-  return (
-    <div className="w-8 h-8 rounded-full bg-emerald-900 border border-emerald-700 flex items-center justify-center text-sm shrink-0 mb-0.5">
-      🤖
-    </div>
-  );
-}
-
-function LoadingScreen({ stage }: { stage: number }) {
-  const s = STAGES[Math.min(stage, STAGES.length - 1)];
-  return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-6">
-      {/* Progress bar */}
-      <div className="w-full max-w-xs mb-12">
-        <div className="flex justify-between text-xs text-slate-500 mb-2">
-          <span>Tahlil qilinmoqda</span>
-          <span className="text-emerald-400 font-medium">{s.pct}%</span>
-        </div>
-        <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out"
-            style={{ width: `${s.pct}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Animated icon */}
-      <div className="relative mb-8">
-        <div className="w-20 h-20 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center text-3xl">
-          🏦
-        </div>
-        <div className="absolute -inset-2 rounded-3xl border-2 border-emerald-500 border-t-transparent animate-spin opacity-40" />
-      </div>
-
-      <p className="text-white text-lg font-semibold text-center mb-2 slide-up">{s.msg}</p>
-      <p className="text-slate-500 text-sm">OLX narxlari + AI tahlil</p>
-
-      {/* Stage dots */}
-      <div className="flex gap-2 mt-10">
-        {STAGES.map((_, i) => (
-          <div
-            key={i}
-            className="rounded-full transition-all duration-500"
-            style={{
-              width: i <= stage ? '20px' : '6px',
-              height: '6px',
-              backgroundColor: i <= stage ? '#10b981' : '#1e293b',
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function Interview() {
   const navigate = useNavigate();
-  const { setAnswer, setResult, setPrices, setStatus, answers } = useAppStore();
+  const { setResult, setPrices, setStatus, setError } = useAppStore();
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingStage, setLoadingStage] = useState(0);
-  const [showTyping, setShowTyping] = useState(false);
-  const [warnedAt, setWarnedAt] = useState<number | null>(null); // track if we already warned for this question
-  const [chat, setChat] = useState<ChatMsg[]>([
-    { role: 'bot', text: QUESTIONS[0].text, key: 'bot-0' },
-  ]);
+  const [messages, setMessages]     = useState<ChatMessage[]>([]);
+  const [history, setHistory]       = useState<HistoryItem[]>([]);
+  const [input, setInput]           = useState('');
+  const [botTyping, setBotTyping]   = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [stage, setStage]           = useState(0);
+  const [turnCount, setTurnCount]   = useState(0);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const bottomRef   = useRef<HTMLDivElement>(null);
+  const inputRef    = useRef<HTMLTextAreaElement>(null);
+  const stageTimer  = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const currentQ = QUESTIONS[currentIndex];
-  const isLast = currentIndex === QUESTIONS.length - 1;
-  const progress = (currentIndex / QUESTIONS.length) * 100;
-  const trimmedInput = inputValue.trim();
-  const canSubmit = trimmedInput.length >= 2;
-
-  // Focus input when question changes
+  // Auto-scroll
   useEffect(() => {
-    textareaRef.current?.focus();
-  }, [currentIndex]);
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, botTyping]);
 
-  // Scroll to bottom on new chat messages or typing indicator
+  // Start conversation on mount
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chat, showTyping]);
+    startConversation();
+  }, []);
 
-  // Auto-resize textarea
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.style.height = 'auto';
-    ta.style.height = Math.min(ta.scrollHeight, 130) + 'px';
-  }, [inputValue]);
+  const addBotMessage = (text: string) => {
+    setMessages(prev => [...prev, {
+      role: 'bot',
+      text,
+      id: `bot-${Date.now()}`,
+    }]);
+  };
 
-  // Rotate loading stages
-  useEffect(() => {
-    if (!isLoading) return;
-    const interval = setInterval(() => {
-      setLoadingStage(s => Math.min(s + 1, STAGES.length - 1));
-    }, 4500);
-    return () => clearInterval(interval);
-  }, [isLoading]);
+  const startConversation = async () => {
+    setBotTyping(true);
+    try {
+      // Send empty first message to get the opening question from Gemini
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          history: [{ role: 'user', content: 'Salom' }],
+        }),
+      });
+      const data = await res.json();
+      const opening = data.message || "Salom! Men sizning biznesingiz uchun kredit tayyorgarlik ballini hisoblayman va biznes-reja tuzaman. Avval aytib bering — biznesingiz nima bilan shug'ullanadi?";
+      addBotMessage(opening);
+      setHistory([
+        { role: 'user', content: 'Salom' },
+        { role: 'model', content: opening },
+      ]);
+    } catch {
+      const fallback = "Salom! Biznesingiz haqida gaplashaylik. Qanday biznes bilan shug'ullanasiz?";
+      addBotMessage(fallback);
+      setHistory([
+        { role: 'user', content: 'Salom' },
+        { role: 'model', content: fallback },
+      ]);
+    } finally {
+      setBotTyping(false);
+    }
+  };
 
-  // ── Handle sending an answer ──────────────────────────────────────────────
+  const sendMessage = async (text?: string) => {
+    const userText = (text ?? input).trim();
+    if (!userText || botTyping || processing) return;
 
-  const sendAnswer = useCallback(async (answer: string) => {
-    const text = answer.trim();
-    if (!text || text.length < 2) return;
+    setInput('');
 
-    // ── Quality check — warn once, then let them proceed ──
-    const alreadyWarned = warnedAt === currentIndex;
-    if (!alreadyWarned) {
-      const warning = checkAnswerQuality(currentIndex, text);
-      if (warning) {
-        // Show user bubble, then bot warning — don't advance
-        setChat(c => [
-          ...c,
-          { role: 'user', text, qIndex: currentIndex, key: `user-${currentIndex}-warn` },
-        ]);
-        setInputValue('');
-        setWarnedAt(currentIndex);
-        setShowTyping(true);
-        await new Promise(r => setTimeout(r, 600));
-        setShowTyping(false);
-        setChat(c => [
-          ...c,
-          { role: 'bot', text: warning, key: `warn-${currentIndex}` },
-          { role: 'bot', text: currentQ.text, key: `bot-${currentIndex}-retry` },
-        ]);
-        return; // stay on same question
+    // Add user message to chat
+    const userMsg: ChatMessage = { role: 'user', text: userText, id: `user-${Date.now()}` };
+    setMessages(prev => [...prev, userMsg]);
+
+    const newHistory: HistoryItem[] = [
+      ...history,
+      { role: 'user', content: userText },
+    ];
+    setHistory(newHistory);
+    setTurnCount(c => c + 1);
+    setBotTyping(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ history: newHistory }),
+        signal: AbortSignal.timeout(30_000),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      const { message, done, planJson } = data;
+
+      // Show Gemini's reply
+      if (message) {
+        addBotMessage(message);
+        setHistory(prev => [...prev, { role: 'model', content: message }]);
       }
+
+      setBotTyping(false);
+
+      if (done && planJson) {
+        // Gemini finished collecting — process the plan
+        await processPlan(planJson, newHistory);
+      }
+
+    } catch (err) {
+      setBotTyping(false);
+      // Fallback response
+      const fallback = "Kechirasiz, biroz muammo bo'ldi. Iltimos, qaytadan yozing.";
+      addBotMessage(fallback);
+      setHistory(prev => [...prev, { role: 'model', content: fallback }]);
     }
+  };
 
-    // ── Good answer (or already warned) — advance ──
-    setChat(c => [...c, { role: 'user', text, qIndex: currentIndex, key: `user-${currentIndex}` }]);
-    setAnswer(currentIndex, currentQ.text, text);
-    setInputValue('');
-
-    if (!isLast) {
-      setShowTyping(true);
-      await new Promise(r => setTimeout(r, 600));
-      setShowTyping(false);
-      const next = QUESTIONS[currentIndex + 1];
-      setChat(c => [...c, { role: 'bot', text: next.text, key: `bot-${currentIndex + 1}` }]);
-      setCurrentIndex(i => i + 1);
-    } else {
-      await submitToAPI(text);
-    }
-  }, [currentIndex, currentQ, isLast, warnedAt]);
-
-  // ── Submit all answers ────────────────────────────────────────────────────
-
-  const submitToAPI = async (finalAnswer: string) => {
-    const allAnswers = QUESTIONS.map((q, i) => {
-      if (i === currentIndex) return { question: q.text, answer: finalAnswer };
-      const stored = answers[i];
-      return stored ? { question: q.text, answer: stored.answer } : null;
-    }).filter(Boolean) as { question: string; answer: string }[];
-
-    setIsLoading(true);
-    setLoadingStage(0);
+  const processPlan = async (planJson: string, convHistory: HistoryItem[]) => {
+    setProcessing(true);
     setStatus('loading');
 
-    // ── A: Extract facts (instant, client-side) ─────────────────────────────
-    const facts = extractFacts(allAnswers);
-    const category = detectCategory(facts.business_type);
+    // Start progress stages
+    let stageIndex = 0;
+    stageTimer.current = setInterval(() => {
+      stageIndex = Math.min(stageIndex + 1, STAGES.length - 1);
+      setStage(stageIndex);
+    }, 2500);
 
-    // ── B: Fire plan + prices in parallel — prices add ZERO wait time ───────
-    const planPromise = (async () => {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 90_000);
-      try {
-        const res = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ answers: allAnswers }),
-          signal: controller.signal,
-        });
-        clearTimeout(timer);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return AIResultSchema.parse(JSON.parse(await res.text()));
-      } catch {
-        clearTimeout(timer);
-        return null; // signals fallback
+    try {
+      // Parse the plan JSON from Gemini
+      let result = AIResultSchema.parse(JSON.parse(planJson));
+      const facts = result.facts;
+
+      // Load curated market prices for this business category
+      const category = detectCategory(facts.business_type);
+      let prices: Record<string, StoredPrice> = {};
+
+      if (category.queries.length > 0) {
+        prices = getFallbackPrices(category.queries) as Record<string, StoredPrice>;
       }
-    })();
 
-    const pricesPromise = (async (): Promise<Record<string, StoredPrice>> => {
-      if (category.queries.length === 0) return {};
-      try {
-        const res = await fetch('/api/prices', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ queries: category.queries }),
-          signal: AbortSignal.timeout(10_000),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json() as Record<string, StoredPrice & { error?: string }>;
-        // Drop any entries that came back as errors
-        return Object.fromEntries(
-          Object.entries(data).filter(([, v]) => !v.error && v.avg > 0)
-        );
-      } catch {
-        // OLX unreachable — use curated offline dataset
-        return getFallbackPrices(category.queries) as Record<string, StoredPrice>;
+      // Price context for enriching the plan
+      const priceCtx: PriceContext | undefined = Object.keys(prices).length > 0
+        ? { prices, category, source: Object.values(prices)[0]?.source }
+        : undefined;
+
+      // If business plan sections are thin, enhance with template
+      const hasPlan = result.business_plan.financial_forecast?.length > 50;
+      if (!hasPlan && priceCtx) {
+        const enriched = buildTemplatePlan(facts, priceCtx);
+        result = { ...result, business_plan: enriched.business_plan };
       }
-    })();
 
-    // ── C: Wait for both to settle ──────────────────────────────────────────
-    const [planResult, fetchedPrices] = await Promise.all([planPromise, pricesPromise]);
+      // Revenue check
+      const revenueCheck = checkRevenue(facts, prices, category);
 
-    // ── D: Build final plan (AI or template fallback) ───────────────────────
-    const priceCtx: PriceContext | undefined = Object.keys(fetchedPrices).length > 0
-      ? {
-          prices: fetchedPrices,
-          category,
-          source: Object.values(fetchedPrices)[0]?.source,
-          fetchedAt: Object.values(fetchedPrices)[0]?.fetchedAt,
-        }
-      : undefined;
+      // Store everything
+      setPrices(prices, revenueCheck);
+      setResult(result);
 
-    const result = planResult ?? buildTemplatePlan(facts, priceCtx);
+      if (stageTimer.current) clearInterval(stageTimer.current);
+      navigate('/result');
 
-    // ── E: Compute revenue check against actual price data ──────────────────
-    // Use fetched prices if we got them, otherwise offline fallback
-    const pricesForCheck = Object.keys(fetchedPrices).length > 0
-      ? fetchedPrices
-      : getFallbackPrices(category.queries) as Record<string, StoredPrice>;
+    } catch (err) {
+      if (stageTimer.current) clearInterval(stageTimer.current);
+      console.error('Plan processing failed:', err);
 
-    const revenueCheck = checkRevenue(facts, pricesForCheck, category);
-
-    // ── F: Store everything and navigate ────────────────────────────────────
-    setPrices(fetchedPrices, revenueCheck);
-    setResult(result);
-    navigate('/result');
-  };
-
-  // ── Go back to previous question ──────────────────────────────────────────
-
-  const goBack = () => {
-    if (currentIndex === 0) {
-      navigate('/');
-      return;
+      // Try to parse partial JSON or fall back to conversation-based extraction
+      try {
+        // Build a basic plan from conversation using template
+        const fallbackResult = buildTemplatePlan({
+          business_type: extractFromConversation(convHistory, 'biznes') || 'Biznes',
+          region: extractFromConversation(convHistory, 'viloyat') || "Toshkent",
+          years_operating: 1,
+          monthly_revenue_uzs: 10_000_000,
+          loan_purpose: "Biznesni rivojlantirish",
+          loan_amount_uzs: 50_000_000,
+          loan_term_months: 24,
+          has_collateral: false,
+          collateral_type: "",
+          employees: 2,
+          main_competitors: "Bozordagi raqobatchilar",
+          two_year_plan: "Biznesni kengaytirish",
+        });
+        setResult(fallbackResult);
+        navigate('/result');
+      } catch {
+        setStatus('error');
+        setError('Biznes reja yaratishda xatolik. Qayta urinib ko\'ring.');
+        setProcessing(false);
+      }
     }
-    // Remove the last user bubble and current bot bubble from chat
-    setChat(c => c.slice(0, -2));
-    // Restore previous answer in textarea
-    const prev = answers[currentIndex - 1];
-    setInputValue(prev?.answer ?? '');
-    setCurrentIndex(i => i - 1);
   };
 
-  // ── Keyboard handler ──────────────────────────────────────────────────────
+  // Simple keyword extractor from conversation history
+  const extractFromConversation = (hist: HistoryItem[], keyword: string): string | null => {
+    const userMessages = hist.filter(h => h.role === 'user').map(h => h.content).join(' ');
+    if (keyword === 'biznes') {
+      const match = userMessages.match(/\b(novvoy|do'kon|kafe|restoran|qurilish|ferma|tikuv)\w*/i);
+      return match?.[0] ?? null;
+    }
+    if (keyword === 'viloyat') {
+      const match = userMessages.match(/\b(toshkent|samarqand|andijon|namangan|farg'ona|buxoro|jizzax|qashqadaryo|surxondaryo|xorazm|navoiy)\b/i);
+      return match?.[0] ?? null;
+    }
+    return null;
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (canSubmit) sendAnswer(inputValue);
+      sendMessage();
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
+  const progressPct = processing ? STAGES[stage]?.pct ?? 10 : 0;
+  const progressMsg = processing ? STAGES[stage]?.msg ?? '' : '';
 
-  if (isLoading) return <LoadingScreen stage={loadingStage} />;
+  // Determine which quick replies to show based on turn count
+  const quickReplies = !processing && !botTyping && turnCount < 10
+    ? (QUICK_REPLIES[turnCount] ?? [])
+    : [];
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="flex flex-col h-screen bg-slate-950 text-white">
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur border-b border-slate-800/60">
-        <div className="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto w-full">
-          <button
-            onClick={goBack}
-            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm py-1 px-2 -ml-2 rounded-lg hover:bg-slate-800"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            {currentIndex === 0 ? 'Bosh sahifa' : 'Orqaga'}
-          </button>
+      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-950">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm"
+        >
+          <span>←</span>
+          <span className="hidden sm:inline">Bosh sahifa</span>
+        </button>
 
-          <div className="text-center">
-            <p className="text-white text-sm font-semibold leading-none">BiznesPlan AI</p>
-            <p className="text-slate-500 text-xs mt-0.5">Kredit tayyorgarlik</p>
-          </div>
-
-          <div className="text-right min-w-[48px]">
-            <span className="text-emerald-400 font-bold text-sm">{currentIndex + 1}</span>
-            <span className="text-slate-600 text-sm"> / {QUESTIONS.length}</span>
-          </div>
+        <div className="text-center">
+          <p className="text-white font-semibold text-sm">BiznesPlan AI</p>
+          <p className="text-slate-500 text-xs">Kredit tayyorgarlik</p>
         </div>
 
-        {/* Progress bar */}
-        <div className="h-0.5 bg-slate-800">
-          <div
-            className="h-full bg-emerald-500 transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="text-right">
+          <p className="text-emerald-400 text-sm font-mono">{turnCount} / 10</p>
         </div>
       </header>
 
-      {/* ── Chat history ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
-        <div className="space-y-4">
-          {chat.map(msg => (
-            msg.role === 'bot' ? (
-              <div key={msg.key} className="flex justify-start items-end gap-2.5 msg-bot">
-                <BotAvatar />
-                <div className="max-w-[80%] bg-slate-800 text-white rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed">
-                  {msg.text}
-                </div>
-              </div>
-            ) : (
-              <div key={msg.key} className="flex justify-end items-end gap-2.5 msg-user">
-                <div className="max-w-[80%] bg-emerald-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 text-sm leading-relaxed">
-                  {msg.text}
-                </div>
-                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm shrink-0 mb-0.5">
-                  👤
-                </div>
-              </div>
-            )
-          ))}
-
-          {/* Typing indicator */}
-          {showTyping && <TypingIndicator />}
+      {/* ── Processing overlay ── */}
+      {processing && (
+        <div className="absolute inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center px-8">
+          <div className="w-full max-w-sm space-y-6 text-center">
+            <div className="w-16 h-16 mx-auto rounded-full bg-emerald-950 border-2 border-emerald-500 flex items-center justify-center">
+              <span className="text-3xl animate-pulse">🤖</span>
+            </div>
+            <div>
+              <p className="text-white font-semibold text-lg mb-1">Biznes-reja tayyorlanmoqda</p>
+              <p className="text-slate-400 text-sm">{progressMsg}</p>
+            </div>
+            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <p className="text-slate-600 text-xs">Bozor narxlari · Soliq tahlili · AI reja</p>
+          </div>
         </div>
+      )}
 
-        <div ref={chatEndRef} className="h-4" />
+      {/* ── Chat messages ── */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+
+        {messages.map(msg => (
+          <div
+            key={msg.id}
+            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+          >
+            {/* Avatar */}
+            {msg.role === 'bot' && (
+              <div className="w-9 h-9 rounded-full bg-emerald-900 border border-emerald-700 flex items-center justify-center text-lg shrink-0 mt-0.5">
+                🤖
+              </div>
+            )}
+
+            {/* Bubble */}
+            <div
+              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                msg.role === 'user'
+                  ? 'bg-emerald-700 text-white rounded-tr-sm'
+                  : 'bg-slate-800 text-slate-100 rounded-tl-sm'
+              }`}
+            >
+              {msg.text}
+            </div>
+          </div>
+        ))}
+
+        {/* Typing indicator */}
+        {botTyping && (
+          <div className="flex gap-3">
+            <div className="w-9 h-9 rounded-full bg-emerald-900 border border-emerald-700 flex items-center justify-center text-lg shrink-0">
+              🤖
+            </div>
+            <div className="bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
+
+        <div ref={bottomRef} />
       </div>
 
-      {/* ── Input area ── */}
-      <div className="border-t border-slate-800 bg-slate-950 px-4 pt-3 pb-5 max-w-2xl mx-auto w-full">
+      {/* ── Quick reply chips ── */}
+      {quickReplies.length > 0 && (
+        <div className="shrink-0 px-4 pb-2 flex gap-2 overflow-x-auto">
+          {quickReplies.map(r => (
+            <button
+              key={r}
+              onClick={() => sendMessage(r)}
+              className="shrink-0 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-600 text-slate-300 hover:text-white text-xs rounded-full transition-all"
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
 
-        {/* Example hint — clickable */}
-        <button
-          onClick={() => {
-            setInputValue(currentQ.example);
-            textareaRef.current?.focus();
-          }}
-          className="flex items-center gap-2 mb-3 text-xs text-slate-500 hover:text-emerald-400 transition-colors group"
-        >
-          <span className="text-amber-500">💡</span>
-          <span className="group-hover:underline">
-            Namuna: <span className="text-slate-400 group-hover:text-emerald-400">{currentQ.example}</span>
-          </span>
-        </button>
-
-        {/* Textarea + send */}
-        <div className="flex gap-3 items-end">
-          <div
-            className="flex-1 bg-slate-800 rounded-2xl border transition-colors"
-            style={{ borderColor: trimmedInput.length >= 2 ? '#10b981' : '#334155' }}
-          >
-            <textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={currentQ.placeholder}
-              rows={1}
-              className="w-full bg-transparent text-white placeholder-slate-500 rounded-2xl px-4 py-3 resize-none outline-none text-sm leading-relaxed"
-              style={{ maxHeight: '130px', overflowY: 'auto' }}
-            />
-          </div>
-
-          {/* Send button */}
-          <button
-            onClick={() => sendAnswer(inputValue)}
-            disabled={!canSubmit}
-            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: canSubmit ? '#10b981' : '#1e293b',
-              color: canSubmit ? '#0f172a' : '#475569',
+      {/* ── Input bar ── */}
+      <div className="shrink-0 px-4 py-3 border-t border-slate-800 bg-slate-950">
+        <div className="flex gap-2 items-end">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Javob yozing..."
+            rows={1}
+            disabled={botTyping || processing}
+            className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 focus:border-emerald-600 rounded-2xl text-white text-sm placeholder-slate-500 outline-none resize-none transition-colors disabled:opacity-50"
+            style={{ minHeight: '44px', maxHeight: '120px' }}
+            onInput={e => {
+              const t = e.currentTarget;
+              t.style.height = 'auto';
+              t.style.height = Math.min(t.scrollHeight, 120) + 'px';
             }}
+          />
+          <button
+            onClick={() => sendMessage()}
+            disabled={!input.trim() || botTyping || processing}
+            className="w-11 h-11 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-2xl flex items-center justify-center transition-colors shrink-0"
           >
-            {isLast ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            )}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
           </button>
         </div>
-
-        {/* Hint text */}
-        <p className="text-slate-700 text-xs mt-2.5 text-center">
-          Enter — yuborish &nbsp;·&nbsp; Shift+Enter — yangi qator
-        </p>
+        <p className="text-slate-700 text-xs mt-1.5 text-center">Enter — yuborish · Shift+Enter — yangi qator</p>
       </div>
-
     </div>
   );
 }

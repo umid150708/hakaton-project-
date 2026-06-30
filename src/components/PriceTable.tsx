@@ -1,7 +1,7 @@
 /**
  * PriceTable — "Joriy Bozor Narxlari" section on the Result page.
  *
- * Shows real market prices fetched from OLX.uz (or offline fallback),
+ * Shows curated wholesale market prices,
  * visualises the min/avg/max range for each product, and embeds the
  * revenue-check verdict so the user knows if their stated income is realistic.
  */
@@ -11,8 +11,6 @@ import type { RevenueCheckResult } from '../lib/revenueCheck';
 import type { CategoryInfo } from '../lib/categoryMap';
 
 // ─── Shared price row shape ───────────────────────────────────────────────────
-// Accepts both PriceResult (from api/prices.ts) and FallbackPriceResult.
-
 export interface PriceRow {
   query: string;
   avg: number;
@@ -21,9 +19,9 @@ export interface PriceRow {
   median: number;
   count: number;
   listings: { title: string; price: number; city: string }[];
-  source: 'olx' | 'fallback';
+  source: 'curated' | 'fallback';
   fetchedAt: string;
-  unit?: string;   // present in FallbackPriceResult, optional
+  unit?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -208,17 +206,13 @@ export default function PriceTable({
   className = '',
 }: PriceTableProps) {
   const rows = Object.values(prices);
-  const hasLiveData = rows.some(r => r.source === 'olx');
-  const hasAnyData  = rows.length > 0;
+  const hasAnyData = rows.length > 0;
 
   // For service businesses or no data: show only revenue check
   const showPrices = hasAnyData && category.isProductBusiness;
 
-  // Source badge — "Offline ma'lumot" sounds broken; use a positive label instead
   const fetchedAt = rows[0]?.fetchedAt ?? '2026';
-  const sourceBadge = hasLiveData
-    ? { text: 'OLX Live', color: '#10b981', dot: true }
-    : { text: `${fetchedAt} narxlari`, color: '#10b981', dot: false };
+  const sourceBadge = { text: `${fetchedAt} narxlari`, color: '#10b981', dot: false };
 
   return (
     <section className={`bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden ${className}`}>

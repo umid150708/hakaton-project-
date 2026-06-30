@@ -3,7 +3,7 @@
  * Never echoes nonsense back. All text is conditional on data quality.
  *
  * Pass a PriceContext to enrich the financial forecast and market analysis
- * with real OLX.uz prices (avg/min/max for each product the business uses).
+ * with curated market prices (avg/min/max for each product the business uses).
  */
 
 import type { AIResult, Facts } from './schema';
@@ -18,10 +18,10 @@ interface PriceEntry {
 }
 
 export interface PriceContext {
-  prices: Record<string, PriceEntry>;   // keyed by OLX query string
+  prices: Record<string, PriceEntry>;
   category: CategoryInfo;
-  fetchedAt?: string;                   // e.g. "2026-06-30"
-  source?: 'olx' | 'fallback';
+  fetchedAt?: string;
+  source?: 'curated' | 'fallback';
 }
 
 // ─── Sanitizer ────────────────────────────────────────────────────────────────
@@ -159,9 +159,8 @@ function marketPriceSentence(ctx: PriceContext): string {
     return `${query} — ${(p.avg / 1000).toFixed(0)} ming so'm${unit}`;
   });
 
-  const src = ctx.source === 'olx' ? 'OLX.uz' : 'joriy bozor';
   const date = ctx.fetchedAt ? ` (${ctx.fetchedAt})` : '';
-  return `${src} narxlari${date}: ${parts.join('; ')}.`;
+  return `Joriy bozor narxlari${date}: ${parts.join('; ')}.`;
 }
 
 /**
@@ -174,12 +173,11 @@ function priceAnchoredForecast(f: Facts, ctx: PriceContext): string {
   if (entries.length === 0) return '';
 
   const lines: string[] = [];
-  const src = ctx.source === 'olx' ? 'OLX.uz' : "offline bozor ma'lumotlari";
   const unit = ctx.category.unit || 'dona';
   const emp  = Math.max(1, f.employees);
 
   // ── Price table ──
-  lines.push(`📊 Joriy bozor narxlari (${src}):`);
+  lines.push(`📊 Joriy bozor narxlari:`);
   for (const [query, p] of entries.slice(0, 4)) {
     const unitStr = p.unit ? `/${p.unit}` : '';
     const avgStr  = (p.avg  / 1_000).toFixed(0);

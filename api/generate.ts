@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { withGemini } from './_gemini';
 
-// The system prompt — single source of truth
+// Edge runtime: 30s limit on free Vercel (vs 10s for serverless)
+export const config = { runtime: 'edge' };
+
 const SYSTEM_PROMPT = `Siz O'zbekiston kichik va o'rta korxonalari (KOK) uchun kredit tayyorgarlik maslahatchisissiz.
 Savdo-sanoat palatasi nomidan ish ko'rasiz.
 
@@ -69,7 +69,6 @@ interface AnswerPair {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  // CORS headers for local dev
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -80,22 +79,8 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  if (req.method === 'GET' && new URL(req.url).pathname.includes('health')) {
-    return new Response(JSON.stringify({ status: 'ok' }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
-  }
-
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders });
-  }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return new Response(
-      JSON.stringify({ error: 'API key not configured' }),
-      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    );
   }
 
   let answers: AnswerPair[];
@@ -109,46 +94,32 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 
-  // Format Q&A for Claude
   const userMessage = answers
     .map((a, i) => `Savol ${i + 1}: ${a.question}\nJavob: ${a.answer}`)
     .join('\n\n');
 
-  const client = new Anthropic({ apiKey });
-
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 16000,
-      thinking: {
-        type: 'enabled',
-        budget_tokens: 4000,
-      } as Parameters<typeof client.messages.create>[0]['thinking'],
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: userMessage,
+    const rawJson = await withGemini(async (genAI) => {
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        systemInstruction: SYSTEM_PROMPT,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 8192,
+          responseMimeType: 'application/json',
         },
-      ],
+      });
+      const result = await model.generateContent(userMessage);
+      return result.response.text().trim();
     });
-
-    // Extract the text block (extended thinking returns multiple blocks)
-    const textBlock = response.content.find((block) => block.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
-      throw new Error('No text block in response');
-    }
-
-    const rawJson = textBlock.text.trim();
-
-    // Basic JSON validation
-    JSON.parse(rawJson); // throws if invalid
+    // Validate JSON before returning
+    JSON.parse(rawJson);
 
     return new Response(rawJson, {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (error) {
-    console.error('Anthropic API error:', error);
+    console.error('Gemini API error:', error);
     return new Response(
       JSON.stringify({ error: 'AI generation failed', detail: String(error) }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }

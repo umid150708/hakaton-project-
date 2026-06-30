@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useSearchParams } from 'reac
 import Landing from './pages/Landing';
 import Interview from './pages/Interview';
 import Result from './pages/Result';
+import Bozor from './pages/Bozor';
 import { useAppStore } from './stores/appStore';
 import { DEMO_FIXTURE, DEMO_PRICES, DEMO_REVENUE_CHECK } from './lib/demoFixture';
 
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/interview" element={<Interview />} />
         <Route path="/result" element={<Result />} />
+        <Route path="/bozor" element={<Bozor />} />
       </Routes>
     </BrowserRouter>
   );

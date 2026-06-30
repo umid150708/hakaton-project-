@@ -7,8 +7,11 @@ import { useAppStore } from '../stores/appStore';
 import { computeScore } from '../lib/scoring';
 import { assessDataQuality } from '../lib/answerQuality';
 import { detectCategory } from '../lib/categoryMap';
+import { calcTax } from '../lib/taxCalc';
 import PriceTable from '../components/PriceTable';
 import RevenueCheck from '../components/RevenueCheck';
+import TaxCalculator from '../components/TaxCalculator';
+import LoanCalculator from '../components/LoanCalculator';
 import type { AIResult } from '../lib/schema';
 import type { ScoreResult } from '../lib/scoring';
 
@@ -192,6 +195,7 @@ export default function Result() {
 
   const score = computeScore(result.facts, revenueCheck ?? undefined);
   const category = detectCategory(result.facts.business_type);
+  const tax = calcTax(result.facts, category.key);
 
   const handleExportPDF = async () => {
     setExporting(true);
@@ -291,7 +295,7 @@ export default function Result() {
         {/* Personalized score recommendations */}
         <ScoreRecommendations score={score} facts={result.facts} />
 
-        {/* Market prices — shown early so judges see the OLX differentiator */}
+        {/* Market prices */}
         {Object.keys(prices).length > 0 && revenueCheck && (
           <PriceTable
             prices={prices}
@@ -311,6 +315,21 @@ export default function Result() {
             <PlanSection title="Risklar va yechimlar" content={result.business_plan.risk_assessment} />
           </div>
         </section>
+
+        {/* Loan Calculator — kredit kalkulyatori */}
+        <LoanCalculator
+          loan_amount_uzs={result.facts.loan_amount_uzs}
+          loan_term_months={result.facts.loan_term_months}
+          monthly_revenue_uzs={result.facts.monthly_revenue_uzs}
+        />
+
+        {/* Tax Calculator — soliq hisob-kitobi */}
+        {result.facts.monthly_revenue_uzs > 0 && (
+          <TaxCalculator
+            tax={tax}
+            monthly_revenue_uzs={result.facts.monthly_revenue_uzs}
+          />
+        )}
 
         {/* Revenue analysis warning — shown after business plan so it doesn't dominate */}
         {revenueCheck && (

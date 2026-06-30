@@ -2,6 +2,8 @@ import { jsPDF } from 'jspdf';
 import type { AIResult } from './schema';
 import type { ScoreResult } from './scoring';
 import type { RevenueCheckResult } from './revenueCheck';
+import { calcTax } from './taxCalc';
+import { detectCategory } from './categoryMap';
 
 // Minimal price shape — compatible with StoredPrice + FallbackPriceResult
 interface PDFPriceRow {
@@ -10,7 +12,7 @@ interface PDFPriceRow {
   max: number;
   count: number;
   unit?: string;
-  source: 'olx' | 'fallback';
+  source: 'curated' | 'fallback';
 }
 
 /**
@@ -104,10 +106,9 @@ function addPriceTable(
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
 
-  const isLive = entries.some(([, p]) => p.source === 'olx');
-  const srcLabel = isLive ? 'OLX.uz — JONLI' : 'OFFLINE MA\'LUMOT';
+  const srcLabel = 'BOZOR NARXLARI';
   doc.text('6. JORIY BOZOR NARXLARI', PAGE_MARGIN + 3, y + 3);
-  doc.setTextColor(isLive ? 16 : 245, isLive ? 185 : 158, isLive ? 129 : 11);
+  doc.setTextColor(16, 185, 129);
   doc.setFontSize(7);
   doc.text(srcLabel, PAGE_MARGIN + CONTENT_WIDTH - doc.getTextWidth(srcLabel) - 3, y + 3);
   y += 12;
@@ -330,6 +331,118 @@ export async function exportToPDF(
   if (prices && revenueCheck && Object.keys(prices).length > 0) {
     y = addPriceTable(doc, prices, revenueCheck, y);
     y += 6;
+  }
+
+  // ---- TAX SUMMARY ----
+  {
+    const cat = detectCategory(result.facts.business_type);
+    const tax = calcTax(result.facts, cat.key);
+
+    if (y > 230) { doc.addPage(); y = PAGE_MARGIN; }
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(PAGE_MARGIN, y - 4, CONTENT_WIDTH, 10, 'F');
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SOLIQ HISOB-KITOBI', PAGE_MARGIN + 3, y + 3);
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(7);
+    doc.text(tax.regime_label, PAGE_WIDTH - PAGE_MARGIN - doc.getTextWidth(tax.regime_label) - 3, y + 3);
+    y += 14;
+
+    // 3-col numbers
+    const cols = [
+      { label: 'Oylik soliq', val: tax.monthly_tax_uzs, color: [239, 68, 68] as [number,number,number] },
+      { label: 'Yillik soliq', val: tax.annual_tax_uzs, color: [245, 158, 11] as [number,number,number] },
+      { label: "Soliqdan keyin", val: tax.after_tax_monthly_uzs, color: [16, 185, 129] as [number,number,number] },
+    ];
+    const colW = CONTENT_WIDTH / 3;
+    cols.forEach(({ label, val, color }, i) => {
+      const cx = PAGE_MARGIN + i * colW;
+      doc.setFillColor(22, 30, 46);
+      doc.rect(cx, y - 2, colW - 2, 16, 'F');
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'normal');
+      doc.text(label, cx + 3, y + 3);
+      doc.setTextColor(...color);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(fmtPrice(val) + " so'm", cx + 3, y + 10);
+    });
+    y += 22;
+
+    // Breakdown lines
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    tax.breakdown.forEach(item => {
+      if (y > 270) { doc.addPage(); y = PAGE_MARGIN; }
+      doc.setTextColor(203, 213, 225);
+      doc.text(`• ${item.label}:`, PAGE_MARGIN + 3, y);
+      doc.setTextColor(16, 185, 129);
+      doc.text(fmtPrice(item.monthly_uzs) + '/oy', PAGE_MARGIN + CONTENT_WIDTH - 30, y);
+      y += 5;
+    });
+
+    // Recommendation
+    if (y > 255) { doc.addPage(); y = PAGE_MARGIN; }
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(7);
+    y = addWrappedText(doc, tax.recommendation, PAGE_MARGIN + 3, y + 2, CONTENT_WIDTH - 6, 4);
+    y += 8;
+  }
+
+  // ---- LOAN CALCULATOR SUMMARY ----
+  if (result.facts.loan_amount_uzs > 0 && result.facts.loan_term_months > 0) {
+    if (y > 230) { doc.addPage(); y = PAGE_MARGIN; }
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(PAGE_MARGIN, y - 4, CONTENT_WIDTH, 10, 'F');
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('KREDIT KALKULYATORI', PAGE_MARGIN + 3, y + 3);
+    y += 14;
+
+    const P = result.facts.loan_amount_uzs;
+    const n = result.facts.loan_term_months;
+    const rates = [0.18, 0.22, 0.26];
+    const rateLabels = ['18%', '22%', '26%'];
+
+    rates.forEach((rate, i) => {
+      const r = rate / 12;
+      const pmt = P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      const totalInterest = pmt * n - P;
+      const cx = PAGE_MARGIN + (CONTENT_WIDTH / 3) * i;
+      const colW = CONTENT_WIDTH / 3 - 2;
+      doc.setFillColor(22, 30, 46);
+      doc.rect(cx, y - 2, colW, 18, 'F');
+      doc.setTextColor(i === 0 ? 16 : i === 1 ? 59 : 245, i === 0 ? 185 : i === 1 ? 130 : 158, i === 0 ? 129 : i === 1 ? 246 : 11);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(rateLabels[i], cx + 3, y + 4);
+      doc.setFontSize(9);
+      doc.text(fmtPrice(pmt) + '/oy', cx + 3, y + 11);
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(6);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`+${fmtPrice(totalInterest)} foiz`, cx + 3, y + 16);
+    });
+    y += 26;
+
+    // DTI note
+    if (result.facts.monthly_revenue_uzs > 0) {
+      const r22 = 0.22 / 12;
+      const pmt22 = P * (r22 * Math.pow(1 + r22, n)) / (Math.pow(1 + r22, n) - 1);
+      const dti = (pmt22 / result.facts.monthly_revenue_uzs * 100).toFixed(0);
+      const dtiOk = Number(dti) <= 40;
+      doc.setTextColor(dtiOk ? 16 : 239, dtiOk ? 185 : 68, dtiOk ? 129 : 68);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`DTI (22% stavkada): ${dti}% daromaddan — bank chegarasi 40%`, PAGE_MARGIN + 3, y);
+      y += 8;
+    }
   }
 
   // ---- BANK RECOMMENDATIONS ----

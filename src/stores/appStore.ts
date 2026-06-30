@@ -18,7 +18,7 @@ export interface StoredPrice {
   median: number;
   count: number;
   listings: { title: string; price: number; city: string }[];
-  source: 'olx' | 'fallback';
+  source: 'curated' | 'fallback';
   fetchedAt: string;
   unit?: string;
 }

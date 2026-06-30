@@ -258,7 +258,7 @@ export default function RevenueCheck({
         {result.basis !== 'none' && (
           <p className="text-slate-700 text-xs">
             {result.basis === 'price_data'
-              ? `Baho OLX.uz narxlari asosida: "${result.price_used}"`
+              ? `Baho ulgurji bozor narxlari asosida: "${result.price_used}"`
               : 'Baho sohaviy benchmarklar asosida'}
           </p>
         )}

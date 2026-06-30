@@ -1,15 +1,16 @@
 /**
- * categoryMap — maps a business type (free text, Uzbek) → OLX search queries.
+ * categoryMap — maps a business type (free text, Uzbek) → market price queries.
  *
  * Returns the products this business BUYS (inputs) and SELLS (outputs),
- * so we can fetch real current market prices from OLX.uz.
+ * used to look up curated wholesale market prices.
  *
  * Covers the most common Uzbek SME types based on Chamber of Commerce data.
  */
 
 export interface CategoryInfo {
+  key: string;          // English slug, e.g. "bakery", "retail", "IT"
   category: string;     // Uzbek label shown in UI
-  queries: string[];    // OLX search queries (max 4 — we fetch in parallel)
+  queries: string[];    // price lookup keys (matched against pricesFallback)
   unit: string;         // e.g. "kg", "dona", "metr", "litr", ""
   isProductBusiness: boolean; // false = service business (no product prices)
 }
@@ -22,6 +23,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /novvoy|non\s*(ishlab|zavod|sex)|lavash|somsa|samsa|konditer|tort|kek|pizza|bulka|baranki/i,
     info: {
+      key: "bakery",
       category: "Non va pishiriq mahsulotlari",
       queries: ["bug'doy uni", "non sotiladi", "qand shakar"],
       unit: "kg",
@@ -33,6 +35,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /sabzavot|meva|poliz|pomidor|bodring|kartoshka|uzum|olma|gilos|shaftoli|qovun|tarvuz|piyoz|sarimsoq|karam|lavlagi/i,
     info: {
+      key: "vegetables",
       category: "Meva-sabzavot savdosi",
       queries: ["pomidor sotiladi", "kartoshka sotiladi", "bodring sotiladi"],
       unit: "kg",
@@ -44,6 +47,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /qassob|go'sht|mol\s*go'sht|qo'y|tovuq|baliq|kabob|qovurma|shashlik/i,
     info: {
+      key: "meat",
       category: "Go'sht va chorva mahsulotlari",
       queries: ["mol go'shti sotiladi", "qo'y go'shti", "tovuq go'shti"],
       unit: "kg",
@@ -55,6 +59,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /sut|qatiq|pishloq|sariyog'|qaymoq|kefir|yogurt|tvorog|ferma/i,
     info: {
+      key: "dairy",
       category: "Sut mahsulotlari",
       queries: ["sut sotiladi", "pishloq sotiladi", "sariyog'"],
       unit: "litr",
@@ -66,6 +71,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /sartarosh|go'zallik\s*salon|salon\s*go'|manikur|pedikur|kosmetolog|spa\b|barber/i,
     info: {
+      key: "beauty",
       category: "Go'zallik saloni va sartaroshxona",
       queries: ["soch bo'yog'i", "kosmetika ulgurji"],
       unit: "dona",
@@ -77,6 +83,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /\bkafe\b|restoran|\boshxona\b|choyxona|fast\s*food|milliy\s*taom|bufet|stolovaya|tushlik\s*joyi/i,
     info: {
+      key: "cafe",
       category: "Oshxona va restoran",
       queries: ["go'sht sotiladi", "un sotiladi", "sabzavot ulgurji"],
       unit: "kg",
@@ -88,6 +95,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /qishloq\s*xo'jalik|dehqon|fermer|hosil|ekin|bug'doy|g'alla|paxta|sholi|jo'xori|o'g'it|issiqxona|greenhouse/i,
     info: {
+      key: "agriculture",
       category: "Qishloq xo'jaligi",
       queries: ["bug'doy sotiladi", "mineral o'g'it", "urug' sotiladi"],
       unit: "kg",
@@ -99,6 +107,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /qurilish|ta'mirlash|remont|quruvchi|loyiha|bino|uy\s*qurish|gips|sement|g'isht|temir|po'lat/i,
     info: {
+      key: "construction",
       category: "Qurilish va ta'mirlash",
       queries: ["sement sotiladi", "g'isht sotiladi", "qum shag'al"],
       unit: "kg",
@@ -110,6 +119,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /kiyim|tikuv|tikish|gazlama|mato|libos|ko'ylak|shim|palto|poyabzal|charm|nashavsoz/i,
     info: {
+      key: "clothing",
       category: "Kiyim-kechak va tikuvchilik",
       queries: ["gazlama sotiladi", "ip sotiladi", "kiyim ulgurji"],
       unit: "metr",
@@ -121,6 +131,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /moyka|avtoservis|avto\s*ta'mirlash|shinomontaj|vulkanizatsiya|avto\s*elektrik|detal|zapchast/i,
     info: {
+      key: "auto",
       category: "Avtomobil xizmatlari",
       queries: ["avto ehtiyot qismlar", "motor yog'i sotiladi"],
       unit: "dona",
@@ -132,6 +143,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /mebel|yog'och|eshik|deraza|stol|stul|shkaf|divani|ustaxona\s*(yog'och|mebel)/i,
     info: {
+      key: "furniture",
       category: "Mebel va yog'och ishlari",
       queries: ["yog'och sotiladi", "mebel furnitura", "lak bo'yoq"],
       unit: "metr",
@@ -143,6 +155,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /elektron|telefon|kompyuter|noutbuk|texnika|maishiy\s*texnika|tv|televizor|konditsioner|sovutgich/i,
     info: {
+      key: "electronics",
       category: "Elektronika savdosi",
       queries: ["telefon aksessuarlar", "elektronika ulgurji"],
       unit: "dona",
@@ -154,6 +167,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /do'kon|magazin|savdo\s*nuqta|oziq\s*ovqat|supermarket|minimarket|ulgurji|chakana/i,
     info: {
+      key: "retail",
       category: "Chakana savdo do'koni",
       queries: ["oziq ovqat ulgurji", "un sotiladi", "qand shakar"],
       unit: "kg",
@@ -165,6 +179,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /dorixona|apteka|dori|tibbiy|klinika|shifokor|stomatolog|laboratoriya/i,
     info: {
+      key: "pharmacy",
       category: "Tibbiyot va dorixona",
       queries: ["tibbiy uskunalar", "dori vositalar"],
       unit: "dona",
@@ -176,6 +191,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /maktab|ta'lim|kurs|o'qituvchi|repetitor|darsxona|markaz\s*(ta'lim|o'quv)|ingliz|rus\s*til/i,
     info: {
+      key: "education",
       category: "Ta'lim va kurslar",
       queries: [],
       unit: "",
@@ -187,6 +203,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /dastur|it\s|kompyuter\s*(ta'mir|xizmat)|internet|veb\s*sayt|dizayn|reklama|marketing/i,
     info: {
+      key: "IT",
       category: "IT va raqamli xizmatlar",
       queries: [],
       unit: "",
@@ -198,6 +215,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /kimyoviy\s*tozalash|kir\s*yuv|laundry|tozalash\s*xizmat/i,
     info: {
+      key: "laundry",
       category: "Kir yuvish xizmati",
       queries: ["kir yuvish kukuni", "kimyoviy tozalash vosita"],
       unit: "kg",
@@ -209,6 +227,7 @@ const CATEGORIES: Array<{ keywords: RegExp; info: CategoryInfo }> = [
   {
     keywords: /tashish|transport|yuk|logistik|taksi|avtobus|gazelle|yuk\s*mashin/i,
     info: {
+      key: "transport",
       category: "Transport va logistika",
       queries: ["motor yog'i sotiladi", "avto ehtiyot qismlar"],
       unit: "dona",
@@ -233,8 +252,7 @@ export function detectCategory(businessType: string): CategoryInfo {
     }
   }
 
-  // ── Fallback: use the business type as a search query ──
-  // Cleans it up and uses it directly on OLX (may or may not return good results)
+  // ── Fallback: use the business type as a price lookup query ──
   const cleanQuery = trimmed
     .toLowerCase()
     .replace(/[^a-z0-9\s']/g, '')
@@ -242,6 +260,7 @@ export function detectCategory(businessType: string): CategoryInfo {
     .slice(0, 30);
 
   return {
+    key: "retail",
     category: trimmed,
     queries: cleanQuery.length >= 3 ? [cleanQuery] : [],
     unit: "dona",

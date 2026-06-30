@@ -4,7 +4,7 @@
  * Compares what an entrepreneur claims to earn against what a business of
  * that type/size realistically generates based on:
  *   1. Category benchmarks (empirical Uzbek SME data)
- *   2. OLX/fallback price data (when available)
+ *   2. Curated market price data (when available)
  *
  * Catches two common mistakes in loan applications:
  *   - Understated revenue (forgot zeros — "2 million" instead of 20 million)
@@ -16,7 +16,7 @@ import type { CategoryInfo } from './categoryMap';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-/** Minimal price info needed — compatible with both OLX live and fallback. */
+/** Minimal price info needed — compatible with curated and fallback price entries. */
 interface PriceEntry {
   avg: number;
   min: number;
@@ -55,7 +55,7 @@ interface CategoryBenchmark {
   min_per_emp: number;
   /** Monthly revenue per employee at high end (efficient, busy operation) */
   max_per_emp: number;
-  /** Primary OLX price query to use for price-anchored estimation, if any */
+  /** Primary price query to use for price-anchored estimation, if any */
   price_query?: string;
   /** Average units sold per employee per working day (for price estimation) */
   units_per_day?: number;
