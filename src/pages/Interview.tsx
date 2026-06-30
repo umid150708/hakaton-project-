@@ -101,14 +101,30 @@ export default function ChatBot() {
     sendMessage(input);
   };
 
-  // Render bot text: newlines → <br>, **bold**
+  // Render bot text: strip markdown headers, render bullets, bold, newlines
   const formatText = (text: string) => {
     return text.split('\n').map((line, i, arr) => {
-      const parts = line.split(/(\*\*[^*]+\*\*)/g).map((part, j) =>
+      // Strip ### ## # headers — render as plain bold text
+      const headerMatch = line.match(/^#{1,3}\s+(.+)/);
+      if (headerMatch) {
+        return (
+          <span key={i}>
+            <strong>{headerMatch[1]}</strong>
+            {i < arr.length - 1 && <br />}
+          </span>
+        );
+      }
+
+      // Convert "* text" or "- text" bullets → "• text"
+      const bulletLine = line.replace(/^\s*[\*\-]\s+/, '• ');
+
+      // Bold: **text**
+      const parts = bulletLine.split(/(\*\*[^*]+\*\*)/g).map((part, j) =>
         part.startsWith('**') && part.endsWith('**')
           ? <strong key={j}>{part.slice(2, -2)}</strong>
           : part
       );
+
       return (
         <span key={i}>
           {parts}
