@@ -125,11 +125,13 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Gemini primary (better instruction-following for conversational logic)
   // Groq as fallback if Gemini is rate-limited
+  let debugGeminiErr = '';
   try {
     text = await callGemini(history);
     provider = 'gemini';
   } catch (e1) {
-    console.warn('Gemini failed:', String(e1));
+    debugGeminiErr = String(e1);
+    console.warn('Gemini failed:', debugGeminiErr);
     if (process.env.GROQ_API_KEY) {
       try {
         text = await callGroq(history);
@@ -145,7 +147,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
 
-  return new Response(JSON.stringify({ message: text, provider }), {
+  return new Response(JSON.stringify({ message: text, provider, _d: debugGeminiErr || undefined }), {
     headers: { 'Content-Type': 'application/json', ...cors },
   });
 }
