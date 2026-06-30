@@ -1,56 +1,106 @@
 /**
  * AIStrip.tsx — AI market analysis banner above the ads grid
  *
- * Caching strategy:
- *   - Responses cached in localStorage per (tab, category) for 1 hour
- *   - Cache hit = zero API calls, instant display
- *   - Manual ↻ bypasses cache and fetches fresh
- *   - 16 possible combos (2 tabs × 8 cats) = at most 16 API calls per hour total
+ * Sends two things to the API:
+ *   system — teaches Groq the Reuters/Bloomberg style (once, as a style guide)
+ *   prompt — the actual ad data to analyze in that style
+ *
+ * Caching: localStorage per (tab, category), valid 1 hour.
+ * Manual ↻ bypasses cache.
  */
 
 import { useState, useEffect, useRef } from 'react';
-import type { Category } from '../lib/bozorData';
+import type { Ad, Category } from '../lib/bozorData';
 import { CATEGORIES } from '../lib/bozorData';
 
 interface Props {
-  tab: 'buy' | 'sell';
-  cat: Category;
+  tab:  'buy' | 'sell';
+  cat:  Category;
+  ads:  Ad[];
 }
+
+// ── Style guide — teaches Groq HOW to write, not what to say ─────────────────
+// Based on Reuters/Bloomberg commodity brief format:
+//   1. Specific product + price figure in first sentence
+//   2. Cause → effect in second sentence
+//   3. One clear actionable conclusion in third sentence
+//   No generic disclaimers. No filler. Numbers required.
+
+const ANALYST_SYSTEM = `Siz O'zbekiston ulgurji bozori bo'yicha mutaxassis analitiksiz — Reuters va Bloomberg tovar bozori tahlilchilari kabi yozasiz.
+
+Yozish qoidalari (BU QOIDALARDAN HECH QACHON CHETGA CHIQMA):
+1. Birinchi jumlada: aniq mahsulot nomi va narq raqamini keltir (masalan: "Armitura d12 narxi 9 200 so'm/kg")
+2. Ikkinchi jumlada: sabab-natija bog'liqligini ko'rsat ("narx barqaror, chunki qurilish mavsumi...")
+3. Uchinchi jumlada: xaridor yoki sotuvchi uchun BITTA aniq xulosa ber
+4. Jami 3 jumla. Ortiqcha narsa yozma.
+5. Hech qachon "tahlil qiling", "qaror qabul qilishdan oldin tekshiring" kabi bo'sh gaplar yozma.
+6. Professional O'zbek tilida yoz — moliyaviy yangiliklar uslubida.
+
+YOMON MISOL (bunday YOZMA):
+"Bozorda ba'zi tovarlar arzonlashmoqda, boshqalari esa taqchil. Shuning uchun qaror qabul qilishdan oldin bozor holatini yaxshiroq tahlil qilish maqsadga muvofiq."
+
+YAXSHI MISOL (mana SHUNDAY yoz):
+"Sement M400 Samarqand omborlarida 950 so'm/kg bilan taklif etilmoqda — bu fevralga nisbatan 3% past, ishlab chiqarish ortishi baho bosimini kamaytirdi. Armitura (d12) esa 9 200 so'm/kg atrofida barqaror, yozgi qurilish mavsumi talabni ushlab turibdi. Xaridorlar uchun hozir qurilish materiallari olish foydali — kuz boshida narx oshishi kutilmoqda."`;
 
 // ── Cache helpers ─────────────────────────────────────────────────────────────
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-interface CacheEntry { text: string; ts: number }
-
 function cacheGet(tab: string, cat: string): string | null {
   try {
-    const raw = localStorage.getItem(`ai_bozor_v1_${tab}_${cat}`);
+    const raw = localStorage.getItem(`ai_bozor_v2_${tab}_${cat}`);
     if (!raw) return null;
-    const entry: CacheEntry = JSON.parse(raw);
-    if (Date.now() - entry.ts > CACHE_TTL_MS) return null; // expired
-    return entry.text;
+    const { text, ts } = JSON.parse(raw) as { text: string; ts: number };
+    if (Date.now() - ts > CACHE_TTL_MS) return null;
+    return text;
   } catch { return null; }
 }
 
 function cacheSet(tab: string, cat: string, text: string) {
   try {
-    const entry: CacheEntry = { text, ts: Date.now() };
-    localStorage.setItem(`ai_bozor_v1_${tab}_${cat}`, JSON.stringify(entry));
+    localStorage.setItem(`ai_bozor_v2_${tab}_${cat}`, JSON.stringify({ text, ts: Date.now() }));
   } catch { /* storage full — ignore */ }
+}
+
+// ── Prompt builder — passes real ad data for analysis ────────────────────────
+
+function buildPrompt(tab: 'buy' | 'sell', catLabel: string, ads: Ad[]): string {
+  const today = new Date().toLocaleDateString('uz-UZ', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  });
+
+  // Prioritise ads that have prices — more useful for analysis
+  const withPrice    = ads.filter(a => a.price).slice(0, 6);
+  const withoutPrice = ads.filter(a => !a.price).slice(0, 4);
+  const topAds       = [...withPrice, ...withoutPrice];
+
+  const adLines = topAds.length > 0
+    ? topAds.map(a =>
+        `• ${a.product}: ${a.quantity}${a.price ? `, ${a.price}` : ''} — ${a.location}`
+      ).join('\n')
+    : '(e\'lonlar mavjud emas)';
+
+  const role = tab === 'buy' ? 'XARID' : 'SOTUV';
+
+  return `Bugun: ${today}
+Kategoriya: ${catLabel}
+Faol ${role} e'lonlari:
+${adLines}
+
+Ushbu ma'lumotlar asosida ${tab === 'buy' ? 'xaridorlar' : 'sotuvchilar'} uchun bozor tahlilini yoz. Yuqoridagi qoidalarga qat'iy amal qil.`;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function AIStrip({ tab, cat }: Props) {
-  const [text, setText]         = useState('');
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(false);
-  const [fromCache, setFromCache] = useState(false);
+export default function AIStrip({ tab, cat, ads }: Props) {
+  const [text, setText]             = useState('');
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(false);
+  const [fromCache, setFromCache]   = useState(false);
   const [forceRefresh, setForceRefresh] = useState(0);
 
   const lastCombo = useRef('');
-  const catLabel  = CATEGORIES.find(c => c.id === cat)?.label ?? 'umumiy bozor';
+  const catLabel  = CATEGORIES.find(c => c.id === cat)?.label ?? 'Umumiy bozor';
 
   useEffect(() => {
     let cancelled = false;
@@ -59,9 +109,8 @@ export default function AIStrip({ tab, cat }: Props) {
     const isNewCombo = combo !== lastCombo.current;
     lastCombo.current = combo;
 
-    // Use cache unless this is a manual refresh on the same combo
+    // Cache check — skip only on manual refresh of the same combo
     const skipCache = !isNewCombo && forceRefresh > 0;
-
     if (!skipCache) {
       const cached = cacheGet(tab, cat);
       if (cached) {
@@ -73,36 +122,26 @@ export default function AIStrip({ tab, cat }: Props) {
       }
     }
 
-    // Cache miss or forced refresh — hit the API
     setLoading(true);
     setError(false);
     setText('');
     setFromCache(false);
 
-    const scope = cat === 'all'
-      ? "O'zbekiston ulgurji bozori"
-      : `"${catLabel}" kategoriyasi`;
-
-    const prompt = tab === 'buy'
-      ? `O'zbek tilida 3 jumlada: ${scope} bo'yicha xaridorlar uchun hozirgi narx holati. Qaysi tovarlar arzonlashmoqda yoki taqchil? Hozir sotib olish foydali? Aniq, ishbilarmon til bilan yoz.`
-      : `O'zbek tilida 3 jumlada: ${scope} bo'yicha sotuvchilar uchun hozirgi narx holati. Qaysi tovarlar qimmatlashmoqda yoki talab oshmoqda? Hozir sotish foydali? Aniq, ishbilarmon til bilan yoz.`;
-
     fetch('/api/analyse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({
+        system: ANALYST_SYSTEM,
+        prompt: buildPrompt(tab, catLabel, ads),
+      }),
       signal: AbortSignal.timeout(20_000),
     })
       .then(r => r.json())
       .then((data: { text?: string }) => {
         if (cancelled) return;
-        const t = data?.text ?? '';
-        if (t) {
-          setText(t);
-          cacheSet(tab, cat, t);
-        } else {
-          setError(true);
-        }
+        const t = (data?.text ?? '').trim();
+        if (t) { setText(t); cacheSet(tab, cat, t); }
+        else setError(true);
       })
       .catch(() => { if (!cancelled) setError(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -112,10 +151,8 @@ export default function AIStrip({ tab, cat }: Props) {
 
   return (
     <div className="rounded-xl border border-purple-900/40 bg-purple-950/15 px-4 py-3 flex items-start gap-3">
-      {/* Icon */}
       <span className="text-lg shrink-0 mt-0.5">🤖</span>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-2">
           <p className="text-purple-300 text-xs font-semibold uppercase tracking-wide">
@@ -149,11 +186,10 @@ export default function AIStrip({ tab, cat }: Props) {
         )}
       </div>
 
-      {/* Refresh — bypasses cache */}
       {!loading && (
         <button
           onClick={() => setForceRefresh(n => n + 1)}
-          title="Yangi tahlil olish"
+          title="Yangi tahlil"
           className="shrink-0 text-slate-700 hover:text-purple-400 text-base transition-colors mt-0.5"
         >
           ↻

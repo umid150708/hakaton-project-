@@ -246,7 +246,7 @@ export default function Bozor() {
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-4 space-y-4">
 
         {/* AI market strip — re-mounts when tab or category changes */}
-        <AIStrip key={`${tab}-${cat}`} tab={tab} cat={cat} />
+        <AIStrip key={`${tab}-${cat}`} tab={tab} cat={cat} ads={visibleAds} />
 
         {/* Result count + clear */}
         <div className="flex items-center justify-between">
