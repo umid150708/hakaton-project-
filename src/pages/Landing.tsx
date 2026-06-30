@@ -26,48 +26,48 @@ export default function Landing() {
           <span className="text-emerald-400">ikkita muhim vosita</span>
         </h1>
         <p className="text-slate-400 text-sm mb-10 text-center max-w-md leading-relaxed">
-          Bozor narxlarini tahlil qiling va kredit, imtiyozlar, soliq bo'yicha maslahat oling —
-          ikkalasi bitta platformada, bepul.
+          B2B bozorda xaridorlar va sotuvchilarni ulang, kredit va imtiyozlar bo'yicha
+          AI maslahat oling — barchasi bitta platformada, bepul.
         </p>
 
         {/* ── Two product cards ── */}
         <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
 
-          {/* Problem 14 — Bozor-Analitika */}
+          {/* Problem 14 — Bozor B2B */}
           <Link
             to="/bozor"
-            className="group relative flex flex-col bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-700 rounded-2xl p-6 transition-all"
+            className="group relative flex flex-col bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-blue-700 rounded-2xl p-6 transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <span className="px-2 py-0.5 bg-blue-950 text-blue-400 text-xs rounded-full border border-blue-900 font-medium">
                 Muammo 14
               </span>
-              <span className="text-2xl">📊</span>
+              <span className="text-2xl">🏪</span>
             </div>
             <h2 className="text-white font-bold text-lg mb-2 leading-tight">
-              Bozor-Analitika
+              B2B Bozor
             </h2>
             <p className="text-slate-400 text-sm leading-relaxed mb-4 flex-1">
-              Istalgan mahsulotning ulgurji narxini toping. Un, sement, go'sht, gazlama —
-              qayerdan eng arzon sotib olish mumkinligini ko'ring.
+              Ulgurji xaridorlar va sotuvchilar uchun e'lonlar taxtasi.
+              Xarid yoki sotuv e'loni joylashtiring, to'g'ridan-to'g'ri aloqa qiling.
             </p>
             <div className="space-y-1.5 mb-5">
               {[
-                'Mahsulot qidirish va narx taqqoslash',
-                'Eng arzon taklif va yetkazib beruvchi',
-                'Narx o\'zgarish tendensiyasi',
-                'Viloyat bo\'yicha filtrlash',
+                "Xarid va sotuv e'lonlari — bir joyda",
+                '8 ta kategoriya bo\'yicha filtrlash',
+                'AI bozor tahlili (har kuni)',
+                'Bevosita aloqa — vositachisiz',
               ].map(f => (
                 <div key={f} className="flex items-center gap-2 text-xs text-slate-400">
-                  <span className="text-emerald-500">✓</span>{f}
+                  <span className="text-blue-500">✓</span>{f}
                 </div>
               ))}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform">
-                Narxlarni ko'rish →
+              <span className="text-blue-400 text-sm font-medium group-hover:translate-x-1 transition-transform">
+                Bozorga kirish →
               </span>
-              <span className="text-xs text-slate-600">CBU · Ulgurji bozorlar</span>
+              <span className="text-xs text-slate-600">Chorsu · Ipodrom · B2B</span>
             </div>
           </Link>
 
@@ -119,13 +119,13 @@ export default function Landing() {
             <div>
               <p className="text-xs text-blue-400 font-medium mb-3 flex items-center gap-1.5">
                 <span className="w-4 h-4 bg-blue-950 rounded-full flex items-center justify-center text-[10px]">14</span>
-                Bozor-Analitika
+                B2B Bozor
               </p>
               <div className="space-y-3">
                 {[
-                  { n: '1', t: "Mahsulot kiriting", s: "'Un', 'sement', 'go'sht' — o'zbek yoki rus tilida" },
-                  { n: '2', t: 'Narxlar yuklanadi', s: 'Ulgurji bozor ma\'lumotlari va CBU kurslari birlashtiriladi' },
-                  { n: '3', t: "Eng arzonini tanlang", s: 'Yetkazib beruvchi, narx diapazoni va tendensiya' },
+                  { n: '1', t: "Xarid yoki sotuv tanlang", s: "🛒 Xaridorlar yoki 💰 Sotuvchilar bo'limini oching" },
+                  { n: '2', t: "E'lon joylashtiring",      s: "Mahsulot, miqdor, joylashuv va narx kiriting" },
+                  { n: '3', t: "To'g'ridan-to'g'ri aloqa", s: "Kontaktni ko'ring, vositachisiz bog'laning" },
                 ].map(s => (
                   <div key={s.n} className="flex gap-3">
                     <div className="w-6 h-6 rounded-full bg-blue-950 border border-blue-900 flex items-center justify-center text-xs font-bold text-blue-400 shrink-0 mt-0.5">{s.n}</div>
@@ -171,7 +171,7 @@ export default function Landing() {
               { icon: '🏦', title: 'Kredit olish', body: "Bank talablari, hujjatlar, garovsiz mikrokreditlar (PQ-4862)" },
               { icon: '♿', title: 'Nogironlik imtiyozlari', body: "Soliq yengilliklari, pensiya, bepul xizmatlar (I/II/III guruh)" },
               { icon: '🧾', title: 'Soliq rejimlari', body: "Patent vs SST, QQS, ish haqi soliqlari" },
-              { icon: '📋', title: 'Davlat dasturlari', body: "2026-yil AI scoring, Savdo-sanoat palatasi, INSON" },
+              { icon: '📋', title: 'Davlat dasturlari', body: "Garovsiz mikrokredit (PQ-4862), INSON markazi, ishonch telefoni 1140" },
             ].map(m => (
               <div key={m.title} className="bg-slate-900 rounded-xl p-3.5 border border-slate-800">
                 <div className="text-2xl mb-2">{m.icon}</div>
@@ -187,9 +187,9 @@ export default function Landing() {
           <p className="text-xs text-slate-600 uppercase tracking-wider text-center mb-5">Ma'lumot manbalari</p>
           <div className="grid grid-cols-3 gap-3 text-center">
             {[
-              { name: 'CBU.uz', role: 'Valyuta kurslari', color: 'text-blue-400' },
-              { name: 'Lex.uz', role: 'Qonunlar bazasi', color: 'text-amber-400' },
-              { name: 'Soliq.uz', role: 'Soliq ma\'lumotlari', color: 'text-emerald-400' },
+              { name: 'Lex.uz',    role: 'Qonunlar bazasi',       color: 'text-amber-400' },
+              { name: 'Soliq.uz',  role: "Soliq ma'lumotlari",    color: 'text-emerald-400' },
+              { name: 'Stat.uz',   role: 'Bozor statistikasi',    color: 'text-blue-400' },
             ].map(p => (
               <div key={p.name} className="bg-slate-900 rounded-xl p-3 border border-slate-800">
                 <p className={`font-bold text-sm ${p.color}`}>{p.name}</p>
