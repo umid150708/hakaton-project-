@@ -1,4 +1,11 @@
-import { useState } from 'react';
+/**
+ * AIStrip.tsx — AI market analysis banner above the ads grid
+ *
+ * Auto-loads on mount and whenever tab or category changes.
+ * No expand/collapse — analysis is always visible.
+ */
+
+import { useState, useEffect } from 'react';
 import type { Category } from '../lib/bozorData';
 import { CATEGORIES } from '../lib/bozorData';
 
@@ -9,71 +16,88 @@ interface Props {
 
 export default function AIStrip({ tab, cat }: Props) {
   const [text, setText]       = useState('');
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen]       = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState(false);
+  const [tick, setTick]       = useState(0); // bump to refresh
 
   const catLabel = CATEGORIES.find(c => c.id === cat)?.label ?? 'umumiy bozor';
 
-  const analyze = async () => {
-    if (loading) return;
-    setOpen(true);
+  useEffect(() => {
+    let cancelled = false;
     setLoading(true);
+    setError(false);
     setText('');
 
-    const scope = cat === 'all' ? "O'zbekiston ulgurji bozori" : `"${catLabel}" kategoriyasi`;
+    const scope = cat === 'all'
+      ? "O'zbekiston ulgurji bozori"
+      : `"${catLabel}" kategoriyasi`;
+
     const prompt = tab === 'buy'
-      ? `O'zbek tilida 2-3 jumlada: ${scope} bo'yicha xaridorlar uchun hozirgi narx holati. Qaysi tovarlar arzonlashmoqda yoki taqchil? Hozir sotib olish foydali?`
-      : `O'zbek tilida 2-3 jumlada: ${scope} bo'yicha sotuvchilar uchun hozirgi narx holati. Qaysi tovarlar qimmatlashmoqda? Hozir sotish foydali?`;
+      ? `O'zbek tilida 3 jumlada: ${scope} bo'yicha xaridorlar uchun hozirgi narx holati. Qaysi tovarlar arzonlashmoqda yoki taqchil? Hozir sotib olish foydali? Aniq, ishbilarmon til bilan yoz.`
+      : `O'zbek tilida 3 jumlada: ${scope} bo'yicha sotuvchilar uchun hozirgi narx holati. Qaysi tovarlar qimmatlashmoqda yoki talab oshmoqda? Hozir sotish foydali? Aniq, ishbilarmon til bilan yoz.`;
 
-    try {
-      const res = await fetch('/api/analyse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-        signal: AbortSignal.timeout(20_000),
-      });
-      setText((await res.json())?.text ?? 'Tahlil yuklanmadi.');
-    } catch {
-      setText('Tahlil yuklanmadi. Internet aloqasini tekshiring.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetch('/api/analyse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+      signal: AbortSignal.timeout(20_000),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled) {
+          const t = data?.text ?? '';
+          if (t) setText(t);
+          else setError(true);
+        }
+      })
+      .catch(() => { if (!cancelled) setError(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
 
-  const preview = loading
-    ? 'Tahlil qilinmoqda...'
-    : open && text
-      ? text.slice(0, 65) + '...'
-      : `${tab === 'buy' ? 'Xaridorlar' : 'Sotuvchilar'} uchun — ${catLabel}`;
+    return () => { cancelled = true; };
+  }, [tab, cat, tick]);
 
   return (
-    <div className="rounded-xl border border-purple-900/40 bg-purple-950/15 overflow-hidden">
-      <button
-        onClick={open ? () => setOpen(false) : analyze}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-900/15 transition-colors text-left"
-      >
-        <span className="text-xl shrink-0">🤖</span>
-        <div className="flex-1 min-w-0">
-          <p className="text-purple-300 text-sm font-semibold">AI Bozor Tahlili</p>
-          <p className="text-slate-500 text-xs truncate">{preview}</p>
-        </div>
-        {loading
-          ? <span className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin shrink-0" />
-          : !open
-            ? <span className="text-xs px-3 py-1.5 bg-purple-800/50 hover:bg-purple-700/60 text-purple-300 rounded-lg border border-purple-700/40 font-medium transition-colors shrink-0">Tahlil →</span>
-            : <span className="text-slate-500 shrink-0">▲</span>
-        }
-      </button>
+    <div className="rounded-xl border border-purple-900/40 bg-purple-950/15 px-4 py-3 flex items-start gap-3">
+      {/* Icon */}
+      <span className="text-lg shrink-0 mt-0.5">🤖</span>
 
-      {open && !loading && text && (
-        <div className="px-4 pb-4">
-          <div className="bg-slate-800/50 rounded-xl p-3 border border-purple-900/30">
-            <p className="text-slate-200 text-sm leading-relaxed">{text}</p>
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-purple-300 text-xs font-semibold uppercase tracking-wide mb-2">
+          AI Tahlil · {tab === 'buy' ? 'Xaridorlar' : 'Sotuvchilar'} · {catLabel}
+        </p>
+
+        {loading ? (
+          /* Skeleton */
+          <div className="space-y-2">
+            <div className="h-3 bg-slate-800 rounded-full animate-pulse w-full" />
+            <div className="h-3 bg-slate-800 rounded-full animate-pulse w-[85%]" />
+            <div className="h-3 bg-slate-800 rounded-full animate-pulse w-[65%]" />
           </div>
-          <button onClick={analyze} className="mt-2 text-xs text-purple-400 hover:text-purple-300 transition-colors">
-            ↻ Yangilash
-          </button>
-        </div>
+        ) : error ? (
+          <p className="text-slate-500 text-sm">
+            Tahlil yuklanmadi.{' '}
+            <button
+              onClick={() => setTick(t => t + 1)}
+              className="text-purple-400 hover:text-purple-300 underline transition-colors"
+            >
+              Qayta urinish
+            </button>
+          </p>
+        ) : (
+          <p className="text-slate-200 text-sm leading-relaxed">{text}</p>
+        )}
+      </div>
+
+      {/* Refresh button — only when content is loaded */}
+      {!loading && (
+        <button
+          onClick={() => setTick(t => t + 1)}
+          title="Yangilash"
+          className="shrink-0 text-slate-700 hover:text-purple-400 text-base transition-colors mt-0.5"
+        >
+          ↻
+        </button>
       )}
     </div>
   );
