@@ -26,13 +26,48 @@ interface HistoryItem {
 const WELCOME_MESSAGE =
   "Salom! Men O'zbekiston tadbirkorlari uchun AI maslahatchiман. 👋\n\nQuyidagi mavzularda yordam bera olaman:\n• 🏦 Bankdan kredit olish (hujjatlar, talablar, eng mos bank)\n• ♿ Nogironligi bo'lgan tadbirkorlar uchun imtiyozlar\n• 🧾 Soliq rejimlari (Patent, SST, QQS)\n• 📋 Davlat dasturlari va qo'llab-quvvatlash\n• 💼 Biznes bo'yicha umumiy savollar\n\nSavolingizni yozing — javob beraman!";
 
-const QUICK_QUESTIONS = [
+const DEFAULT_CHIPS = [
   "Kredit olish uchun qanday hujjatlar kerak?",
   "Nogironligim bor, qanday imtiyozlar bor?",
   "Patent va SST qaysi biri foydali?",
   "Garovsiz kredit olish mumkinmi?",
   "YaTT bo'lib ro'yxatdan o'tsam solig'im qancha?",
 ];
+
+// Detect what follow-up chips to show based on bot's last message
+function detectChips(botText: string): string[] {
+  const t = botText.toLowerCase();
+
+  if (t.includes('guruhingiz') || (t.includes('guruh') && t.includes('i, ii')))
+    return ['I guruh', 'II guruh', 'III guruh', 'Bilmayman'];
+
+  if (t.includes('yatt sifatida') || t.includes("ro'yxatdan o'tgan") || t.includes('yakka tadbirkor'))
+    return ["Ha, YaTT sifatida ro'yxatdan o'tganman", "Yo'q, hali yo'q", "Qanday ro'yxatdan o'taman?"];
+
+  if (t.includes('garov') && (t.includes('bor-yo\'q') || t.includes('bor yoki') || t.includes('mavjudmi')))
+    return ["Ha, garovim bor (ko'chmas mulk)", "Ha, avtomobilim bor", "Yo'q, garovsiz kredit kerak"];
+
+  if (t.includes('qancha miqdor') || t.includes('kredit miqdori') || t.includes('necha million'))
+    return ['30–100 mln so\'m', '100–500 mln so\'m', '500 mln – 1 mlrd so\'m', '1 mlrd+ so\'m'];
+
+  if (t.includes('qaysi bank') || t.includes('bank tanlash') || t.includes('qaysi bankka'))
+    return ['Mikrokreditbank', 'Kapitalbank', 'Aloqabank', 'Bilmayman, tavsiya bering'];
+
+  if (t.includes('viloyat') || t.includes('qayerda') || t.includes('shahar'))
+    return ['Toshkent', 'Samarqand', "Farg'ona", 'Boshqa viloyat'];
+
+  if (t.includes('faoliyat turi') || t.includes('biznes turi') || t.includes('nima bilan shug\'ul'))
+    return ['Savdo (do\'kon)', 'Ishlab chiqarish', 'Xizmat ko\'rsatish', 'Qishloq xo\'jaligi'];
+
+  if (t.includes('ish staji') || t.includes('staj'))
+    return ["Ha, ish stajim bor", "Yo'q, ish stajim yetarli emas", "Bilmayman"];
+
+  if (t.includes('xodim') || t.includes('ishchi'))
+    return ['0 (faqat o\'zim)', '1–5 xodim', '5–20 xodim', '20+ xodim'];
+
+  // No specific follow-up detected — back to defaults
+  return DEFAULT_CHIPS;
+}
 
 export default function ChatBot() {
   const navigate = useNavigate();
@@ -42,6 +77,7 @@ export default function ChatBot() {
   const [history, setHistory]   = useState<HistoryItem[]>([]);
   const [input, setInput]       = useState('');
   const [loading, setLoading]   = useState(false);
+  const [chips, setChips]       = useState<string[]>(DEFAULT_CHIPS);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
 
@@ -82,6 +118,7 @@ export default function ChatBot() {
       };
       setMessages(prev => [...prev, botMsg]);
       setHistory([...newHistory, { role: 'model', content: botText }]);
+      setChips(detectChips(botText));
     } catch (err) {
       const errText = String(err).includes('timeout')
         ? "Ulanish vaqti tugadi. Qaytadan urinib ko'ring."
@@ -216,7 +253,7 @@ export default function ChatBot() {
         <div className="max-w-2xl mx-auto">
           <p className="text-slate-600 text-xs mb-2">Tez savollar:</p>
           <div className="flex gap-2 flex-wrap">
-            {QUICK_QUESTIONS.map((q, i) => (
+            {chips.map((q, i) => (
               <button
                 key={i}
                 onClick={() => sendMessage(q)}
