@@ -2,14 +2,15 @@
  * _gemini.ts — Gemini client with automatic key rotation
  *
  * Strategy:
- *  1. Pick a key randomly (distributes load 50/50 across both keys)
- *  2. If that key hits a rate limit (429) or quota error, instantly retry with the other key
- *  3. If both keys fail, throw the last error
+ *  1. Shuffle all configured keys randomly (distributes load evenly)
+ *  2. On rate limit (429 / quota) errors, instantly try the next key
+ *  3. If all keys fail, throw the last error
  *
- * This doubles the effective quota:
- *  - Key 1 (AQ.Ab8...): ~250 req/day, 10 RPM
- *  - Key 2 (AIzaSy...): ~250 req/day, 15 RPM (standard format key has higher RPM)
- *  - Combined: ~500 req/day, up to 25 RPM effective
+ * Effective capacity (3 keys):
+ *  - Key 1 (GEMINI_API_KEY):   ~250 req/day, 10 RPM
+ *  - Key 2 (GEMINI_API_KEY_2): ~250 req/day, 15 RPM
+ *  - Key 3 (GEMINI_API_KEY_3): ~250 req/day, 10 RPM
+ *  - Combined: ~750 req/day, up to 35 RPM effective
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -18,8 +19,19 @@ function getKeys(): string[] {
   const keys: string[] = [];
   if (process.env.GEMINI_API_KEY)   keys.push(process.env.GEMINI_API_KEY);
   if (process.env.GEMINI_API_KEY_2) keys.push(process.env.GEMINI_API_KEY_2);
+  if (process.env.GEMINI_API_KEY_3) keys.push(process.env.GEMINI_API_KEY_3);
   if (keys.length === 0) throw new Error('No Gemini API keys configured');
   return keys;
+}
+
+/** Fisher-Yates shuffle — distributes load evenly across all keys */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 function isRateLimitError(err: unknown): boolean {
@@ -40,27 +52,21 @@ type GeminiCallFn<T> = (client: GoogleGenerativeAI) => Promise<T>;
  * Pass a function that receives a GoogleGenerativeAI instance and returns a promise.
  */
 export async function withGemini<T>(fn: GeminiCallFn<T>): Promise<T> {
-  const keys = getKeys();
-
-  // Shuffle so load is distributed across keys over time
-  const shuffled = keys.length > 1 && Math.random() > 0.5
-    ? [keys[1], keys[0]]
-    : [...keys];
-
+  const keys = shuffle(getKeys());
   let lastError: unknown;
 
-  for (const key of shuffled) {
+  for (let i = 0; i < keys.length; i++) {
     try {
-      const client = new GoogleGenerativeAI(key);
+      const client = new GoogleGenerativeAI(keys[i]);
       return await fn(client);
     } catch (err) {
       lastError = err;
-      if (isRateLimitError(err) && shuffled.indexOf(key) < shuffled.length - 1) {
+      if (isRateLimitError(err) && i < keys.length - 1) {
         // Rate limited on this key — try the next one
-        console.warn(`Key ${key.slice(0, 8)}... rate limited, switching to next key`);
+        console.warn(`Gemini key ${keys[i].slice(0, 8)}... rate limited, switching to key ${i + 2}`);
         continue;
       }
-      // Non-rate-limit error — don't retry
+      // Non-rate-limit error — don't retry with other keys
       throw err;
     }
   }
