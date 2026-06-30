@@ -1,20 +1,15 @@
 /**
- * Interview.tsx — Gemini-powered conversational business advisor
+ * Interview.tsx — AI Business Advisory Chatbot
  *
- * Gemini drives the conversation naturally, asks follow-up questions,
- * and when it has enough info, outputs the full business plan JSON.
+ * A conversational chatbot that helps entrepreneurs with:
+ *  - How to get credit from banks
+ *  - Disability benefits and tax incentives
+ *  - Tax regime advice
+ *  - General business guidance
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppStore } from '../stores/appStore';
-import type { StoredPrice } from '../stores/appStore';
-import { AIResultSchema } from '../lib/schema';
-import { detectCategory } from '../lib/categoryMap';
-import { getFallbackPrices } from '../lib/pricesFallback';
-import { checkRevenue } from '../lib/revenueCheck';
-import type { PriceContext } from '../lib/templatePlan';
-import { buildTemplatePlan } from '../lib/templatePlan';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,44 +24,78 @@ interface HistoryItem {
   content: string;
 }
 
-// ─── Loading stages ───────────────────────────────────────────────────────────
+// ─── Quick reply chips (content-aware) ────────────────────────────────────────
 
-const STAGES = [
-  { pct: 10, msg: "Suhbat tahlil qilinmoqda..." },
-  { pct: 25, msg: "Joriy bozor narxlari yuklanmoqda..." },
-  { pct: 42, msg: "Daromad bozor narxlari bilan solishtirilmoqda..." },
-  { pct: 58, msg: "Bank talablari tekshirilmoqda..." },
-  { pct: 73, msg: "Moliyaviy prognoz hisoblanmoqda..." },
-  { pct: 87, msg: "Soliq rejimi aniqlanmoqda..." },
-  { pct: 95, msg: "Biznes-reja yakunlanmoqda..." },
+interface QuickReplyRule {
+  pattern: RegExp;
+  replies: string[];
+}
+
+const QUICK_REPLY_RULES: QuickReplyRule[] = [
+  {
+    pattern: /nima\s*(bilan)?\s*yordam|qanday\s*savol|nimani\s*bilmoqchi|qanday\s*maslahat/i,
+    replies: ["Kredit olish haqida", "Soliq imtiyozlari", "Nogironlik imtiyozlari", "Biznes maslahat"],
+  },
+  {
+    pattern: /biznes(ingiz)?\s*nima|qanday\s*biznes|faoliyat|soha/i,
+    replies: ["Novvoyxona", "Sabzavot do'koni", "Kafe / oshxona", "Tikuvchilik", "Qurilish"],
+  },
+  {
+    pattern: /qaysi\s*viloyat|qayerda|mintaqa|shahar/i,
+    replies: ["Toshkent", "Samarqand", "Andijon", "Farg'ona", "Jizzax", "Buxoro"],
+  },
+  {
+    pattern: /kredit|bank|qarz|ssuda|moliya/i,
+    replies: ["Qanday hujjat kerak?", "Garovsiz kredit bormi?", "Qaysi bank yaxshi?", "Foiz stavkasi qancha?"],
+  },
+  {
+    pattern: /nogironlik|imtiyoz|guruh|TIEK|pensiya/i,
+    replies: ["Soliq yengilliklari", "Pensiya miqdori", "Garovsiz mikrokreditlar", "Qanday ariza beraman?"],
+  },
+  {
+    pattern: /soliq|patent|SST|QQS|INPS/i,
+    replies: ["Patent foydali mi?", "SST qancha foiz?", "QQS qachon kerak?", "Xodimlar solig'i"],
+  },
+  {
+    pattern: /garov|kafolat|ko['']chmas/i,
+    replies: ["Garovsiz kredit bormi?", "Uy garov sifatida", "Avtomobil garov", "Kafil kerakmi?"],
+  },
+  {
+    pattern: /hujjat|ariza|ro['']yxat|kerak/i,
+    replies: ["Kredit uchun hujjatlar", "Soliq uchun hujjatlar", "INSON markazi", "Soliq inspeksiyasi"],
+  },
 ];
 
-// ─── Quick reply chips ────────────────────────────────────────────────────────
+// Initial suggestions shown at start
+const INITIAL_SUGGESTIONS = [
+  "Kredit olish haqida maslahat",
+  "Nogironlik imtiyozlari",
+  "Soliq rejimi tanlash",
+  "Biznesni rivojlantirish",
+];
 
-const QUICK_REPLIES: Record<number, string[]> = {
-  0: ["Novvoyxona", "Sabzavot do'koni", "Kafe / oshxona", "Qurilish", "Kiyim do'koni"],
-  3: ["Toshkent", "Samarqand", "Andijon", "Namangan", "Farg'ona", "Buxoro", "Jizzax"],
-  5: ["Yangi uskunalar", "Do'konni kengaytirish", "Tovar sotib olish", "Ta'mirlash"],
-  7: ["Ha, kvartira bor", "Ha, avtomobil bor", "Yo'q, garovim yo'q"],
-};
+function detectQuickReplies(lastBotMessage: string): string[] {
+  if (!lastBotMessage) return INITIAL_SUGGESTIONS;
+  for (const rule of QUICK_REPLY_RULES) {
+    if (rule.pattern.test(lastBotMessage)) {
+      return rule.replies;
+    }
+  }
+  return [];
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function Interview() {
   const navigate = useNavigate();
-  const { setResult, setPrices, setStatus, setError } = useAppStore();
 
-  const [messages, setMessages]     = useState<ChatMessage[]>([]);
-  const [history, setHistory]       = useState<HistoryItem[]>([]);
-  const [input, setInput]           = useState('');
-  const [botTyping, setBotTyping]   = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [stage, setStage]           = useState(0);
-  const [turnCount, setTurnCount]   = useState(0);
+  const [messages, setMessages]   = useState<ChatMessage[]>([]);
+  const [history, setHistory]     = useState<HistoryItem[]>([]);
+  const [input, setInput]         = useState('');
+  const [botTyping, setBotTyping] = useState(false);
 
-  const bottomRef   = useRef<HTMLDivElement>(null);
-  const inputRef    = useRef<HTMLTextAreaElement>(null);
-  const stageTimer  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef  = useRef<HTMLTextAreaElement>(null);
 
   // Auto-scroll
   useEffect(() => {
@@ -89,7 +118,6 @@ export default function Interview() {
   const startConversation = async () => {
     setBotTyping(true);
     try {
-      // Send empty first message to get the opening question from Gemini
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,14 +126,14 @@ export default function Interview() {
         }),
       });
       const data = await res.json();
-      const opening = data.message || "Salom! Men sizning biznesingiz uchun kredit tayyorgarlik ballini hisoblayman va biznes-reja tuzaman. Avval aytib bering — biznesingiz nima bilan shug'ullanadi?";
+      const opening = data.message || "Assalomu alaykum! Men sizga kredit olish, soliq imtiyozlari, nogironlik yengilliklari va biznes masalalari bo'yicha maslahat bera olaman. Qanday yordam kerak?";
       addBotMessage(opening);
       setHistory([
         { role: 'user', content: 'Salom' },
         { role: 'model', content: opening },
       ]);
     } catch {
-      const fallback = "Salom! Biznesingiz haqida gaplashaylik. Qanday biznes bilan shug'ullanasiz?";
+      const fallback = "Assalomu alaykum! Biznesingiz bo'yicha maslahat kerakmi? Kredit, soliq, imtiyozlar — istalgan savolingizga javob beraman.";
       addBotMessage(fallback);
       setHistory([
         { role: 'user', content: 'Salom' },
@@ -118,7 +146,7 @@ export default function Interview() {
 
   const sendMessage = async (text?: string) => {
     const userText = (text ?? input).trim();
-    if (!userText || botTyping || processing) return;
+    if (!userText || botTyping) return;
 
     setInput('');
 
@@ -131,7 +159,6 @@ export default function Interview() {
       { role: 'user', content: userText },
     ];
     setHistory(newHistory);
-    setTurnCount(c => c + 1);
     setBotTyping(true);
 
     try {
@@ -145,119 +172,17 @@ export default function Interview() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      const { message, done, planJson } = data;
+      const message = data.message || "Kechirasiz, javob berishda muammo bo'ldi.";
 
-      // Show Gemini's reply
-      if (message) {
-        addBotMessage(message);
-        setHistory(prev => [...prev, { role: 'model', content: message }]);
-      }
-
-      setBotTyping(false);
-
-      if (done && planJson) {
-        // Gemini finished collecting — process the plan
-        await processPlan(planJson, newHistory);
-      }
-
-    } catch (err) {
-      setBotTyping(false);
-      // Fallback response
+      addBotMessage(message);
+      setHistory(prev => [...prev, { role: 'model', content: message }]);
+    } catch {
       const fallback = "Kechirasiz, biroz muammo bo'ldi. Iltimos, qaytadan yozing.";
       addBotMessage(fallback);
       setHistory(prev => [...prev, { role: 'model', content: fallback }]);
+    } finally {
+      setBotTyping(false);
     }
-  };
-
-  const processPlan = async (planJson: string, convHistory: HistoryItem[]) => {
-    setProcessing(true);
-    setStatus('loading');
-
-    // Start progress stages
-    let stageIndex = 0;
-    stageTimer.current = setInterval(() => {
-      stageIndex = Math.min(stageIndex + 1, STAGES.length - 1);
-      setStage(stageIndex);
-    }, 2500);
-
-    try {
-      // Parse the plan JSON from Gemini
-      let result = AIResultSchema.parse(JSON.parse(planJson));
-      const facts = result.facts;
-
-      // Load curated market prices for this business category
-      const category = detectCategory(facts.business_type);
-      let prices: Record<string, StoredPrice> = {};
-
-      if (category.queries.length > 0) {
-        prices = getFallbackPrices(category.queries) as Record<string, StoredPrice>;
-      }
-
-      // Price context for enriching the plan
-      const priceCtx: PriceContext | undefined = Object.keys(prices).length > 0
-        ? { prices, category, source: Object.values(prices)[0]?.source }
-        : undefined;
-
-      // If business plan sections are thin, enhance with template
-      const hasPlan = result.business_plan.financial_forecast?.length > 50;
-      if (!hasPlan && priceCtx) {
-        const enriched = buildTemplatePlan(facts, priceCtx);
-        result = { ...result, business_plan: enriched.business_plan };
-      }
-
-      // Revenue check
-      const revenueCheck = checkRevenue(facts, prices, category);
-
-      // Store everything
-      setPrices(prices, revenueCheck);
-      setResult(result);
-
-      if (stageTimer.current) clearInterval(stageTimer.current);
-      navigate('/result');
-
-    } catch (err) {
-      if (stageTimer.current) clearInterval(stageTimer.current);
-      console.error('Plan processing failed:', err);
-
-      // Try to parse partial JSON or fall back to conversation-based extraction
-      try {
-        // Build a basic plan from conversation using template
-        const fallbackResult = buildTemplatePlan({
-          business_type: extractFromConversation(convHistory, 'biznes') || 'Biznes',
-          region: extractFromConversation(convHistory, 'viloyat') || "Toshkent",
-          years_operating: 1,
-          monthly_revenue_uzs: 10_000_000,
-          loan_purpose: "Biznesni rivojlantirish",
-          loan_amount_uzs: 50_000_000,
-          loan_term_months: 24,
-          has_collateral: false,
-          collateral_type: "",
-          employees: 2,
-          main_competitors: "Bozordagi raqobatchilar",
-          two_year_plan: "Biznesni kengaytirish",
-        });
-        setResult(fallbackResult);
-        navigate('/result');
-      } catch {
-        setStatus('error');
-        setError('Biznes reja yaratishda xatolik. Qayta urinib ko\'ring.');
-        setProcessing(false);
-      }
-    }
-  };
-
-  // Simple keyword extractor from conversation history
-  const extractFromConversation = (hist: HistoryItem[], keyword: string): string | null => {
-    const userMessages = hist.filter(h => h.role === 'user').map(h => h.content).join(' ');
-    if (keyword === 'biznes') {
-      const match = userMessages.match(/\b(novvoy|do'kon|kafe|restoran|qurilish|ferma|tikuv)\w*/i);
-      return match?.[0] ?? null;
-    }
-    if (keyword === 'viloyat') {
-      const match = userMessages.match(/\b(toshkent|samarqand|andijon|namangan|farg'ona|buxoro|jizzax|qashqadaryo|surxondaryo|xorazm|navoiy)\b/i);
-      return match?.[0] ?? null;
-    }
-    return null;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -267,13 +192,10 @@ export default function Interview() {
     }
   };
 
-  const progressPct = processing ? STAGES[stage]?.pct ?? 10 : 0;
-  const progressMsg = processing ? STAGES[stage]?.msg ?? '' : '';
-
-  // Determine which quick replies to show based on turn count
-  const quickReplies = !processing && !botTyping && turnCount < 10
-    ? (QUICK_REPLIES[turnCount] ?? [])
-    : [];
+  // Determine which quick replies to show based on last bot message content
+  const botMessages = messages.filter(m => m.role === 'bot');
+  const lastBotMsg = botMessages.length > 0 ? botMessages[botMessages.length - 1].text : '';
+  const quickReplies = !botTyping ? detectQuickReplies(lastBotMsg) : [];
 
   return (
     <div className="flex flex-col h-screen bg-slate-950 text-white">
@@ -290,35 +212,16 @@ export default function Interview() {
 
         <div className="text-center">
           <p className="text-white font-semibold text-sm">BiznesPlan AI</p>
-          <p className="text-slate-500 text-xs">Kredit tayyorgarlik</p>
+          <p className="text-slate-500 text-xs">Tadbirkor maslahatchi</p>
         </div>
 
-        <div className="text-right">
-          <p className="text-emerald-400 text-sm font-mono">{turnCount} / 10</p>
-        </div>
+        <button
+          onClick={() => navigate('/bozor')}
+          className="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+        >
+          📊 Bozor
+        </button>
       </header>
-
-      {/* ── Processing overlay ── */}
-      {processing && (
-        <div className="absolute inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center px-8">
-          <div className="w-full max-w-sm space-y-6 text-center">
-            <div className="w-16 h-16 mx-auto rounded-full bg-emerald-950 border-2 border-emerald-500 flex items-center justify-center">
-              <span className="text-3xl animate-pulse">🤖</span>
-            </div>
-            <div>
-              <p className="text-white font-semibold text-lg mb-1">Biznes-reja tayyorlanmoqda</p>
-              <p className="text-slate-400 text-sm">{progressMsg}</p>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-1000"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <p className="text-slate-600 text-xs">Bozor narxlari · Soliq tahlili · AI reja</p>
-          </div>
-        </div>
-      )}
 
       {/* ── Chat messages ── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
@@ -337,7 +240,7 @@ export default function Interview() {
 
             {/* Bubble */}
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                 msg.role === 'user'
                   ? 'bg-emerald-700 text-white rounded-tr-sm'
                   : 'bg-slate-800 text-slate-100 rounded-tl-sm'
@@ -388,9 +291,9 @@ export default function Interview() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Javob yozing..."
+            placeholder="Savolingizni yozing..."
             rows={1}
-            disabled={botTyping || processing}
+            disabled={botTyping}
             className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 focus:border-emerald-600 rounded-2xl text-white text-sm placeholder-slate-500 outline-none resize-none transition-colors disabled:opacity-50"
             style={{ minHeight: '44px', maxHeight: '120px' }}
             onInput={e => {
@@ -401,7 +304,7 @@ export default function Interview() {
           />
           <button
             onClick={() => sendMessage()}
-            disabled={!input.trim() || botTyping || processing}
+            disabled={!input.trim() || botTyping}
             className="w-11 h-11 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-2xl flex items-center justify-center transition-colors shrink-0"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
