@@ -504,6 +504,9 @@ export default function Bozor() {
 
       <div className="max-w-3xl mx-auto px-4 py-5 space-y-5">
 
+        {/* ── Buy / Sell Ads Board ── */}
+        <AdsBoard />
+
         {/* ── Search ── */}
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
@@ -588,9 +591,6 @@ export default function Bozor() {
             ))}
           </div>
         )}
-
-        {/* ── Buy / Sell Ads Board ── */}
-        <AdsBoard />
 
         {/* ── Cross-sell ── */}
         <div className="bg-slate-900 rounded-2xl border border-emerald-900/30 p-5 text-center">
