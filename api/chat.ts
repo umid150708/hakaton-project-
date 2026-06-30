@@ -2,10 +2,10 @@
  * api/chat.ts — AI business advisor chatbot for Uzbekistan entrepreneurs
  *
  * Provider priority:
- *   1. Gemini gemini-2.5-flash (primary — superior instruction-following,
- *      critical for "ask one question first" behavior; 3 keys = 750 req/day)
- *   2. Groq llama-3.1-8b-instant (fallback — 500k tokens/day but poor
- *      at following behavioral instructions reliably)
+ *   1. Gemini gemini-1.5-flash (primary — superior instruction-following,
+ *      critical for "ask one question first" behavior; 3 keys = 4,500 req/day)
+ *   2. Groq llama-3.1-8b-instant (fallback — 500k tokens/day but unreliable
+ *      at following conversational behavioral rules)
  *
  * System prompt is kept SHORT to maximise daily capacity.
  */
@@ -89,7 +89,7 @@ async function callGroq(history: Message[]): Promise<string> {
 async function callGemini(history: Message[]): Promise<string> {
   return withGemini(async (genAI) => {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',  // 1500 RPD free tier (vs 2.5-flash's 20 RPD)
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
     });
@@ -125,13 +125,11 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Gemini primary (better instruction-following for conversational logic)
   // Groq as fallback if Gemini is rate-limited
-  let debugGeminiErr = '';
   try {
     text = await callGemini(history);
     provider = 'gemini';
   } catch (e1) {
-    debugGeminiErr = String(e1);
-    console.warn('Gemini failed:', debugGeminiErr);
+    console.warn('Gemini failed:', String(e1));
     if (process.env.GROQ_API_KEY) {
       try {
         text = await callGroq(history);
@@ -147,7 +145,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
   }
 
-  return new Response(JSON.stringify({ message: text, provider, _d: debugGeminiErr || undefined }), {
+  return new Response(JSON.stringify({ message: text, provider }), {
     headers: { 'Content-Type': 'application/json', ...cors },
   });
 }
