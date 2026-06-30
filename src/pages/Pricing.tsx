@@ -1,144 +1,29 @@
 /**
- * Pricing.tsx — BiznesPlan AI monetisation page
- *
- * Two models:
- *  A) Subscription plans  (Starter / Pro / Biznes)
- *  B) Deal-fee model      (1.5% per closed deal)
- *
- * NUMBERS — ALL SOURCED:
- *
- * Average SME wholesale deal size (~34M sum):
- *   Source: stat.uz / invexi.org — Jan–Feb 2025 wholesale data
- *   46,477 small wholesale firms · 46,819B sum in 2 months
- *   → ~508M sum/month per firm · ÷ ~15 deals/month = ~34M sum/deal
- *
- * Deal fee 1.5%:
- *   UzEx (official commodity exchange) charges 0.18% total (uzex.uz)
- *   → for standardized bulk commodities (cotton, wheat, metals)
- *   Informal dallol (broker) charges 3–5% (widely documented in UZ)
- *   → we sit between exchange (0.18%) and broker (3–5%), adding AI value
- *   → 1.5% = 8× UzEx but only for SME non-standardized goods
- *   → 1.5% = ½ the cheapest broker rate (3%)
- *
- * Subscription prices:
- *   Benchmarked against: OLX Pro UZ (~150k/month), Uzum Market ads
- *   Annual discount 17–26%: SaaS industry standard (Notion, Linear, Canva)
+ * Pricing.tsx — BiznesPlan AI plans & deal-fee page
+ * All constants live in src/lib/pricingConfig.ts.
  */
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUser, upgradePlan, type Plan } from '../lib/auth';
-
-// ─── Pricing data ──────────────────────────────────────────────────────────────
-
-const DEAL_FEE_PCT = 1.5;   // % of deal value
-const DEAL_FEE_MIN = 50_000;     // minimum fee per deal (sum)
-const DEAL_FEE_MAX = 5_000_000;  // maximum fee per deal (sum)
-
-interface PlanMeta {
-  id: Plan;
-  name: string;
-  icon: string;
-  color: string;         // tailwind color token
-  monthlyPrice: number;  // sum / month
-  yearlyPrice: number;   // sum / year  (already discounted)
-  yearSave: number;      // % saved vs monthly × 12
-  tagline: string;
-  bestFor: string;
-  features: string[];
-  notIncluded?: string[];
-  badge?: string;
-}
-
-const PLANS: PlanMeta[] = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    icon: '🚀',
-    color: 'blue',
-    monthlyPrice: 149_000,
-    yearlyPrice:  1_490_000,
-    yearSave: 17,
-    tagline: "Kichik biznes uchun ideal kirish nuqtasi",
-    bestFor: "Oyiga 1–5 ta bitim yopuvchilar",
-    features: [
-      '30 ta aloqa / oy',
-      'Barcha kategoriyalar bo\'yicha e\'lon',
-      'AI maslahatchi (5 ta savol/kun)',
-      'Asosiy bozor filtrlari',
-      'Standart ko\'rinish',
-    ],
-    notIncluded: ['Yuqori joylashuv (priority)', 'Haftalik hisobot', 'Ko\'p foydalanuvchi'],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    icon: '⚡',
-    color: 'purple',
-    monthlyPrice: 399_000,
-    yearlyPrice:  3_590_000,
-    yearSave: 25,
-    tagline: "O'sib borayotgan biznes uchun to'liq paket",
-    bestFor: "Oyiga 5–20 ta bitim yopuvchilar",
-    badge: "Eng mashhur",
-    features: [
-      'Cheksiz aloqalar',
-      'Cheksiz AI maslahatchi',
-      'Priority ko\'rinish (yuqorida chiqish)',
-      'AI bozor tahlili (har kuni)',
-      'Haftalik narx hisoboti',
-      'E\'lonni \"Tanlangan\" belgilash',
-      'Barcha kategoriyalar',
-    ],
-    notIncluded: ['Ko\'p foydalanuvchi (5 ta)', 'Shaxsiy menejer'],
-  },
-  {
-    id: 'business',
-    name: 'Biznes',
-    icon: '🏢',
-    color: 'emerald',
-    monthlyPrice: 899_000,
-    yearlyPrice:  7_990_000,
-    yearSave: 26,
-    tagline: "Katta kompaniyalar va agentliklar uchun",
-    bestFor: "Oyiga 20+ ta bitim yopuvchilar",
-    features: [
-      'Hammasi Pro-da bor',
-      '5 ta foydalanuvchi (bir akkaunt)',
-      'Featured e\'lonlar (doim yuqorida)',
-      'Maxsus AI bozor hisoboti (haftalik)',
-      'Raqobatchilar tahlili',
-      'Shaxsiy menejer (ish kunlari)',
-      'API integratsiya (tez orada)',
-    ],
-  },
-];
-
-// ─── Helper ────────────────────────────────────────────────────────────────────
-
-function fmt(n: number) {
-  return n.toLocaleString('uz-UZ');
-}
-
-function colorClasses(color: string, variant: 'bg' | 'border' | 'text' | 'badge') {
-  const map: Record<string, Record<string, string>> = {
-    blue:    { bg: 'bg-blue-700 hover:bg-blue-600',   border: 'border-blue-700',    text: 'text-blue-400',   badge: 'bg-blue-900/40 text-blue-400 border-blue-800' },
-    purple:  { bg: 'bg-purple-700 hover:bg-purple-600',border: 'border-purple-600',  text: 'text-purple-400', badge: 'bg-purple-900/40 text-purple-300 border-purple-700' },
-    emerald: { bg: 'bg-emerald-700 hover:bg-emerald-600',border:'border-emerald-700',text: 'text-emerald-400',badge: 'bg-emerald-900/40 text-emerald-400 border-emerald-800' },
-  };
-  return map[color]?.[variant] ?? '';
-}
+import {
+  PLANS, DEAL_FEE_PCT, DEAL_FEE_MIN, DEAL_FEE_MAX,
+  AVG_DEAL_SUM, AVG_DEALS_PER_MONTH,
+  planColor, fmtSum,
+} from '../lib/pricingConfig';
 
 // ─── ROI Calculator ────────────────────────────────────────────────────────────
 
 function ROICalc() {
-  const [deals, setDeals] = useState(15);  // stat.uz: ~15 deals/month per small wholesale firm
-  const [avg, setAvg] = useState(34);      // stat.uz derived: ~34M sum average deal
+  // Defaults from stat.uz: ~15 deals/month, ~34M sum/deal (see pricingConfig.ts)
+  const [deals, setDeals] = useState(AVG_DEALS_PER_MONTH);
+  const [avgM, setAvgM]   = useState(AVG_DEAL_SUM / 1_000_000);
 
-  const totalM = deals * avg;
-  const dealFeeM = (totalM * DEAL_FEE_PCT) / 100;
-  const starterM = 149;
-  const proM = 399;
+  const dealFeeM  = (deals * avgM * DEAL_FEE_PCT) / 100;
+  const starterM  = 149;
+  const proM      = 399;
+
+  const cheapest = dealFeeM <= starterM ? 'deal' : starterM <= proM ? 'starter' : 'pro';
 
   return (
     <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6">
@@ -148,47 +33,113 @@ function ROICalc() {
       <div className="grid grid-cols-2 gap-4 mb-5">
         <div>
           <label className="text-slate-400 text-xs mb-1.5 block">Oyda necha bitim?</label>
-          <input type="range" min={1} max={30} value={deals} onChange={e => setDeals(+e.target.value)}
-            className="w-full accent-purple-500" />
+          <input type="range" min={1} max={30} value={deals} onChange={e => setDeals(+e.target.value)} className="w-full accent-purple-500" />
           <p className="text-white font-bold text-lg mt-1">{deals} ta bitim/oy</p>
         </div>
         <div>
           <label className="text-slate-400 text-xs mb-1.5 block">O'rtacha bitim hajmi</label>
-          <input type="range" min={5} max={500} step={5} value={avg} onChange={e => setAvg(+e.target.value)}
-            className="w-full accent-purple-500" />
-          <p className="text-white font-bold text-lg mt-1">{avg} mln so'm</p>
+          <input type="range" min={5} max={500} step={5} value={avgM} onChange={e => setAvgM(+e.target.value)} className="w-full accent-purple-500" />
+          <p className="text-white font-bold text-lg mt-1">{avgM} mln so'm</p>
         </div>
       </div>
 
-      {/* Comparison */}
       <div className="grid grid-cols-3 gap-3">
-        <div className={`rounded-xl p-3 border text-center ${dealFeeM <= starterM ? 'bg-emerald-900/30 border-emerald-700' : 'bg-slate-800 border-slate-700'}`}>
-          <p className="text-slate-400 text-xs mb-1">Bitim foizi (1.5%)</p>
-          <p className="text-white font-bold text-base">{fmt(Math.round(dealFeeM))} ming</p>
-          <p className="text-slate-500 text-[11px] mt-1">so'm/oy</p>
-          {dealFeeM <= starterM && <p className="text-emerald-400 text-[10px] mt-1 font-semibold">✓ Arzon</p>}
-        </div>
-        <div className={`rounded-xl p-3 border text-center ${starterM <= dealFeeM && starterM <= proM ? 'bg-blue-900/30 border-blue-700' : 'bg-slate-800 border-slate-700'}`}>
-          <p className="text-slate-400 text-xs mb-1">Starter plan</p>
-          <p className="text-white font-bold text-base">149 ming</p>
-          <p className="text-slate-500 text-[11px] mt-1">so'm/oy</p>
-          {starterM < dealFeeM && <p className="text-blue-400 text-[10px] mt-1 font-semibold">✓ Arzon</p>}
-        </div>
-        <div className={`rounded-xl p-3 border text-center ${proM <= dealFeeM && proM <= starterM ? 'bg-purple-900/30 border-purple-700' : 'bg-slate-800 border-slate-700'}`}>
-          <p className="text-slate-400 text-xs mb-1">Pro plan</p>
-          <p className="text-white font-bold text-base">399 ming</p>
-          <p className="text-slate-500 text-[11px] mt-1">so'm/oy</p>
-        </div>
+        {[
+          { key: 'deal',    label: 'Bitim foizi (1.5%)', value: `${fmtSum(Math.round(dealFeeM))} ming` },
+          { key: 'starter', label: 'Starter plan',        value: '149 ming' },
+          { key: 'pro',     label: 'Pro plan',             value: '399 ming' },
+        ].map(opt => (
+          <div key={opt.key} className={`rounded-xl p-3 border text-center transition-all ${
+            cheapest === opt.key ? 'bg-emerald-900/30 border-emerald-700' : 'bg-slate-800 border-slate-700'
+          }`}>
+            <p className="text-slate-400 text-xs mb-1">{opt.label}</p>
+            <p className="text-white font-bold text-base">{opt.value}</p>
+            <p className="text-slate-500 text-[11px] mt-0.5">so'm/oy</p>
+            {cheapest === opt.key && <p className="text-emerald-400 text-[10px] mt-1 font-semibold">✓ Arzon</p>}
+          </div>
+        ))}
       </div>
-
       <p className="text-slate-600 text-xs mt-3 text-center">
-        Oylik savdo hajmi: ~{fmt(totalM)} mln so'm · Bitim foizi narxi: {fmt(Math.round(dealFeeM * 1_000_000 / 1000))} so'm/oy
+        Stat.uz o'rtacha: ~{AVG_DEALS_PER_MONTH} bitim/oy · ~{AVG_DEAL_SUM / 1_000_000}M so'm/bitim
       </p>
     </div>
   );
 }
 
-// ─── Main page ─────────────────────────────────────────────────────────────────
+// ─── Plan Card ─────────────────────────────────────────────────────────────────
+
+interface PlanCardProps {
+  plan: typeof PLANS[number];
+  billing: 'monthly' | 'yearly';
+  chosen: Plan | null;
+  onChoose: (id: Plan) => void;
+}
+
+function PlanCard({ plan, billing, chosen, onChoose }: PlanCardProps) {
+  const price = billing === 'monthly' ? plan.monthlyPrice : Math.round(plan.yearlyPrice / 12);
+  const isChosen = chosen === plan.id;
+  const isPro = plan.id === 'pro';
+
+  return (
+    <div className={`relative rounded-2xl border p-6 flex flex-col gap-5 transition-all ${
+      isPro
+        ? 'bg-purple-950/30 border-purple-600 shadow-xl shadow-purple-900/20 scale-[1.02]'
+        : 'bg-slate-900 border-slate-700 hover:border-slate-500'
+    }`}>
+      {plan.badge && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className="text-xs px-3 py-1 bg-purple-600 text-white rounded-full font-bold shadow-lg">⭐ {plan.badge}</span>
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-2xl">{plan.icon}</span>
+          <span className={`font-bold text-lg ${planColor(plan.color, 'text')}`}>{plan.name}</span>
+        </div>
+        <p className="text-slate-400 text-xs">{plan.tagline}</p>
+      </div>
+
+      <div>
+        <div className="flex items-end gap-1">
+          <span className="text-3xl font-bold text-white">{fmtSum(price)}</span>
+          <span className="text-slate-500 text-sm mb-1">so'm/oy</span>
+        </div>
+        {billing === 'yearly'
+          ? <p className="text-xs text-slate-500 mt-1">Yillik: <span className="text-white font-semibold">{fmtSum(plan.yearlyPrice)}</span> so'm <span className="text-emerald-400 font-semibold ml-1">−{plan.yearSave}%</span></p>
+          : <p className="text-xs text-slate-600 mt-1">yillik tanlasangiz tejaladi</p>
+        }
+        <p className="text-slate-600 text-[11px] mt-1.5">📌 {plan.bestFor}</p>
+      </div>
+
+      <button
+        onClick={() => onChoose(plan.id)}
+        className={`py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-95 ${
+          isChosen ? 'bg-green-600' : planColor(plan.color, 'bg')
+        }`}
+      >
+        {isChosen ? '✓ Tanlandi!' : `${plan.name} rejasini tanlash`}
+      </button>
+
+      <div className="space-y-2">
+        {plan.features.map(f => (
+          <div key={f} className="flex items-start gap-2">
+            <span className={`shrink-0 text-sm ${planColor(plan.color, 'text')}`}>✓</span>
+            <span className="text-slate-300 text-xs leading-relaxed">{f}</span>
+          </div>
+        ))}
+        {plan.notIncluded?.map(f => (
+          <div key={f} className="flex items-start gap-2">
+            <span className="shrink-0 text-slate-700 text-sm">✗</span>
+            <span className="text-slate-700 text-xs leading-relaxed">{f}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Pricing() {
   const navigate = useNavigate();
@@ -213,11 +164,7 @@ export default function Pricing() {
             <div className="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center text-slate-950 font-bold text-xs">B</div>
             <span className="text-white font-semibold text-sm">BiznesPlan AI</span>
           </div>
-          {user && (
-            <span className="text-slate-500 text-xs">
-              Salom, {user.name.split(' ')[0]} 👋
-            </span>
-          )}
+          {user && <span className="text-slate-500 text-xs">Salom, {user.name.split(' ')[0]} 👋</span>}
         </div>
       </header>
 
@@ -228,16 +175,15 @@ export default function Pricing() {
           <span className="inline-block text-xs px-3 py-1 bg-purple-900/40 text-purple-400 rounded-full border border-purple-800 font-medium">
             Tadbirkorlar uchun — O'zbekiston #1 B2B platformasi
           </span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
             Har bir bitimdan ko'proq<br />
             <span className="text-purple-400">daromad oling</span>
           </h1>
           <p className="text-slate-400 max-w-xl mx-auto text-sm leading-relaxed">
-            Birinchi <span className="text-white font-semibold">3 ta aloqa bepul</span>. Keyin biznesingizga mos modelni tanlang —
-            to'liq obuna yoki faqat yopilgan bitimdan foiz.
+            Birinchi <span className="text-white font-semibold">3 ta aloqa bepul</span>.
+            Keyin biznesingizga mos modelni tanlang — obuna yoki bitim foizi.
           </p>
 
-          {/* Billing toggle */}
           <div className="inline-flex bg-slate-900 border border-slate-700 rounded-xl p-1 gap-1">
             <button onClick={() => setBilling('monthly')}
               className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-white'}`}>
@@ -246,7 +192,7 @@ export default function Pricing() {
             <button onClick={() => setBilling('yearly')}
               className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${billing === 'yearly' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-white'}`}>
               Yillik
-              <span className="text-xs px-1.5 py-0.5 bg-emerald-800/60 text-emerald-400 rounded-full border border-emerald-700/50 font-medium">−25%</span>
+              <span className="text-xs px-1.5 py-0.5 bg-emerald-800/60 text-emerald-400 rounded-full border border-emerald-700/50">−25%</span>
             </button>
           </div>
         </div>
@@ -255,14 +201,12 @@ export default function Pricing() {
         <div className="bg-slate-900 rounded-2xl border border-slate-700 p-5 flex flex-col sm:flex-row items-center gap-4">
           <div className="text-4xl shrink-0">🎁</div>
           <div className="flex-1 text-center sm:text-left">
-            <p className="text-white font-bold text-lg">Bepul boshlang — hech qanday karta kerak emas</p>
+            <p className="text-white font-bold text-lg">Bepul boshlang — karta kerak emas</p>
             <p className="text-slate-400 text-sm mt-0.5">
-              Ro'yxatdan o'tgan har bir tadbirkorga <span className="text-white font-semibold">3 ta bepul aloqa</span> beriladi.
-              Platformani sinab ko'ring, keyin qulay tarifni tanlang.
+              Har bir yangi tadbirkorga <span className="text-white font-semibold">3 ta bepul aloqa</span>. Sinab ko'ring, keyin tanlang.
             </p>
           </div>
-          <button onClick={() => navigate('/bozor')}
-            className="shrink-0 px-5 py-2.5 bg-white text-slate-950 text-sm font-bold rounded-xl hover:bg-slate-100 transition-colors">
+          <button onClick={() => navigate('/bozor')} className="shrink-0 px-5 py-2.5 bg-white text-slate-950 text-sm font-bold rounded-xl hover:bg-slate-100 transition-colors">
             Bepul boshlash →
           </button>
         </div>
@@ -271,87 +215,12 @@ export default function Pricing() {
         <div>
           <h2 className="text-white font-bold text-xl mb-2 text-center">Obuna rejalari</h2>
           <p className="text-slate-500 text-sm text-center mb-8">
-            Ko'p bitim yopuvchilar uchun — obuna bitim foizidan arzonroq chiqadi
+            Ko'p bitim yopsangiz — obuna bitim foizidan arzonroq chiqadi
           </p>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {PLANS.map(plan => {
-              const price = billing === 'monthly' ? plan.monthlyPrice : Math.round(plan.yearlyPrice / 12);
-              const isChosen = chosen === plan.id;
-              const isPro = plan.id === 'pro';
-
-              return (
-                <div key={plan.id}
-                  className={`relative rounded-2xl border p-6 flex flex-col gap-5 transition-all
-                    ${isPro
-                      ? 'bg-purple-950/30 border-purple-600 shadow-xl shadow-purple-900/20 scale-[1.02]'
-                      : 'bg-slate-900 border-slate-700 hover:border-slate-500'}
-                  `}
-                >
-                  {/* Most popular badge */}
-                  {plan.badge && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="text-xs px-3 py-1 bg-purple-600 text-white rounded-full font-bold shadow-lg">
-                        ⭐ {plan.badge}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Plan header */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-2xl">{plan.icon}</span>
-                      <span className={`font-bold text-lg ${colorClasses(plan.color, 'text')}`}>{plan.name}</span>
-                    </div>
-                    <p className="text-slate-400 text-xs leading-relaxed">{plan.tagline}</p>
-                  </div>
-
-                  {/* Price */}
-                  <div>
-                    <div className="flex items-end gap-1">
-                      <span className="text-3xl font-bold text-white">{fmt(price)}</span>
-                      <span className="text-slate-500 text-sm mb-1">so'm/oy</span>
-                    </div>
-                    {billing === 'yearly' && (
-                      <p className="text-xs text-slate-500 mt-1">
-                        Yillik: <span className="text-white font-semibold">{fmt(plan.yearlyPrice)}</span> so'm
-                        <span className="ml-2 text-emerald-400 font-semibold">−{plan.yearSave}%</span>
-                      </p>
-                    )}
-                    {billing === 'monthly' && (
-                      <p className="text-xs text-slate-600 mt-1">yillik tanlasangiz tejaladi</p>
-                    )}
-                    <p className="text-slate-600 text-[11px] mt-1.5">📌 {plan.bestFor}</p>
-                  </div>
-
-                  {/* CTA */}
-                  <button
-                    onClick={() => choose(plan.id)}
-                    className={`py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-95 ${
-                      isChosen ? 'bg-green-600' : colorClasses(plan.color, 'bg')
-                    }`}
-                  >
-                    {isChosen ? '✓ Tanlandi!' : `${plan.name} rejasini tanlash`}
-                  </button>
-
-                  {/* Features */}
-                  <div className="space-y-2">
-                    {plan.features.map(f => (
-                      <div key={f} className="flex items-start gap-2">
-                        <span className={`shrink-0 text-sm ${colorClasses(plan.color, 'text')}`}>✓</span>
-                        <span className="text-slate-300 text-xs leading-relaxed">{f}</span>
-                      </div>
-                    ))}
-                    {plan.notIncluded?.map(f => (
-                      <div key={f} className="flex items-start gap-2">
-                        <span className="shrink-0 text-slate-700 text-sm">✗</span>
-                        <span className="text-slate-700 text-xs leading-relaxed">{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {PLANS.map(plan => (
+              <PlanCard key={plan.id} plan={plan} billing={billing} chosen={chosen} onChoose={choose} />
+            ))}
           </div>
         </div>
 
@@ -362,65 +231,71 @@ export default function Pricing() {
           <div className="flex-1 h-px bg-slate-800" />
         </div>
 
-        {/* Deal fee model */}
+        {/* Deal fee */}
         <div>
           <h2 className="text-white font-bold text-xl mb-2 text-center">Bitim foizi modeli</h2>
           <p className="text-slate-500 text-sm text-center mb-6">
-            Obuna to'lamasdan — faqat muvaffaqiyatli yopilgan bitimdan foiz
+            Obuna yo'q — faqat muvaffaqiyatli yopilgan bitimdan foiz
           </p>
 
           <div className="bg-slate-900 rounded-2xl border border-amber-900/50 p-6 max-w-2xl mx-auto">
-            {/* Big number */}
             <div className="text-center mb-6">
-              <p className="text-7xl font-black text-amber-400">1.5%</p>
+              <p className="text-7xl font-black text-amber-400">{DEAL_FEE_PCT}%</p>
               <p className="text-slate-400 text-sm mt-2">yopilgan har bir bitim summasidan</p>
             </div>
 
             {/* Why 1.5% — sourced */}
             <div className="bg-slate-800/60 rounded-xl p-4 mb-5">
-              <p className="text-white text-sm font-semibold mb-3">Nima uchun aynan 1.5%? — manba asosida</p>
+              <p className="text-white text-sm font-semibold mb-3">Nima uchun aynan {DEAL_FEE_PCT}%? — manba asosida</p>
               <div className="space-y-2">
                 {[
-                  { label: 'UzEx rasmiy tovar birjasi (uzex.uz)', pct: '0.18%', color: 'text-slate-400', note: 'faqat standart tovarlar: paxta, bug\'doy, metall' },
-                  { label: "O'zbekiston norasmiy dallollari", pct: '3–5%', color: 'text-red-400', note: 'soliq yo\'q, hujjat yo\'q, AI yo\'q' },
-                  { label: 'BiznesPlan AI — SME B2B platforma', pct: '1.5%', color: 'text-amber-400', highlight: true, note: 'AI + kashfiyot + shaffoflik' },
+                  { label: 'UzEx rasmiy tovar birjasi (uzex.uz)', rate: '0.18%', note: "faqat standart tovarlar: paxta, bug'doy, metall", highlight: false },
+                  { label: "O'zbekiston norasmiy dallollari", rate: '3–5%', note: 'soliq yo\'q, hujjat yo\'q, AI yo\'q', highlight: false },
+                  { label: 'BiznesPlan AI — SME B2B platforma', rate: `${DEAL_FEE_PCT}%`, note: 'AI + kashfiyot + shaffoflik', highlight: true },
                 ].map(r => (
                   <div key={r.label} className={`px-3 py-2.5 rounded-lg ${r.highlight ? 'bg-amber-900/25 border border-amber-700/40' : ''}`}>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-slate-300 text-xs font-medium">{r.label}</span>
-                      <span className={`font-bold text-base shrink-0 ${r.color}`}>{r.pct}</span>
+                      <span className={`font-bold text-base shrink-0 ${r.highlight ? 'text-amber-400' : r.rate.includes('3–5') ? 'text-red-400' : 'text-slate-400'}`}>{r.rate}</span>
                     </div>
                     <p className="text-slate-600 text-[10px] mt-0.5">{r.note}</p>
                   </div>
                 ))}
               </div>
               <div className="mt-3 pt-3 border-t border-slate-700/50 space-y-1">
-                <p className="text-slate-600 text-[10px]">📊 UzEx manba: <span className="text-slate-500">uzex.uz/en/pages/online-exchange-trades-tariff</span></p>
-                <p className="text-slate-600 text-[10px]">📊 O'rtacha bitim: stat.uz · invexi.org (2025-yil yanvar–fevral optom savdo statistikasi)</p>
-                <p className="text-slate-600 text-[10px]">46 477 ta kichik optom korxona · 46 819B so'm / 2 oy → bir korxona ~508M so'm/oy → ~15 bitimga bo'linsa ≈ 34M so'm/bitim</p>
+                <p className="text-slate-600 text-[10px]">📊 UzEx manba: uzex.uz/en/pages/online-exchange-trades-tariff</p>
+                <p className="text-slate-600 text-[10px]">📊 stat.uz · invexi.org — 2025-yil yanvar–fevral: 46 477 kichik optom korxona · 46 819B so'm / 2 oy → ~34M so'm/bitim</p>
               </div>
             </div>
 
-            {/* Real deal examples */}
+            {/* Deal examples */}
             <div className="grid grid-cols-3 gap-3 mb-5">
               {[
-                { label: 'Kichik bitim', value: '10M so\'m', fee: '150 000 so\'m', sub: 'UzEx\'dan tashqari' },
-                { label: 'O\'rtacha bitim', value: '34M so\'m', fee: '510 000 so\'m', sub: '≈ stat.uz o\'rtacha' },
-                { label: 'Katta bitim', value: '100M so\'m', fee: '1 500 000 so\'m', sub: 'dalloldan 2× arzon' },
+                { label: 'Kichik bitim', deal: '10M so\'m', fee: '150 000 so\'m', sub: "UzEx'dan tashqari" },
+                { label: "O'rtacha bitim", deal: `${AVG_DEAL_SUM / 1_000_000}M so'm`, fee: '510 000 so\'m', sub: '≈ stat.uz o\'rtacha' },
+                { label: 'Katta bitim', deal: '100M so\'m', fee: '1 500 000 so\'m', sub: 'dalloldan 2× arzon' },
               ].map(s => (
                 <div key={s.label} className="text-center bg-slate-800 rounded-xl p-3">
                   <p className="text-slate-500 text-[10px] mb-1">{s.label}</p>
-                  <p className="text-white font-bold text-sm">{s.value}</p>
+                  <p className="text-white font-bold text-sm">{s.deal}</p>
                   <p className="text-amber-400 font-bold text-sm">{s.fee}</p>
                   <p className="text-slate-600 text-[10px] mt-0.5">{s.sub}</p>
                 </div>
               ))}
             </div>
 
-            <button onClick={() => choose('deal_fee')}
+            <div className="flex gap-3 text-xs text-slate-600 mb-5">
+              <span>Min: <span className="text-slate-400 font-medium">{fmtSum(DEAL_FEE_MIN)} so'm</span></span>
+              <span>·</span>
+              <span>Max: <span className="text-slate-400 font-medium">{fmtSum(DEAL_FEE_MAX)} so'm</span></span>
+            </div>
+
+            <button
+              onClick={() => choose('deal_fee')}
               className={`w-full py-3 rounded-xl text-slate-950 text-sm font-bold transition-all active:scale-95 ${
                 chosen === 'deal_fee' ? 'bg-green-500' : 'bg-amber-400 hover:bg-amber-300'
-              }`}>
+              }`}
+            >
               {chosen === 'deal_fee' ? '✓ Tanlandi!' : '🤝 Bitim foizi modelini tanlash'}
             </button>
           </div>
@@ -445,16 +320,14 @@ export default function Pricing() {
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {[
-                  { f: "E'lon joylash",          free:'✓', s:'✓', p:'✓', b:'✓' },
-                  { f: 'Aloqa (kontakt)',          free:'3 ta', s:'30/oy', p:'∞', b:'∞' },
-                  { f: 'AI maslahatchi',           free:'✓', s:'5/kun', p:'∞', b:'∞' },
-                  { f: 'Kategoriya filtri',         free:'✓', s:'✓', p:'✓', b:'✓' },
-                  { f: "Priority ko'rinish",        free:'–', s:'–', p:'✓', b:'✓' },
-                  { f: 'AI bozor tahlili',          free:'–', s:'–', p:'✓', b:'✓' },
-                  { f: "Featured e'lonlar",         free:'–', s:'–', p:'–', b:'✓' },
-                  { f: 'Ko\'p foydalanuvchi',       free:'–', s:'–', p:'–', b:'5 ta' },
-                  { f: 'Shaxsiy menejer',           free:'–', s:'–', p:'–', b:'✓' },
-                  { f: 'Haftalik bozor hisoboti',   free:'–', s:'–', p:'✓', b:'✓' },
+                  { f: "E'lon joylash",          free:'✓',    s:'✓',     p:'✓',  b:'✓' },
+                  { f: 'Aloqa (kontakt)',          free:'3 ta', s:'30/oy', p:'∞',  b:'∞' },
+                  { f: 'AI maslahatchi',           free:'✓',    s:'5/kun', p:'∞',  b:'∞' },
+                  { f: "Priority ko'rinish",        free:'–',    s:'–',     p:'✓',  b:'✓' },
+                  { f: 'AI bozor tahlili',          free:'–',    s:'–',     p:'✓',  b:'✓' },
+                  { f: "Featured e'lonlar",         free:'–',    s:'–',     p:'–',  b:'✓' },
+                  { f: "Ko'p foydalanuvchi",        free:'–',    s:'–',     p:'–',  b:'5 ta' },
+                  { f: 'Shaxsiy menejer',           free:'–',    s:'–',     p:'–',  b:'✓' },
                 ].map(row => (
                   <tr key={row.f} className="hover:bg-slate-900/40 transition-colors">
                     <td className="px-4 py-2.5 text-slate-300 text-xs">{row.f}</td>
@@ -464,29 +337,19 @@ export default function Pricing() {
                     <td className="px-3 py-2.5 text-center text-xs text-emerald-400">{row.b}</td>
                   </tr>
                 ))}
-                {/* Prices */}
                 <tr className="bg-slate-900 border-t border-slate-700">
                   <td className="px-4 py-3 text-white font-semibold text-xs">Oylik narx</td>
-                  <td className="px-3 py-3 text-center text-slate-500 text-xs font-bold">0 so'm</td>
+                  <td className="px-3 py-3 text-center text-slate-500 text-xs font-bold">0</td>
                   <td className="px-3 py-3 text-center text-blue-400 text-xs font-bold">149 000</td>
                   <td className="px-3 py-3 text-center text-purple-400 text-xs font-bold">399 000</td>
                   <td className="px-3 py-3 text-center text-emerald-400 text-xs font-bold">899 000</td>
                 </tr>
                 <tr className="bg-slate-900">
                   <td className="px-4 py-3 text-white font-semibold text-xs">Yillik narx</td>
-                  <td className="px-3 py-3 text-center text-slate-500 text-xs font-bold">0 so'm</td>
-                  <td className="px-3 py-3 text-center text-xs">
-                    <span className="text-blue-400 font-bold">1 490 000</span>
-                    <span className="block text-emerald-500 text-[10px]">−17%</span>
-                  </td>
-                  <td className="px-3 py-3 text-center text-xs">
-                    <span className="text-purple-400 font-bold">3 590 000</span>
-                    <span className="block text-emerald-500 text-[10px]">−25%</span>
-                  </td>
-                  <td className="px-3 py-3 text-center text-xs">
-                    <span className="text-emerald-400 font-bold">7 990 000</span>
-                    <span className="block text-emerald-500 text-[10px]">−26%</span>
-                  </td>
+                  <td className="px-3 py-3 text-center text-slate-500 text-xs font-bold">0</td>
+                  <td className="px-3 py-3 text-center text-xs"><span className="text-blue-400 font-bold">1 490 000</span><span className="block text-emerald-500 text-[10px]">−17%</span></td>
+                  <td className="px-3 py-3 text-center text-xs"><span className="text-purple-400 font-bold">3 590 000</span><span className="block text-emerald-500 text-[10px]">−25%</span></td>
+                  <td className="px-3 py-3 text-center text-xs"><span className="text-emerald-400 font-bold">7 990 000</span><span className="block text-emerald-500 text-[10px]">−26%</span></td>
                 </tr>
               </tbody>
             </table>
@@ -497,38 +360,27 @@ export default function Pricing() {
         <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-5">
           <p className="text-slate-500 text-xs uppercase tracking-wider mb-3 font-medium">📊 Narxlar asosi — rasmiy manbalar</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-500">
-            <div className="space-y-1.5">
-              <p><span className="text-slate-400 font-medium">O'rtacha bitim (~34M so'm):</span></p>
+            <div className="space-y-1">
+              <p className="text-slate-400 font-medium">O'rtacha bitim (~34M so'm):</p>
               <p>• stat.uz / invexi.org — 2025-yil yanvar–fevral</p>
               <p>• 46 477 kichik optom korxona → 46 819B so'm / 2 oy</p>
-              <p>• Bir korxona ≈ 508M so'm/oy ÷ ~15 bitim = ~34M so'm/bitim</p>
+              <p>• ~508M so'm/oy/korxona ÷ ~15 bitim = ~34M so'm/bitim</p>
             </div>
-            <div className="space-y-1.5">
-              <p><span className="text-slate-400 font-medium">1.5% komissiya asosi:</span></p>
-              <p>• UzEx rasmiy birja: 0.18% (uzex.uz) — standart tovarlar</p>
-              <p>• Norasmiy dallollar: 3–5% (keng ma'lum)</p>
-              <p>• Uzum Market (B2C): 10–35% (solishtirish uchun)</p>
+            <div className="space-y-1">
+              <p className="text-slate-400 font-medium">1.5% komissiya asosi:</p>
+              <p>• UzEx rasmiy birja: 0.18% (uzex.uz)</p>
+              <p>• Norasmiy dallollar: 3–5%</p>
+              <p>• Uzum Market (B2C): 10–35%</p>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap gap-3 text-[10px] text-slate-700">
-            <a href="https://invexi.org/press/retail-and-wholesale-trade-turnover-in-the-republic-of-uzbekistan-january-february-2025/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors underline">invexi.org — Wholesale Jan–Feb 2025</a>
-            <a href="https://uzex.uz/en/pages/online-exchange-trades-tariff" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors underline">uzex.uz — Exchange tariffs</a>
-            <a href="https://invexi.org/press/key-indicators-of-small-entrepreneurship-in-the-republic-of-uzbekistan-for-2024/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors underline">invexi.org — SME indicators 2024</a>
-            <a href="https://stat.uz" target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 transition-colors underline">stat.uz — National Statistics</a>
-          </div>
-        </div>
-
-        {/* Trust badges */}
-        <div className="text-center space-y-4">
-          <p className="text-slate-600 text-xs uppercase tracking-wider">Ishonch kafolatlari</p>
-          <div className="flex flex-wrap justify-center gap-4">
             {[
-              '🔒 To\'lovlar xavfsiz',
-              '↩️ 14 kun ichida qaytarish',
-              '📞 Qo\'llab-quvvatlash: 1140',
-              '🇺🇿 O\'zbekiston uchun yaratilgan',
-            ].map(t => (
-              <span key={t} className="text-slate-500 text-xs px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-full">{t}</span>
+              { label: 'invexi.org — Wholesale Jan–Feb 2025', url: 'https://invexi.org/press/retail-and-wholesale-trade-turnover-in-the-republic-of-uzbekistan-january-february-2025/' },
+              { label: 'uzex.uz — Exchange tariffs', url: 'https://uzex.uz/en/pages/online-exchange-trades-tariff' },
+              { label: 'invexi.org — SME indicators 2024', url: 'https://invexi.org/press/key-indicators-of-small-entrepreneurship-in-the-republic-of-uzbekistan-for-2024/' },
+              { label: 'stat.uz — National Statistics', url: 'https://stat.uz' },
+            ].map(s => (
+              <a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 underline transition-colors">{s.label}</a>
             ))}
           </div>
         </div>
@@ -537,22 +389,10 @@ export default function Pricing() {
         <div className="max-w-2xl mx-auto space-y-3">
           <h2 className="text-white font-bold text-xl mb-6 text-center">Ko'p so'raladigan savollar</h2>
           {[
-            {
-              q: '3 ta bepul aloqa tugagach nima bo\'ladi?',
-              a: 'Tarifni tanlashingiz so\'raladi. Sotuvchi kontaktini ko\'rish va aloqa qilish uchun obuna yoki bitim foizi modelini tanlang.'
-            },
-            {
-              q: 'Bitim foizi qanday hisoblanadi?',
-              a: 'Bitim yopilgach, platformada bitim summasini kiriting. Biz 1.5% hisoblaymiz (minimal 50 000, maksimal 5 000 000 so\'m). To\'lov Payme orqali amalga oshiriladi.'
-            },
-            {
-              q: 'Yillik obunadan qachon foydalanish kerak?',
-              a: 'Agar oyiga 3+ ta bitim yopsangiz, yillik obuna bitim foizidan ancha arzonroq chiqadi. ROI kalkulyatorimizda o\'zingiz hisoblang.'
-            },
-            {
-              q: 'Rejani o\'zgartirish mumkinmi?',
-              a: 'Ha, istalgan vaqtda yuqori rejaga o\'tish mumkin. Pastga tushish keyingi to\'lov sanasidan kuchga kiradi.'
-            },
+            { q: '3 ta bepul aloqa tugagach nima bo\'ladi?', a: 'Tarifni tanlashingiz so\'raladi. Sotuvchi kontaktini ko\'rish uchun obuna yoki bitim foizi modelini tanlang.' },
+            { q: 'Bitim foizi qanday hisoblanadi?', a: `Bitim yopilgach, platformada summasini kiriting. Biz ${DEAL_FEE_PCT}% hisoblaymiz (min ${fmtSum(DEAL_FEE_MIN)}, max ${fmtSum(DEAL_FEE_MAX)} so'm). To'lov Payme orqali.` },
+            { q: 'Yillik obunadan qachon foydalanish kerak?', a: 'Agar oyiga 3+ ta bitim yopsangiz, yillik obuna bitim foizidan arzonroq. ROI kalkulyatorimizda o\'zingiz hisoblang.' },
+            { q: 'Rejani o\'zgartirish mumkinmi?', a: 'Ha, istalgan vaqtda yuqori rejaga o\'tish mumkin. Pastga tushish keyingi to\'lov sanasidan kuchga kiradi.' },
           ].map(faq => (
             <details key={faq.q} className="bg-slate-900 border border-slate-800 rounded-xl p-4 group">
               <summary className="text-white text-sm font-semibold cursor-pointer list-none flex items-center justify-between gap-3">
@@ -564,22 +404,23 @@ export default function Pricing() {
           ))}
         </div>
 
+        {/* Trust badges */}
+        <div className="text-center space-y-4">
+          <div className="flex flex-wrap justify-center gap-4">
+            {["🔒 To'lovlar xavfsiz", '↩️ 14 kun ichida qaytarish', '📞 Qo\'llab-quvvatlash: 1140', "🇺🇿 O'zbekiston uchun yaratilgan"].map(t => (
+              <span key={t} className="text-slate-500 text-xs px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-full">{t}</span>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Footer CTA */}
-      <div className="border-t border-slate-800 bg-slate-900/50">
+      <div className="border-t border-slate-800 bg-slate-900/50 mt-10">
         <div className="max-w-5xl mx-auto px-4 py-8 text-center space-y-4">
           <p className="text-white font-bold text-lg">Hali ham savolingiz bormi?</p>
-          <p className="text-slate-400 text-sm">AI maslahatchi bilan gaplashing yoki bozorga qarang</p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <button onClick={() => navigate('/interview')}
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors">
-              🤖 AI Maslahatchi
-            </button>
-            <button onClick={() => navigate('/bozor')}
-              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl border border-slate-700 transition-colors">
-              📊 Bozorga qaytish
-            </button>
+            <button onClick={() => navigate('/interview')} className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors">🤖 AI Maslahatchi</button>
+            <button onClick={() => navigate('/bozor')} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl border border-slate-700 transition-colors">📊 Bozorga qaytish</button>
           </div>
           <p className="text-slate-700 text-xs pt-2">BiznesPlan AI · Xakaton 2026 · O'zbekiston</p>
         </div>
