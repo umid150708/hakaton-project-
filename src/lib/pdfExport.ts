@@ -1,6 +1,17 @@
 import { jsPDF } from 'jspdf';
 import type { AIResult } from './schema';
 import type { ScoreResult } from './scoring';
+import type { RevenueCheckResult } from './revenueCheck';
+
+// Minimal price shape — compatible with StoredPrice + FallbackPriceResult
+interface PDFPriceRow {
+  avg: number;
+  min: number;
+  max: number;
+  count: number;
+  unit?: string;
+  source: 'olx' | 'fallback';
+}
 
 /**
  * Exports the business plan to a PDF.
@@ -66,7 +77,161 @@ function addSection(
   return yPos;
 }
 
-export async function exportToPDF(result: AIResult, score: ScoreResult): Promise<void> {
+function fmtPrice(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} mln`;
+  if (n >= 1_000)     return `${Math.round(n / 1_000)} ming`;
+  return String(n);
+}
+
+/**
+ * Draws the "Joriy Bozor Narxlari" table + revenue verdict onto the PDF.
+ * Returns the new Y position after drawing.
+ */
+function addPriceTable(
+  doc: jsPDF,
+  prices: Record<string, PDFPriceRow>,
+  revenueCheck: RevenueCheckResult,
+  startY: number,
+): number {
+  let y = startY;
+  const entries = Object.entries(prices);
+  if (entries.length === 0) return y;
+
+  // ── Section header ──
+  doc.setFillColor(15, 23, 42);
+  doc.rect(PAGE_MARGIN, y - 4, CONTENT_WIDTH, 10, 'F');
+  doc.setTextColor(16, 185, 129);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+
+  const isLive = entries.some(([, p]) => p.source === 'olx');
+  const srcLabel = isLive ? 'OLX.uz — JONLI' : 'OFFLINE MA\'LUMOT';
+  doc.text('6. JORIY BOZOR NARXLARI', PAGE_MARGIN + 3, y + 3);
+  doc.setTextColor(isLive ? 16 : 245, isLive ? 185 : 158, isLive ? 129 : 11);
+  doc.setFontSize(7);
+  doc.text(srcLabel, PAGE_MARGIN + CONTENT_WIDTH - doc.getTextWidth(srcLabel) - 3, y + 3);
+  y += 12;
+
+  // ── Column headers ──
+  const C = {
+    name:  PAGE_MARGIN,
+    avg:   PAGE_MARGIN + 80,
+    range: PAGE_MARGIN + 120,
+    count: PAGE_MARGIN + 158,
+  };
+
+  doc.setTextColor(100, 116, 139);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text('MAHSULOT',    C.name,  y);
+  doc.text("O'RTACHA",   C.avg,   y);
+  doc.text('DIAPAZON',   C.range, y);
+  doc.text("TA'DOD",     C.count, y);
+  y += 2;
+
+  // Divider
+  doc.setDrawColor(30, 41, 59);
+  doc.setLineWidth(0.3);
+  doc.line(PAGE_MARGIN, y, PAGE_MARGIN + CONTENT_WIDTH, y);
+  y += 4;
+
+  // ── Rows ──
+  const rowH = 7;
+  entries.slice(0, 8).forEach(([query, p], i) => {
+    if (y > 265) { doc.addPage(); y = PAGE_MARGIN; }
+
+    // Alternating row background
+    if (i % 2 === 0) {
+      doc.setFillColor(22, 30, 46);
+      doc.rect(PAGE_MARGIN, y - 3, CONTENT_WIDTH, rowH, 'F');
+    }
+
+    const unit = p.unit
+      ? p.unit.replace(/^\d+\s*/, '').replace(/\s*\(.*?\)$/, '').split(/\s+/)[0]
+      : '';
+    const unitSuffix = unit ? `/${unit}` : '';
+
+    doc.setTextColor(203, 213, 225);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(query.slice(0, 28), C.name, y + 1);
+
+    doc.setTextColor(16, 185, 129);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${fmtPrice(p.avg)} so'm${unitSuffix}`, C.avg, y + 1);
+
+    doc.setTextColor(148, 163, 184);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text(`${fmtPrice(p.min)} – ${fmtPrice(p.max)}`, C.range, y + 1);
+
+    doc.text(String(p.count), C.count, y + 1);
+
+    y += rowH;
+  });
+
+  y += 4;
+
+  // ── Revenue check verdict ──
+  if (y > 255) { doc.addPage(); y = PAGE_MARGIN; }
+
+  const verdictColors: Record<RevenueCheckResult['status'], [number, number, number]> = {
+    ok:           [16, 185, 129],
+    ok_high:      [245, 158, 11],
+    too_low:      [245, 158, 11],
+    too_high:     [239, 68, 68],
+    unverifiable: [100, 116, 139],
+  };
+  const vc = verdictColors[revenueCheck.status];
+
+  // Simulate 12% opacity by blending status color with slate-800 background (30,41,59)
+  const bg = [30, 41, 59];
+  const blended: [number, number, number] = [
+    Math.round(vc[0] * 0.12 + bg[0] * 0.88),
+    Math.round(vc[1] * 0.12 + bg[1] * 0.88),
+    Math.round(vc[2] * 0.12 + bg[2] * 0.88),
+  ];
+  doc.setFillColor(...blended);
+  doc.roundedRect(PAGE_MARGIN, y, CONTENT_WIDTH, 20, 2, 2, 'F');
+
+  doc.setDrawColor(...vc);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(PAGE_MARGIN, y, CONTENT_WIDTH, 20, 2, 2, 'S');
+
+  // Status label
+  const statusLabel: Record<RevenueCheckResult['status'], string> = {
+    ok:           'REALISTIK',
+    ok_high:      'BIROZ YUQORI',
+    too_low:      'JUDA PAST',
+    too_high:     'JUDA YUQORI',
+    unverifiable: 'TEKSHIRILMADI',
+  };
+
+  doc.setTextColor(...vc);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`DAROMAD TEKSHIRUVI: ${statusLabel[revenueCheck.status]}`, PAGE_MARGIN + 3, y + 6);
+
+  if (revenueCheck.ratio !== 1) {
+    doc.text(`${revenueCheck.ratio.toFixed(1)}x`, PAGE_MARGIN + CONTENT_WIDTH - 14, y + 6);
+  }
+
+  doc.setTextColor(203, 213, 225);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  const msgLines = doc.splitTextToSize(revenueCheck.message, CONTENT_WIDTH - 8);
+  doc.text(msgLines.slice(0, 2), PAGE_MARGIN + 3, y + 12);
+
+  y += 26;
+  return y;
+}
+
+export async function exportToPDF(
+  result: AIResult,
+  score: ScoreResult,
+  prices?: Record<string, PDFPriceRow>,
+  revenueCheck?: RevenueCheckResult,
+): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const now = new Date().toLocaleDateString('uz-UZ');
 
@@ -157,9 +322,15 @@ export async function exportToPDF(result: AIResult, score: ScoreResult): Promise
   y = addSection(doc, '4. Moliyaviy prognoz (3 yil)', result.business_plan.financial_forecast, y);
   y = addSection(doc, '5. Risklar va yechimlar', result.business_plan.risk_assessment, y);
 
-  // New page for banks + checklist
+  // New page for market prices + banks + checklist
   doc.addPage();
   y = PAGE_MARGIN;
+
+  // ---- MARKET PRICES TABLE (when available) ----
+  if (prices && revenueCheck && Object.keys(prices).length > 0) {
+    y = addPriceTable(doc, prices, revenueCheck, y);
+    y += 6;
+  }
 
   // ---- BANK RECOMMENDATIONS ----
   doc.setTextColor(100, 116, 139);

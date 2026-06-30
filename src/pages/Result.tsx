@@ -197,7 +197,12 @@ export default function Result() {
     setExporting(true);
     try {
       const { exportToPDF } = await import('../lib/pdfExport');
-      await exportToPDF(result, score);
+      await exportToPDF(
+        result,
+        score,
+        Object.keys(prices).length > 0 ? prices : undefined,
+        revenueCheck ?? undefined,
+      );
     } catch (e) {
       console.error('PDF export failed:', e);
       alert('PDF yaratishda xatolik. Keyinroq urinib ko\'ring.');
