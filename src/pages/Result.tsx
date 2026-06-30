@@ -216,6 +216,21 @@ export default function Result() {
     navigate('/');
   };
 
+  const [copied, setCopied] = useState(false);
+  const handleShare = () => {
+    const text =
+      `📊 BiznesPlan AI — Kredit tayyorgarlik natijasi\n\n` +
+      `🏢 Biznes: ${result.facts.business_type} · ${result.facts.region}\n` +
+      `🏆 Ball: ${score.total}/100 (${score.band})\n` +
+      `💰 Kredit: ${(result.facts.loan_amount_uzs / 1_000_000).toFixed(0)} mln so'm · ${result.facts.loan_term_months} oy\n` +
+      `📈 Daromad: ${(result.facts.monthly_revenue_uzs / 1_000_000).toFixed(0)} mln so'm/oy\n\n` +
+      `biznesplan.uz orqali tekshiring → bepul`;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   const colorMap = { red: '#ef4444', amber: '#f59e0b', green: '#10b981' };
 
   return (
@@ -233,7 +248,14 @@ export default function Result() {
           <p className="text-slate-400 text-xs">Biznes-reja tayyor</p>
           <h1 className="text-white font-bold">{result.facts.business_type} · {result.facts.region}</h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
+          <button
+            onClick={handleShare}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors"
+            title="Natijani nusxalash"
+          >
+            {copied ? '✓ Nusxalandi' : '🔗 Ulashish'}
+          </button>
           <button
             onClick={handleExportPDF}
             disabled={exporting}
