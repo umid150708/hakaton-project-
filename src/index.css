@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+/* Brand font */
+body { font-family: 'Inter', system-ui, sans-serif; }
+
+/* Dot-grid hero background */
+.dot-grid {
+  background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle card hover glow */
+.card-buy:hover  { box-shadow: 0 0 0 1px rgba(59,130,246,0.3), 0 8px 32px rgba(59,130,246,0.08); }
+.card-sell:hover { box-shadow: 0 0 0 1px rgba(16,185,129,0.3), 0 8px 32px rgba(16,185,129,0.08); }
+
 @keyframes slideUpFade {
   from {
     opacity: 0;

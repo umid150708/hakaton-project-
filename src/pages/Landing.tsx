@@ -4,157 +4,212 @@ export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
+    <div className="min-h-screen bg-zinc-950 text-white flex flex-col">
 
-      {/* ── Header ── */}
-      <header className="px-6 py-4 flex items-center justify-between border-b border-slate-800/60">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-slate-950 font-bold text-sm">B</div>
-          <span className="font-semibold text-white">BiznesPlan AI</span>
+      {/* ── Fixed nav ── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800/60 bg-zinc-950/85 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-zinc-950 text-sm">B</div>
+            <span className="font-bold text-white tracking-tight">BiznesPlan AI</span>
+          </div>
+
+          {/* Links */}
+          <div className="hidden md:flex items-center gap-7">
+            <Link to="/bozor"     className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">B2B Bozor</Link>
+            <Link to="/interview" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">AI Maslahat</Link>
+            <Link to="/pricing"   className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">Narxlar</Link>
+          </div>
+
+          {/* CTA */}
+          <Link to="/bozor"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-colors active:scale-95">
+            Bozorga kirish →
+          </Link>
         </div>
-        <span className="hidden sm:block text-xs px-2 py-1 bg-slate-800 rounded-full text-slate-400 border border-slate-700">
-          Muammo 14 + 15
-        </span>
-      </header>
+      </nav>
 
-      <main className="flex-1 flex flex-col items-center px-5 pt-10 pb-16 max-w-2xl mx-auto w-full">
+      {/* ── Hero ── */}
+      <section className="relative pt-40 pb-24 px-6 overflow-hidden">
+        {/* Dot grid */}
+        <div className="dot-grid absolute inset-0" />
+        {/* Radial glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(16,185,129,0.10),transparent)]" />
 
-        {/* ── Hero ── */}
-        <p className="text-xs text-slate-500 uppercase tracking-widest mb-3">O'zbekiston KOK platformasi</p>
-        <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-3 text-center">
-          Tadbirkorlar uchun<br />
-          <span className="text-emerald-400">ikkita muhim vosita</span>
-        </h1>
-        <p className="text-slate-400 text-sm mb-10 text-center max-w-md leading-relaxed">
-          B2B bozorda xaridorlar va sotuvchilarni ulang, kredit va imtiyozlar bo'yicha
-          AI maslahat oling — barchasi bitta platformada, bepul.
-        </p>
+        <div className="relative max-w-4xl mx-auto text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-700/60 rounded-full text-xs text-zinc-400 mb-10 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Xakaton 2026 · Muammo 14 + 15 · O'zbekiston
+          </div>
 
-        {/* ── Two product cards ── */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+          {/* Headline */}
+          <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none mb-6">
+            Ulgurji savdoni<br />
+            <span className="gradient-text">yangi darajaga oling</span>
+          </h1>
 
-          {/* Problem 14 — Bozor B2B */}
-          <Link
-            to="/bozor"
-            className="group relative flex flex-col bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-blue-700 rounded-2xl p-6 transition-all"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="px-2 py-0.5 bg-blue-950 text-blue-400 text-xs rounded-full border border-blue-900 font-medium">
-                Muammo 14
-              </span>
-              <span className="text-2xl">🏪</span>
+          <p className="text-zinc-400 text-lg md:text-xl leading-relaxed mb-12 max-w-2xl mx-auto">
+            Chorsu, Ipodrom va butun O'zbekiston bo'yicha xaridorlar va sotuvchilarni
+            birlashtiruvchi B2B platforma — vositachisiz, tezkor, AI yordamida.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <Link to="/bozor"
+              className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-emerald-950 text-base active:scale-95">
+              Bozorga kirish →
+            </Link>
+            <button onClick={() => navigate('/interview')}
+              className="px-8 py-4 bg-zinc-900 hover:bg-zinc-800 text-white font-bold rounded-2xl border border-zinc-700 hover:border-zinc-500 transition-all text-base">
+              AI Maslahat
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats strip ── */}
+      <div className="border-y border-zinc-800/70 bg-zinc-900/40">
+        <div className="max-w-4xl mx-auto grid grid-cols-3 divide-x divide-zinc-800/70 px-6">
+          {[
+            { value: '40+',  label: "Faol e'lonlar" },
+            { value: '8',    label: 'Kategoriya'    },
+            { value: 'AI',   label: 'Bozor tahlili' },
+          ].map(s => (
+            <div key={s.label} className="py-6 text-center">
+              <p className="text-3xl md:text-4xl font-black text-white tracking-tight">{s.value}</p>
+              <p className="text-zinc-500 text-xs font-medium mt-1 uppercase tracking-wider">{s.label}</p>
             </div>
-            <h2 className="text-white font-bold text-lg mb-2 leading-tight">
-              B2B Bozor
-            </h2>
-            <p className="text-slate-400 text-sm leading-relaxed mb-4 flex-1">
-              Ulgurji xaridorlar va sotuvchilar uchun e'lonlar taxtasi.
-              Xarid yoki sotuv e'loni joylashtiring, to'g'ridan-to'g'ri aloqa qiling.
-            </p>
-            <div className="space-y-1.5 mb-5">
-              {[
-                "Xarid va sotuv e'lonlari — bir joyda",
-                '8 ta kategoriya bo\'yicha filtrlash',
-                'AI bozor tahlili (har kuni)',
-                'Bevosita aloqa — vositachisiz',
-              ].map(f => (
-                <div key={f} className="flex items-center gap-2 text-xs text-slate-400">
-                  <span className="text-blue-500">✓</span>{f}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-blue-400 text-sm font-medium group-hover:translate-x-1 transition-transform">
-                Bozorga kirish →
-              </span>
-              <span className="text-xs text-slate-600">Chorsu · Ipodrom · B2B</span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Two product cards — asymmetric 3:2 ── */}
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-5 gap-4">
+
+          {/* B2B Bozor — big (3/5) */}
+          <Link to="/bozor"
+            className="group md:col-span-3 relative flex flex-col bg-zinc-900 hover:bg-zinc-800/70 border border-zinc-800 rounded-3xl p-8 transition-all overflow-hidden">
+            {/* Subtle blue tint */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-950/25 via-transparent to-transparent pointer-events-none" />
+            <div className="relative flex flex-col flex-1">
+              <div className="flex items-start justify-between mb-8">
+                <span className="text-4xl">🏪</span>
+                <span className="text-[11px] text-zinc-500 border border-zinc-700/60 rounded-full px-3 py-1 font-medium">Muammo 14</span>
+              </div>
+
+              <h2 className="text-2xl font-black text-white mb-3 leading-tight tracking-tight">B2B Bozor</h2>
+              <p className="text-zinc-400 text-sm leading-relaxed mb-8 flex-1">
+                O'zbekistonning yirik ulgurji bozorlarini raqamli formatga olib kiramiz.
+                E'lon joylashtiring, kontakt toping — vositachisiz va tezkor.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 mb-8">
+                {[
+                  { icon: '🛒', text: "Xarid va sotuv e'lonlari" },
+                  { icon: '🗂️', text: '8 ta kategoriya filtri'  },
+                  { icon: '🤖', text: 'AI bozor tahlili'         },
+                  { icon: '📞', text: 'Bevosita aloqa'           },
+                ].map(f => (
+                  <div key={f.text} className="flex items-center gap-2 bg-zinc-800/60 rounded-xl px-3 py-2.5">
+                    <span className="text-base shrink-0">{f.icon}</span>
+                    <span className="text-zinc-400 text-xs font-medium">{f.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-blue-400 font-semibold text-sm group-hover:gap-3 transition-all">
+                Bozorga kirish <span className="text-base">→</span>
+              </div>
             </div>
           </Link>
 
-          {/* Problem 15 — AI Maslahatchi */}
-          <div
-            onClick={() => navigate('/interview')}
-            className="group relative flex flex-col bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-700 rounded-2xl p-6 transition-all cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="px-2 py-0.5 bg-emerald-950 text-emerald-400 text-xs rounded-full border border-emerald-900 font-medium">
-                Muammo 15
-              </span>
-              <span className="text-2xl">🤖</span>
-            </div>
-            <h2 className="text-white font-bold text-lg mb-2 leading-tight">
-              AI Maslahatchi
-            </h2>
-            <p className="text-slate-400 text-sm leading-relaxed mb-4 flex-1">
-              Kredit olish, soliq imtiyozlari, nogironlik yengilliklari va biznes
-              masalalari bo'yicha AI maslahat oling.
-            </p>
-            <div className="space-y-1.5 mb-5">
-              {[
-                'Kredit olish jarayoni va hujjatlar',
-                'Nogironlik imtiyozlari (I/II/III guruh)',
-                'Soliq rejimi tavsiyasi (patent/SST)',
-                'Davlat dasturlari va yordam',
-              ].map(f => (
-                <div key={f} className="flex items-center gap-2 text-xs text-slate-400">
-                  <span className="text-emerald-500">✓</span>{f}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-emerald-400 text-sm font-medium group-hover:translate-x-1 transition-transform">
-                Maslahat olish — bepul →
-              </span>
-              <span className="text-xs text-slate-600">Gemini AI</span>
+          {/* AI Maslahat — smaller (2/5) */}
+          <div onClick={() => navigate('/interview')}
+            className="group md:col-span-2 relative flex flex-col bg-zinc-900 hover:bg-zinc-800/70 border border-zinc-800 rounded-3xl p-8 transition-all cursor-pointer overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/25 via-transparent to-transparent pointer-events-none" />
+            <div className="relative flex flex-col flex-1">
+              <div className="flex items-start justify-between mb-8">
+                <span className="text-4xl">🤖</span>
+                <span className="text-[11px] text-zinc-500 border border-zinc-700/60 rounded-full px-3 py-1 font-medium">Muammo 15</span>
+              </div>
+
+              <h2 className="text-2xl font-black text-white mb-3 tracking-tight">AI Maslahatchi</h2>
+              <p className="text-zinc-400 text-sm leading-relaxed mb-8 flex-1">
+                Kredit, soliq imtiyozlari va nogironlik yengilliklari bo'yicha Gemini AI yordamida maslahat oling.
+              </p>
+
+              <div className="space-y-3 mb-8">
+                {[
+                  'Kredit va bank hujjatlari',
+                  'Nogironlik imtiyozlari (I/II/III)',
+                  'Soliq rejimlari (patent/SST)',
+                  'Davlat dasturlari va yordam',
+                ].map(f => (
+                  <div key={f} className="flex items-center gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span className="text-zinc-400 text-xs">{f}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm group-hover:gap-3 transition-all">
+                Maslahat olish — bepul <span className="text-base">→</span>
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* ── How it works (combined) ── */}
-        <div className="w-full border-t border-slate-800 pt-8 mb-10">
-          <p className="text-xs text-slate-600 uppercase tracking-wider text-center mb-6">Qanday ishlaydi</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* ── How it works ── */}
+      <section className="py-24 px-6 border-t border-zinc-800/50">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-xs text-zinc-600 uppercase tracking-widest text-center mb-16 font-medium">Qanday ishlaydi</p>
 
-            {/* Problem 14 steps */}
+          <div className="grid md:grid-cols-2 gap-16">
+
+            {/* B2B steps */}
             <div>
-              <p className="text-xs text-blue-400 font-medium mb-3 flex items-center gap-1.5">
-                <span className="w-4 h-4 bg-blue-950 rounded-full flex items-center justify-center text-[10px]">14</span>
-                B2B Bozor
-              </p>
-              <div className="space-y-3">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-8 h-8 rounded-full bg-blue-950 border border-blue-800/60 flex items-center justify-center text-xs font-bold text-blue-400">14</div>
+                <h3 className="text-white font-bold tracking-tight">B2B Bozor</h3>
+              </div>
+              <div className="space-y-8">
                 {[
-                  { n: '1', t: "Xarid yoki sotuv tanlang", s: "🛒 Xaridorlar yoki 💰 Sotuvchilar bo'limini oching" },
-                  { n: '2', t: "E'lon joylashtiring",      s: "Mahsulot, miqdor, joylashuv va narx kiriting" },
-                  { n: '3', t: "To'g'ridan-to'g'ri aloqa", s: "Kontaktni ko'ring, vositachisiz bog'laning" },
+                  { n: '01', title: "Xarid yoki sotuv bo'limini oching", desc: "Xaridorlar 🛒 yoki Sotuvchilar 💰 — kerakli tomonni tanlang" },
+                  { n: '02', title: "E'lon joylashtiring",               desc: "Mahsulot, miqdor, o'lchov birligi, joylashuv va narxni kiriting" },
+                  { n: '03', title: "To'g'ridan-to'g'ri bog'laning",     desc: "Kontaktni ko'ring, vositachisiz muloqot qiling va bitimni yoping" },
                 ].map(s => (
-                  <div key={s.n} className="flex gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-950 border border-blue-900 flex items-center justify-center text-xs font-bold text-blue-400 shrink-0 mt-0.5">{s.n}</div>
+                  <div key={s.n} className="flex gap-5">
+                    <span className="text-3xl font-black text-zinc-800 shrink-0 leading-none mt-0.5 select-none">{s.n}</span>
                     <div>
-                      <p className="text-white text-sm font-medium">{s.t}</p>
-                      <p className="text-slate-500 text-xs mt-0.5">{s.s}</p>
+                      <p className="text-white font-semibold text-sm mb-1.5 tracking-tight">{s.title}</p>
+                      <p className="text-zinc-500 text-xs leading-relaxed">{s.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Problem 15 steps */}
+            {/* AI steps */}
             <div>
-              <p className="text-xs text-emerald-400 font-medium mb-3 flex items-center gap-1.5">
-                <span className="w-4 h-4 bg-emerald-950 rounded-full flex items-center justify-center text-[10px]">15</span>
-                AI Maslahatchi
-              </p>
-              <div className="space-y-3">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-8 h-8 rounded-full bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-xs font-bold text-emerald-400">15</div>
+                <h3 className="text-white font-bold tracking-tight">AI Maslahatchi</h3>
+              </div>
+              <div className="space-y-8">
                 {[
-                  { n: '1', t: 'Savolingizni yozing', s: "Kredit, soliq, imtiyoz — istalgan mavzu" },
-                  { n: '2', t: 'AI tahlil qiladi', s: 'Gemini AI qonunlar va bank talablarini biladi' },
-                  { n: '3', t: 'Aniq maslahat oling', s: 'Hujjatlar, muddatlar, miqdorlar — batafsil' },
+                  { n: '01', title: "Savolingizni erkin yozing",     desc: "Kredit, soliq, imtiyoz yoki biznes — istalgan mavzuda" },
+                  { n: '02', title: "AI tahlil qiladi",              desc: "O'zbek qonunlari, bank talablari va davlat dasturlarini biladi" },
+                  { n: '03', title: "Aniq maslahat oling",           desc: "Hujjatlar, muddatlar, miqdorlar — batafsil va aniq" },
                 ].map(s => (
-                  <div key={s.n} className="flex gap-3">
-                    <div className="w-6 h-6 rounded-full bg-emerald-950 border border-emerald-900 flex items-center justify-center text-xs font-bold text-emerald-400 shrink-0 mt-0.5">{s.n}</div>
+                  <div key={s.n} className="flex gap-5">
+                    <span className="text-3xl font-black text-zinc-800 shrink-0 leading-none mt-0.5 select-none">{s.n}</span>
                     <div>
-                      <p className="text-white text-sm font-medium">{s.t}</p>
-                      <p className="text-slate-500 text-xs mt-0.5">{s.s}</p>
+                      <p className="text-white font-semibold text-sm mb-1.5 tracking-tight">{s.title}</p>
+                      <p className="text-zinc-500 text-xs leading-relaxed">{s.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -162,48 +217,58 @@ export default function Landing() {
             </div>
           </div>
         </div>
+      </section>
 
-        {/* ── Key knowledge areas ── */}
-        <div className="w-full border-t border-slate-800 pt-8 mb-10">
-          <p className="text-xs text-slate-600 uppercase tracking-wider text-center mb-6">AI maslahatchi biladi</p>
-          <div className="grid grid-cols-2 gap-3">
+      {/* ── AI knowledge areas ── */}
+      <section className="py-24 px-6 border-t border-zinc-800/50">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-xs text-zinc-600 uppercase tracking-widest text-center mb-16 font-medium">AI maslahatchi nimalарni biladi</p>
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { icon: '🏦', title: 'Kredit olish', body: "Bank talablari, hujjatlar, garovsiz mikrokreditlar (PQ-4862)" },
-              { icon: '♿', title: 'Nogironlik imtiyozlari', body: "Soliq yengilliklari, pensiya, bepul xizmatlar (I/II/III guruh)" },
-              { icon: '🧾', title: 'Soliq rejimlari', body: "Patent vs SST, QQS, ish haqi soliqlari" },
-              { icon: '📋', title: 'Davlat dasturlari', body: "Garovsiz mikrokredit (PQ-4862), INSON markazi, ishonch telefoni 1140" },
+              { icon: '🏦', title: 'Kredit olish',           body: "Bank talablari, hujjatlar ro'yxati, garovsiz mikrokreditlar (PQ-4862)" },
+              { icon: '♿', title: 'Nogironlik imtiyozlari', body: "Soliq yengilliklari, pensiya, bepul xizmatlar — I/II/III guruh bo'yicha" },
+              { icon: '🧾', title: 'Soliq rejimlari',       body: "Patent va SST farqi, QQS hisob-kitobi, ish haqi soliqlari" },
+              { icon: '📋', title: 'Davlat dasturlari',     body: "INSON markazi, 1140 ishonch raqami, garovsiz kredit dasturlari" },
             ].map(m => (
-              <div key={m.title} className="bg-slate-900 rounded-xl p-3.5 border border-slate-800">
-                <div className="text-2xl mb-2">{m.icon}</div>
-                <p className="text-white text-sm font-medium mb-1">{m.title}</p>
-                <p className="text-slate-500 text-xs leading-relaxed">{m.body}</p>
+              <div key={m.title} className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800/80 hover:border-zinc-700 transition-colors">
+                <span className="text-2xl mb-4 block">{m.icon}</span>
+                <p className="text-white text-sm font-bold mb-2 tracking-tight">{m.title}</p>
+                <p className="text-zinc-500 text-xs leading-relaxed">{m.body}</p>
               </div>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* ── Partners ── */}
-        <div className="w-full border-t border-slate-800 pt-8">
-          <p className="text-xs text-slate-600 uppercase tracking-wider text-center mb-5">Ma'lumot manbalari</p>
-          <div className="grid grid-cols-3 gap-3 text-center">
+      {/* ── Data sources ── */}
+      <section className="py-12 px-6 border-t border-zinc-800/50">
+        <div className="max-w-5xl mx-auto text-center">
+          <p className="text-xs text-zinc-700 uppercase tracking-widest mb-8 font-medium">Ma'lumot manbalari</p>
+          <div className="flex items-center justify-center gap-10 flex-wrap">
             {[
-              { name: 'Lex.uz',    role: 'Qonunlar bazasi',       color: 'text-amber-400' },
-              { name: 'Soliq.uz',  role: "Soliq ma'lumotlari",    color: 'text-emerald-400' },
-              { name: 'Stat.uz',   role: 'Bozor statistikasi',    color: 'text-blue-400' },
+              { name: 'Lex.uz',    color: 'text-amber-500'  },
+              { name: 'Soliq.uz',  color: 'text-emerald-500'},
+              { name: 'Stat.uz',   color: 'text-blue-500'   },
             ].map(p => (
-              <div key={p.name} className="bg-slate-900 rounded-xl p-3 border border-slate-800">
-                <p className={`font-bold text-sm ${p.color}`}>{p.name}</p>
-                <p className="text-slate-500 text-xs mt-1 leading-tight">{p.role}</p>
-              </div>
+              <span key={p.name} className={`font-bold text-sm ${p.color} opacity-50 hover:opacity-100 transition-opacity cursor-default`}>
+                {p.name}
+              </span>
             ))}
           </div>
         </div>
+      </section>
 
-      </main>
-
-      <footer className="text-center text-slate-700 text-xs py-4 border-t border-slate-900 px-6 flex items-center justify-center gap-4 flex-wrap">
-        <span>BiznesPlan AI · Xakaton 2026 · Muammo 14 + 15</span>
-        <Link to="/pricing" className="text-purple-600 hover:text-purple-400 transition-colors">Narxlar →</Link>
+      {/* ── Footer ── */}
+      <footer className="border-t border-zinc-800/50 px-6 py-6 mt-auto">
+        <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-zinc-950 text-xs">B</div>
+            <span className="text-zinc-600 text-sm font-medium">BiznesPlan AI · 2026</span>
+          </div>
+          <Link to="/pricing" className="text-zinc-600 hover:text-zinc-300 text-sm transition-colors font-medium">
+            Narxlar →
+          </Link>
+        </div>
       </footer>
 
     </div>
