@@ -2,12 +2,12 @@
  * api/chat.ts — AI business advisor chatbot for Uzbekistan entrepreneurs
  *
  * Provider priority:
- *   1. Groq llama-3.1-8b-instant (500k tokens/day free, fast for chat)
- *   2. Gemini gemini-2.5-flash (fallback)
+ *   1. Gemini gemini-2.5-flash (primary — superior instruction-following,
+ *      critical for "ask one question first" behavior; 3 keys = 750 req/day)
+ *   2. Groq llama-3.1-8b-instant (fallback — 500k tokens/day but poor
+ *      at following behavioral instructions reliably)
  *
- * System prompt is kept SHORT (~350 tokens) to maximise daily capacity.
- * The model already knows Uzbekistan context — we only pass specific
- * numbers, law references and role rules it couldn't know on its own.
+ * System prompt is kept SHORT to maximise daily capacity.
  */
 
 import { withGemini } from './_gemini';
@@ -123,27 +123,23 @@ export default async function handler(req: Request): Promise<Response> {
   let text = '';
   let provider = '';
 
-  if (process.env.GROQ_API_KEY) {
-    try {
-      text = await callGroq(history);
-      provider = 'groq';
-    } catch (e1) {
-      console.warn('Groq failed:', String(e1));
+  // Gemini primary (better instruction-following for conversational logic)
+  // Groq as fallback if Gemini is rate-limited
+  try {
+    text = await callGemini(history);
+    provider = 'gemini';
+  } catch (e1) {
+    console.warn('Gemini failed:', String(e1));
+    if (process.env.GROQ_API_KEY) {
       try {
-        text = await callGemini(history);
-        provider = 'gemini-fallback';
+        text = await callGroq(history);
+        provider = 'groq-fallback';
       } catch (e2) {
         console.error('Both failed:', String(e2));
         text = FALLBACK_MSG;
         provider = 'fallback';
       }
-    }
-  } else {
-    try {
-      text = await callGemini(history);
-      provider = 'gemini';
-    } catch (e) {
-      console.error('Gemini failed:', String(e));
+    } else {
       text = FALLBACK_MSG;
       provider = 'fallback';
     }
