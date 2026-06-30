@@ -195,26 +195,24 @@ export default function ChatBot() {
         </div>
       </div>
 
-      {/* ── Quick question chips (only on first message) ── */}
-      {messages.length <= 1 && (
-        <div className="px-4 pb-2">
-          <div className="max-w-2xl mx-auto">
-            <p className="text-slate-600 text-xs mb-2">Tez savollar:</p>
-            <div className="flex gap-2 flex-wrap">
-              {QUICK_QUESTIONS.map((q, i) => (
-                <button
-                  key={i}
-                  onClick={() => sendMessage(q)}
-                  disabled={loading}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs rounded-full transition-colors disabled:opacity-50"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
+      {/* ── Quick question chips (always visible) ── */}
+      <div className="px-4 pb-2">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-slate-600 text-xs mb-2">Tez savollar:</p>
+          <div className="flex gap-2 flex-wrap">
+            {QUICK_QUESTIONS.map((q, i) => (
+              <button
+                key={i}
+                onClick={() => sendMessage(q)}
+                disabled={loading}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs rounded-full transition-colors disabled:opacity-50"
+              >
+                {q}
+              </button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
       {/* ── Input ── */}
       <div className="border-t border-slate-800 bg-slate-950 px-4 py-3">
