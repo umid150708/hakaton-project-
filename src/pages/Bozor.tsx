@@ -20,13 +20,190 @@ import { fetchRates, IMPORT_SENSITIVITY, type RateSnapshot } from '../lib/cbuRat
 
 type SortKey = 'price_asc' | 'price_desc' | 'trend' | 'name';
 
-// ─── Community price report ───────────────────────────────────────────────────
+// ─── Buy / Sell Ads Board ─────────────────────────────────────────────────────
 
-interface CommunityReport {
+interface Ad {
+  id: string;
+  type: 'buy' | 'sell';
   product: string;
-  price: number;
+  quantity: string;
   location: string;
+  price: string;       // optional for buy ads
+  contact: string;
   date: string;
+}
+
+const ADS_KEY = 'b2b_ads_v2';
+
+function loadAds(): Ad[] {
+  try { return JSON.parse(localStorage.getItem(ADS_KEY) ?? '[]'); }
+  catch { return []; }
+}
+function saveAd(ad: Ad) {
+  const all = loadAds();
+  all.unshift(ad);
+  localStorage.setItem(ADS_KEY, JSON.stringify(all.slice(0, 100)));
+}
+
+function AdsBoard() {
+  const [tab, setTab]           = useState<'buy' | 'sell'>('buy');
+  const [filter, setFilter]     = useState<'all' | 'buy' | 'sell'>('all');
+  const [ads, setAds]           = useState<Ad[]>(loadAds);
+  const [product, setProduct]   = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [location, setLocation] = useState('');
+  const [price, setPrice]       = useState('');
+  const [contact, setContact]   = useState('');
+  const [done, setDone]         = useState(false);
+
+  const canSubmit = product.trim() && quantity.trim() && location.trim();
+
+  const submit = () => {
+    if (!canSubmit) return;
+    const ad: Ad = {
+      id: Date.now().toString(),
+      type: tab,
+      product: product.trim(),
+      quantity: quantity.trim(),
+      location: location.trim(),
+      price: price.trim(),
+      contact: contact.trim(),
+      date: new Date().toLocaleDateString('uz-UZ'),
+    };
+    saveAd(ad);
+    setAds(loadAds());
+    setProduct(''); setQuantity(''); setLocation(''); setPrice(''); setContact('');
+    setDone(true);
+    setTimeout(() => setDone(false), 2500);
+  };
+
+  const visible = filter === 'all' ? ads : ads.filter(a => a.type === filter);
+
+  return (
+    <div className="bg-slate-900 rounded-xl border border-slate-700 overflow-hidden">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-slate-800">
+        <p className="text-white text-sm font-semibold">📢 Xaridorlar va Sotuvchilar</p>
+        <p className="text-slate-500 text-xs mt-0.5">E'lon joylashtiring — toping yoki soting</p>
+      </div>
+
+      {/* Buy / Sell tab switcher */}
+      <div className="flex border-b border-slate-800">
+        <button
+          onClick={() => setTab('buy')}
+          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+            tab === 'buy'
+              ? 'bg-blue-900/40 text-blue-400 border-b-2 border-blue-500'
+              : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          🛒 Sotib olaman
+        </button>
+        <button
+          onClick={() => setTab('sell')}
+          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+            tab === 'sell'
+              ? 'bg-emerald-900/40 text-emerald-400 border-b-2 border-emerald-500'
+              : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          💰 Sotaman
+        </button>
+      </div>
+
+      {/* Form */}
+      <div className="p-4 border-b border-slate-800 space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            value={product} onChange={e => setProduct(e.target.value)}
+            placeholder={tab === 'buy' ? "Nima kerak? (sement, un...)" : "Nima sotasiz? (go'sht, armitura...)"}
+            className="col-span-2 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-blue-600"
+          />
+          <input
+            value={quantity} onChange={e => setQuantity(e.target.value)}
+            placeholder="Miqdor (10 tonna, 500 kg...)"
+            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-blue-600"
+          />
+          <input
+            value={location} onChange={e => setLocation(e.target.value)}
+            placeholder={tab === 'buy' ? "Qayerga? (Jizzax, Namangan...)" : "Qayerdan? (Toshkent, Andijon...)"}
+            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-blue-600"
+          />
+          {tab === 'sell' && (
+            <input
+              value={price} onChange={e => setPrice(e.target.value)}
+              placeholder="Narx (so'mda, kg/tonna)"
+              className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-emerald-600"
+            />
+          )}
+          <input
+            value={contact} onChange={e => setContact(e.target.value)}
+            placeholder="Telefon yoki ism (ixtiyoriy)"
+            className={`px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 outline-none focus:border-blue-600 ${tab === 'sell' ? '' : 'col-span-2'}`}
+          />
+        </div>
+        <button
+          onClick={submit}
+          disabled={!canSubmit}
+          className={`w-full py-2 text-white text-sm font-medium rounded-lg transition-colors disabled:bg-slate-800 disabled:text-slate-600 ${
+            tab === 'buy'
+              ? 'bg-blue-700 hover:bg-blue-600'
+              : 'bg-emerald-700 hover:bg-emerald-600'
+          }`}
+        >
+          {done ? '✓ E\'lon joylashtirildi!' : tab === 'buy' ? '🛒 Xarid e\'lonini joylashtirish' : '💰 Sotuv e\'lonini joylashtirish'}
+        </button>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 px-4 py-2 border-b border-slate-800">
+        {(['all', 'buy', 'sell'] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1 rounded-full text-xs transition-colors ${
+              filter === f ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            {f === 'all' ? `Barchasi (${ads.length})` : f === 'buy' ? `🛒 Xarid (${ads.filter(a=>a.type==='buy').length})` : `💰 Sotuv (${ads.filter(a=>a.type==='sell').length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Ads list */}
+      {visible.length === 0 ? (
+        <p className="px-4 py-4 text-slate-600 text-xs text-center">
+          {filter === 'all' ? "Hali e'lon yo'q. Birinchi bo'lib joylashtiring!" : "Bu toifada e'lon yo'q"}
+        </p>
+      ) : (
+        <div className="divide-y divide-slate-800/60 max-h-80 overflow-y-auto">
+          {visible.map(ad => (
+            <div key={ad.id} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    ad.type === 'buy'
+                      ? 'bg-blue-950 text-blue-400 border border-blue-900'
+                      : 'bg-emerald-950 text-emerald-400 border border-emerald-900'
+                  }`}>
+                    {ad.type === 'buy' ? '🛒 Xarid' : '💰 Sotuv'}
+                  </span>
+                  <span className="text-white text-sm font-semibold">{ad.product}</span>
+                </div>
+                <span className="text-slate-600 text-xs shrink-0">{ad.date}</span>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-400">
+                <span>📦 {ad.quantity}</span>
+                <span>📍 {ad.location}</span>
+                {ad.price && <span className="text-emerald-400 font-medium">💵 {ad.price} so'm</span>}
+                {ad.contact && <span>📞 {ad.contact}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── CBU Rate Bar ─────────────────────────────────────────────────────────────
@@ -236,108 +413,6 @@ function AIAnalyst({ rates, productName }: { rates: RateSnapshot | null; product
   );
 }
 
-// ─── Community Price Reporter ─────────────────────────────────────────────────
-
-const STORAGE_KEY = 'b2b_community_reports';
-
-function loadReports(): CommunityReport[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
-  } catch { return []; }
-}
-
-function saveReport(r: CommunityReport) {
-  const all = loadReports();
-  all.unshift(r);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all.slice(0, 50)));
-}
-
-function CommunityReports() {
-  const [product, setProduct]   = useState('');
-  const [price, setPrice]       = useState('');
-  const [location, setLocation] = useState('');
-  const [reports, setReports]   = useState<CommunityReport[]>(loadReports);
-  const [submitted, setSubmitted] = useState(false);
-
-  const submit = () => {
-    if (!product.trim() || !price.trim()) return;
-    const r: CommunityReport = {
-      product: product.trim(),
-      price: parseInt(price.replace(/\D/g, '')) || 0,
-      location: location.trim() || 'Noma\'lum joy',
-      date: new Date().toLocaleDateString('uz-UZ'),
-    };
-    saveReport(r);
-    setReports(loadReports());
-    setProduct(''); setPrice(''); setLocation('');
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 2000);
-  };
-
-  return (
-    <div className="bg-slate-900 rounded-xl border border-amber-900/30 overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
-        <span className="text-lg">👥</span>
-        <div>
-          <p className="text-white text-sm font-semibold">Jamiyat narx xabarlari</p>
-          <p className="text-slate-500 text-xs">Bozorda ko'rgan narxingizni qo'shing — hammaga yordam qiling</p>
-        </div>
-      </div>
-
-      {/* Submit form */}
-      <div className="p-4 border-b border-slate-800 space-y-2">
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            value={product} onChange={e => setProduct(e.target.value)}
-            placeholder="Mahsulot (un, go'sht...)"
-            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-600 outline-none focus:border-amber-600"
-          />
-          <input
-            value={price} onChange={e => setPrice(e.target.value)}
-            placeholder="Narx (so'mda)"
-            type="number"
-            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-600 outline-none focus:border-amber-600"
-          />
-        </div>
-        <div className="flex gap-2">
-          <input
-            value={location} onChange={e => setLocation(e.target.value)}
-            placeholder="Joy (Chorsu, Ipodrom...)"
-            className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-600 outline-none focus:border-amber-600"
-          />
-          <button
-            onClick={submit}
-            disabled={!product || !price}
-            className="px-4 py-2 bg-amber-700 hover:bg-amber-600 disabled:bg-slate-800 disabled:text-slate-600 text-white text-xs font-medium rounded-lg transition-colors"
-          >
-            {submitted ? '✓' : 'Qo\'shish'}
-          </button>
-        </div>
-      </div>
-
-      {/* Reports list */}
-      {reports.length === 0 ? (
-        <p className="px-4 py-3 text-slate-600 text-xs">Hali xabar yo'q. Birinchi bo'lib qo'shing!</p>
-      ) : (
-        <div className="divide-y divide-slate-800/60 max-h-48 overflow-y-auto">
-          {reports.map((r, i) => (
-            <div key={i} className="px-4 py-2.5 flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <span className="text-white text-sm font-medium">{r.product}</span>
-                <span className="text-slate-500 text-xs ml-2">{r.location}</span>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-amber-400 text-sm font-mono">{fmtB2BPrice(r.price)} so'm</span>
-                <p className="text-slate-700 text-xs">{r.date}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function Bozor() {
@@ -514,8 +589,8 @@ export default function Bozor() {
           </div>
         )}
 
-        {/* ── Community reports ── */}
-        <CommunityReports />
+        {/* ── Buy / Sell Ads Board ── */}
+        <AdsBoard />
 
         {/* ── Cross-sell ── */}
         <div className="bg-slate-900 rounded-2xl border border-emerald-900/30 p-5 text-center">
