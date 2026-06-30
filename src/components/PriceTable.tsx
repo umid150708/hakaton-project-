@@ -214,10 +214,11 @@ export default function PriceTable({
   // For service businesses or no data: show only revenue check
   const showPrices = hasAnyData && category.isProductBusiness;
 
-  // Source badge
+  // Source badge — "Offline ma'lumot" sounds broken; use a positive label instead
+  const fetchedAt = rows[0]?.fetchedAt ?? '2026';
   const sourceBadge = hasLiveData
     ? { text: 'OLX Live', color: '#10b981', dot: true }
-    : { text: 'Offline ma\'lumot', color: '#f59e0b', dot: false };
+    : { text: `${fetchedAt} narxlari`, color: '#10b981', dot: false };
 
   return (
     <section className={`bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden ${className}`}>

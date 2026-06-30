@@ -67,6 +67,12 @@ export function checkAnswerQuality(questionIndex: number, answer: string): strin
       }
       break;
 
+    case 8: // Competitors — must be meaningful
+      if (isNonsense(t) || t.length < 5) {
+        return "⚠️ Raqiblaringizni bilish bozor tahlili uchun muhim. Masalan: \"Yonimizda 2 ta do'kon bor\" yoki \"Bozordagi sabzavot sotuvchilar\" — aniq bo'lmasa ham yozing.";
+      }
+      break;
+
     case 9: // 2-year plan — must be meaningful
       if (isNonsense(t) || t.length < 10) {
         return "⚠️ Bank kelajak rejangizni bilmoqchi. Hech bo'lmasa 1-2 ta maqsadingizni yozing — masalan: \"Yangi filial ochish\" yoki \"Eksport boshlash va ishchilar sonini 10 taga yetkazish\".";

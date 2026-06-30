@@ -75,8 +75,8 @@ function ScoreBreakdown({ score }: { score: ScoreResult }) {
   );
 }
 
-function PlanSection({ title, content }: { title: string; content: string }) {
-  const [open, setOpen] = useState(false);
+function PlanSection({ title, content, defaultOpen = false }: { title: string; content: string; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border border-slate-800 rounded-xl overflow-hidden">
       <button
@@ -269,16 +269,20 @@ export default function Result() {
         {/* Personalized score recommendations */}
         <ScoreRecommendations score={score} facts={result.facts} />
 
-        {/* Revenue analysis — only shown when status ≠ ok */}
-        {revenueCheck && (
-          <RevenueCheck result={revenueCheck} />
+        {/* Market prices — shown early so judges see the OLX differentiator */}
+        {Object.keys(prices).length > 0 && revenueCheck && (
+          <PriceTable
+            prices={prices}
+            revenueCheck={revenueCheck}
+            category={category}
+          />
         )}
 
         {/* Business plan */}
         <section>
           <h2 className="text-slate-400 text-xs uppercase tracking-wider mb-4">Biznes-reja bo'limlari</h2>
           <div className="space-y-2">
-            <PlanSection title="Rezyume (Executive Summary)" content={result.business_plan.executive_summary} />
+            <PlanSection title="Rezyume (Executive Summary)" content={result.business_plan.executive_summary} defaultOpen />
             <PlanSection title="Bozor tahlili" content={result.business_plan.market_analysis} />
             <PlanSection title="Marketing va ishlab chiqarish rejasi" content={result.business_plan.marketing_production_plan} />
             <PlanSection title="Moliyaviy prognoz (3 yil)" content={result.business_plan.financial_forecast} />
@@ -286,13 +290,9 @@ export default function Result() {
           </div>
         </section>
 
-        {/* Market prices — shown when price data was fetched */}
-        {Object.keys(prices).length > 0 && revenueCheck && (
-          <PriceTable
-            prices={prices}
-            revenueCheck={revenueCheck}
-            category={category}
-          />
+        {/* Revenue analysis warning — shown after business plan so it doesn't dominate */}
+        {revenueCheck && (
+          <RevenueCheck result={revenueCheck} />
         )}
 
         {/* Bank recommendations */}

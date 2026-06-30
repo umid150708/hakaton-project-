@@ -1,30 +1,27 @@
 import { useNavigate } from 'react-router-dom';
 
-const STEPS = [
+const FEATURES = [
   {
-    n: '1',
-    emoji: '💬',
-    title: 'Suhbat',
-    desc: "10 ta savol, oddiy o'zbek tilida",
+    icon: '📊',
+    title: "Real bozor narxlari",
+    desc: "OLX.uz dan jonli narxlar. Bug'doy uni, go'sht, sement — hamma narsa haqiqiy.",
   },
   {
-    n: '2',
-    emoji: '🧠',
-    title: 'AI tahlil',
-    desc: "Sun'iy intellekt biznesingizni bank ko'zi bilan ko'radi",
+    icon: '🏦',
+    title: "7 mezonli kredit balli",
+    desc: "Tajriba, garov, to'lov qobiliyati va bozor narxlariga moslik — 100 ballik tizim.",
   },
   {
-    n: '3',
-    emoji: '📄',
-    title: 'Tayyor reja',
-    desc: 'PDF reja, kredit balli va bank tavsiyasi',
+    icon: '📄',
+    title: "Bank tayyor hujjat",
+    desc: "PDF reja, 3 ta bank tavsiyasi va \"bankga borishdan oldin\" tekshiruv ro'yxati.",
   },
 ];
 
-const STATS = [
-  { value: '90%',  label: "KOKlar kredit ololmaydi" },
-  { value: '$6B',  label: 'Kredit kamomadi' },
-  { value: '2026', label: "Yangi AI scoring tizimi", accent: true },
+const PROOF = [
+  { value: '18',    label: 'biznes turi qamrab olingan',  unit: 'ta' },
+  { value: '38',    label: "OLX narx kategoriyasi",       unit: 'ta' },
+  { value: '100',   label: 'kredit tayyorgarlik balli',   unit: 'ball' },
 ];
 
 export default function Landing() {
@@ -41,88 +38,115 @@ export default function Landing() {
           </div>
           <span className="font-semibold text-white">BiznesPlan AI</span>
         </div>
-        <span className="text-xs text-slate-500 hidden sm:block">
-          Savdo-sanoat palatasi hamkori
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500 hidden sm:block">
+            Problem 14 + 15 · Savdo-sanoat palatasi
+          </span>
+          <button
+            onClick={() => navigate('/?demo=1')}
+            className="text-xs px-3 py-1.5 border border-slate-700 rounded-lg text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
+          >
+            Demo →
+          </button>
+        </div>
       </header>
 
-      {/* ── Hero ── */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-14 text-center max-w-2xl mx-auto w-full">
+      <main className="flex-1 flex flex-col items-center px-6 py-12 max-w-2xl mx-auto w-full">
 
-        {/* Badge */}
+        {/* ── OLX badge — lead with the differentiator ── */}
         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-950 border border-emerald-800/60 rounded-full text-emerald-400 text-xs mb-8">
           <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-          O'zbek tilida &nbsp;·&nbsp; Bepul sinab ko'ring
+          OLX.uz narxlari bilan ishlaydi &nbsp;·&nbsp; Bepul
         </div>
 
-        {/* Headline */}
-        <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.15] mb-5">
-          10 daqiqada<br />
-          <span className="text-emerald-400">bankka tayyor</span> biznes-reja
+        {/* ── Headline ── */}
+        <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.15] mb-4 text-center">
+          Real narxlar asosida<br />
+          <span className="text-emerald-400">kredit balli</span> va reja
         </h1>
 
-        <p className="text-slate-400 text-base md:text-lg mb-10 max-w-lg leading-relaxed">
-          Savollarga javob bering — AI professional biznes-reja,
-          kredit balli va qaysi bankka borish kerakligini ko'rsatadi.
+        <p className="text-slate-400 text-base md:text-lg mb-3 max-w-lg leading-relaxed text-center">
+          10 savolga javob bering — tizim OLX.uz'dan joriy bozor narxlarini oladi,
+          daromadingizni tekshiradi va bankka tayyor hujjat tayyorlaydi.
         </p>
 
-        {/* Stats */}
+        {/* ── Problem statement ── */}
+        <p className="text-slate-600 text-sm mb-10 text-center max-w-md">
+          O'zbekistonda KOKlarning 90% kredit ololmaydi — asosan hujjat va tayyorgarlik yetishmasligi sababli.
+        </p>
+
+        {/* ── Stats ── */}
         <div className="grid grid-cols-3 gap-3 mb-10 w-full max-w-sm">
-          {STATS.map(s => (
+          {PROOF.map(s => (
             <div key={s.value} className="bg-slate-900 rounded-xl p-3.5 border border-slate-800 text-center">
-              <div className={`text-xl font-bold ${s.accent ? 'text-emerald-400' : 'text-white'}`}>
+              <div className="text-xl font-bold text-emerald-400">
                 {s.value}
+                <span className="text-sm font-normal text-slate-500 ml-0.5">{s.unit}</span>
               </div>
               <div className="text-xs text-slate-500 mt-1 leading-tight">{s.label}</div>
             </div>
           ))}
         </div>
 
-        {/* Primary CTA */}
+        {/* ── Primary CTA ── */}
         <button
           onClick={() => navigate('/interview')}
-          className="group w-full max-w-sm py-4 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-2"
+          className="group w-full max-w-sm py-4 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-2 mb-4"
         >
-          Boshlash
+          Boshlash — 10 daqiqa
           <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </button>
 
-        <div className="flex items-center gap-4 mt-4 text-xs text-slate-600">
-          <span>Ro'yxatdan o'tish shart emas</span>
-          <span>·</span>
-          <button
-            onClick={() => navigate('/?demo=1')}
-            className="text-slate-500 hover:text-emerald-400 transition-colors"
-          >
-            Namunani ko'rish →
-          </button>
-        </div>
+        <p className="text-xs text-slate-600 mb-14 text-center">
+          Ro'yxatdan o'tish shart emas &nbsp;·&nbsp; Internet bo'lmasa ham ishlaydi
+        </p>
 
-        {/* How it works */}
-        <div className="grid grid-cols-3 gap-5 mt-14 w-full text-left">
-          {STEPS.map((step, i) => (
-            <div key={step.n} className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">{step.emoji}</span>
-                {i < STEPS.length - 1 && (
-                  <div className="flex-1 h-px bg-slate-800 hidden sm:block" />
-                )}
+        {/* ── Feature cards ── */}
+        <div className="w-full grid grid-cols-1 gap-3 mb-14">
+          {FEATURES.map((f, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-4 bg-slate-900 rounded-xl p-4 border border-slate-800"
+            >
+              <span className="text-2xl mt-0.5 shrink-0">{f.icon}</span>
+              <div>
+                <p className="text-white font-semibold text-sm mb-1">{f.title}</p>
+                <p className="text-slate-400 text-xs leading-relaxed">{f.desc}</p>
               </div>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">
-                {step.n}-qadam
-              </p>
-              <p className="text-sm font-semibold text-white">{step.title}</p>
-              <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
             </div>
           ))}
         </div>
+
+        {/* ── How it works ── */}
+        <div className="w-full border-t border-slate-800 pt-10">
+          <p className="text-xs text-slate-600 uppercase tracking-wider mb-6 text-center">Qanday ishlaydi</p>
+          <div className="space-y-4">
+            {[
+              { n: '1', text: "10 ta savolga o'zbek tilida javob bering", sub: "Biznes turi, daromad, kredit miqdori, garov..." },
+              { n: '2', text: "Tizim OLX.uz'dan joriy narxlarni oladi", sub: "Bug'doy uni, non, go'sht, sement — real narxlar real vaqtda" },
+              { n: '3', text: "AI kredit ballini hisoblaydi", sub: "Daromadingiz bozor narxlariga mosmi? 7 mezon." },
+              { n: '4', text: "Bank tayyor PDF siz uchun", sub: "Biznes-reja + 3 bank tavsiyasi + hujjatlar ro'yxati" },
+            ].map(step => (
+              <div key={step.n} className="flex items-start gap-4">
+                <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-emerald-400 shrink-0 mt-0.5">
+                  {step.n}
+                </div>
+                <div>
+                  <p className="text-white text-sm font-medium">{step.text}</p>
+                  <p className="text-slate-500 text-xs mt-0.5">{step.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </main>
 
       {/* ── Footer ── */}
       <footer className="text-center text-slate-700 text-xs py-4 border-t border-slate-900 px-6">
-        O'zbekiston Savdo-sanoat palatasi hamkori &nbsp;·&nbsp; World Bank FINGROW dasturi
+        O'zbekiston Savdo-sanoat palatasi hamkori &nbsp;·&nbsp; Hackathon 2026 &nbsp;·&nbsp; Problem 14 + 15
       </footer>
 
     </div>

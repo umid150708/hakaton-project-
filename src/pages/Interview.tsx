@@ -21,13 +21,13 @@ type ChatMsg =
 // ─── Loading stages ───────────────────────────────────────────────────────────
 
 const STAGES = [
-  { pct: 12,  msg: "Javoblaringiz tahlil qilinmoqda..." },
-  { pct: 28,  msg: "Biznes profili tuzilmoqda..." },
-  { pct: 48,  msg: "Bank talablari solishtirilmoqda..." },
-  { pct: 65,  msg: "Moliyaviy prognoz hisoblanmoqda..." },
-  { pct: 80,  msg: "Biznes-reja yozilmoqda..." },
-  { pct: 93,  msg: "Kredit tayyorgarlik tekshirilmoqda..." },
-  { pct: 99,  msg: "Deyarli tayyor..." },
+  { pct: 10,  msg: "Javoblaringiz tahlil qilinmoqda..." },
+  { pct: 25,  msg: "OLX.uz dan joriy narxlar olinmoqda..." },
+  { pct: 42,  msg: "Daromad bozor narxlari bilan solishtirilmoqda..." },
+  { pct: 58,  msg: "Bank talablari tekshirilmoqda..." },
+  { pct: 73,  msg: "Moliyaviy prognoz hisoblanmoqda..." },
+  { pct: 87,  msg: "Biznes-reja yozilmoqda..." },
+  { pct: 97,  msg: "Deyarli tayyor..." },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ function LoadingScreen({ stage }: { stage: number }) {
       </div>
 
       <p className="text-white text-lg font-semibold text-center mb-2 slide-up">{s.msg}</p>
-      <p className="text-slate-500 text-sm">~25–35 soniya</p>
+      <p className="text-slate-500 text-sm">OLX narxlari + AI tahlil</p>
 
       {/* Stage dots */}
       <div className="flex gap-2 mt-10">

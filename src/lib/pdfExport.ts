@@ -399,6 +399,11 @@ export async function exportToPDF(
   }
 
   // Save
-  const filename = `BiznesReja_${result.facts.business_type.replace(/\s+/g, '_')}_${now.replace(/\./g, '-')}.pdf`;
+  const safeName = result.facts.business_type
+    .replace(/[''`']/g, '')        // remove apostrophes (o', g' etc.)
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_\-]/g, '') // strip anything else unsafe
+    .slice(0, 40);
+  const filename = `BiznesReja_${safeName}_${now.replace(/\./g, '-')}.pdf`;
   doc.save(filename);
 }
