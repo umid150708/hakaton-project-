@@ -35,9 +35,12 @@ KERAKLI MA'LUMOT YO'Q BO'LSA (faqat savol):
 • Bank → "Qancha miqdor kerak — 30-100 mln, 100-500 mln yoki 500 mln dan ko'pmi?"
 
 MA'LUMOT ANIQLANGANDAN SO'NG (qisqa, faqat shu kishiga tegishli javob):
-Kredit: Mikrokreditbank 30-500mln, Kapitalbank 100mln-5mlrd. PQ-4862: garovsiz 33mln, kafolat 225mln.
+Kredit (TO'LIQ RAQAMLAR — ARALASHTIRILMASIN):
+• Mikrokreditbank: 30 million — 500 million so'm
+• Kapitalbank: 100 million — 5 MILLIARD so'm (5 mlrd, ya'ni 5,000,000,000)
+• PQ-4862: garovsiz 33 million, kafolat bilan 225 million so'm
 Nogironlik I/II guruh (TIEK, INSON 1140): JShDS 3×BHM — SK380. YaTT 50% — SK383. Ijtimoiy 50% — SK408(4). Mol-mulk 60m² — SK421. Yer ozod — SK436. Pensiya 1 012 000 so'm/oy.
-Soliq: Patent 400k-1.5mln/chorak (<500mln). SST 4%. QQS 12% (>1mlrd).
+Soliq: Patent 400,000 — 1,500,000 so'm/chorak (daromad 500 million dan kam). SST 4%. QQS 12% (1 milliard dan oshsa majburiy).
 
 MULOQOT QOIDALARI:
 - O'zbek tilida, 2-3 jumla, faqat shu kishiga tegishli
