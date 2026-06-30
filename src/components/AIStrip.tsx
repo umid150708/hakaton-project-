@@ -1,11 +1,14 @@
 /**
  * AIStrip.tsx — AI market analysis banner above the ads grid
  *
- * Auto-loads on mount and whenever tab or category changes.
- * No expand/collapse — analysis is always visible.
+ * Caching strategy:
+ *   - Responses cached in localStorage per (tab, category) for 1 hour
+ *   - Cache hit = zero API calls, instant display
+ *   - Manual ↻ bypasses cache and fetches fresh
+ *   - 16 possible combos (2 tabs × 8 cats) = at most 16 API calls per hour total
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Category } from '../lib/bozorData';
 import { CATEGORIES } from '../lib/bozorData';
 
@@ -14,19 +17,67 @@ interface Props {
   cat: Category;
 }
 
-export default function AIStrip({ tab, cat }: Props) {
-  const [text, setText]       = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(false);
-  const [tick, setTick]       = useState(0); // bump to refresh
+// ── Cache helpers ─────────────────────────────────────────────────────────────
 
-  const catLabel = CATEGORIES.find(c => c.id === cat)?.label ?? 'umumiy bozor';
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+interface CacheEntry { text: string; ts: number }
+
+function cacheGet(tab: string, cat: string): string | null {
+  try {
+    const raw = localStorage.getItem(`ai_bozor_v1_${tab}_${cat}`);
+    if (!raw) return null;
+    const entry: CacheEntry = JSON.parse(raw);
+    if (Date.now() - entry.ts > CACHE_TTL_MS) return null; // expired
+    return entry.text;
+  } catch { return null; }
+}
+
+function cacheSet(tab: string, cat: string, text: string) {
+  try {
+    const entry: CacheEntry = { text, ts: Date.now() };
+    localStorage.setItem(`ai_bozor_v1_${tab}_${cat}`, JSON.stringify(entry));
+  } catch { /* storage full — ignore */ }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function AIStrip({ tab, cat }: Props) {
+  const [text, setText]         = useState('');
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(false);
+  const [fromCache, setFromCache] = useState(false);
+  const [forceRefresh, setForceRefresh] = useState(0);
+
+  const lastCombo = useRef('');
+  const catLabel  = CATEGORIES.find(c => c.id === cat)?.label ?? 'umumiy bozor';
 
   useEffect(() => {
     let cancelled = false;
+
+    const combo      = `${tab}-${cat}`;
+    const isNewCombo = combo !== lastCombo.current;
+    lastCombo.current = combo;
+
+    // Use cache unless this is a manual refresh on the same combo
+    const skipCache = !isNewCombo && forceRefresh > 0;
+
+    if (!skipCache) {
+      const cached = cacheGet(tab, cat);
+      if (cached) {
+        setText(cached);
+        setLoading(false);
+        setError(false);
+        setFromCache(true);
+        return;
+      }
+    }
+
+    // Cache miss or forced refresh — hit the API
     setLoading(true);
     setError(false);
     setText('');
+    setFromCache(false);
 
     const scope = cat === 'all'
       ? "O'zbekiston ulgurji bozori"
@@ -43,18 +94,21 @@ export default function AIStrip({ tab, cat }: Props) {
       signal: AbortSignal.timeout(20_000),
     })
       .then(r => r.json())
-      .then(data => {
-        if (!cancelled) {
-          const t = data?.text ?? '';
-          if (t) setText(t);
-          else setError(true);
+      .then((data: { text?: string }) => {
+        if (cancelled) return;
+        const t = data?.text ?? '';
+        if (t) {
+          setText(t);
+          cacheSet(tab, cat, t);
+        } else {
+          setError(true);
         }
       })
       .catch(() => { if (!cancelled) setError(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
-  }, [tab, cat, tick]);
+  }, [tab, cat, forceRefresh]);
 
   return (
     <div className="rounded-xl border border-purple-900/40 bg-purple-950/15 px-4 py-3 flex items-start gap-3">
@@ -63,22 +117,28 @@ export default function AIStrip({ tab, cat }: Props) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-purple-300 text-xs font-semibold uppercase tracking-wide mb-2">
-          AI Tahlil · {tab === 'buy' ? 'Xaridorlar' : 'Sotuvchilar'} · {catLabel}
-        </p>
+        <div className="flex items-center gap-2 mb-2">
+          <p className="text-purple-300 text-xs font-semibold uppercase tracking-wide">
+            AI Tahlil · {tab === 'buy' ? 'Xaridorlar' : 'Sotuvchilar'} · {catLabel}
+          </p>
+          {fromCache && !loading && (
+            <span className="text-[10px] px-1.5 py-0.5 bg-slate-800 text-slate-500 rounded-full border border-slate-700">
+              keshdan
+            </span>
+          )}
+        </div>
 
         {loading ? (
-          /* Skeleton */
           <div className="space-y-2">
             <div className="h-3 bg-slate-800 rounded-full animate-pulse w-full" />
             <div className="h-3 bg-slate-800 rounded-full animate-pulse w-[85%]" />
-            <div className="h-3 bg-slate-800 rounded-full animate-pulse w-[65%]" />
+            <div className="h-3 bg-slate-800 rounded-full animate-pulse w-[60%]" />
           </div>
         ) : error ? (
           <p className="text-slate-500 text-sm">
             Tahlil yuklanmadi.{' '}
             <button
-              onClick={() => setTick(t => t + 1)}
+              onClick={() => setForceRefresh(n => n + 1)}
               className="text-purple-400 hover:text-purple-300 underline transition-colors"
             >
               Qayta urinish
@@ -89,11 +149,11 @@ export default function AIStrip({ tab, cat }: Props) {
         )}
       </div>
 
-      {/* Refresh button — only when content is loaded */}
+      {/* Refresh — bypasses cache */}
       {!loading && (
         <button
-          onClick={() => setTick(t => t + 1)}
-          title="Yangilash"
+          onClick={() => setForceRefresh(n => n + 1)}
+          title="Yangi tahlil olish"
           className="shrink-0 text-slate-700 hover:text-purple-400 text-base transition-colors mt-0.5"
         >
           ↻
