@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getUser, useDealContact, FREE_LIMIT, type UserProfile } from '../lib/auth';
+import SignUpModal from '../components/SignUpModal';
 
 // ─── Categories ────────────────────────────────────────────────────────────────
 
@@ -139,7 +141,7 @@ function CatBadge({ cat }: { cat: Category }) {
 
 // ─── Ad Card ───────────────────────────────────────────────────────────────────
 
-function AdCard({ ad }: { ad: Ad }) {
+function AdCard({ ad, onContact }: { ad: Ad; onContact: () => void }) {
   const isBuy = ad.type === 'buy';
   return (
     <div className={`
@@ -181,10 +183,10 @@ function AdCard({ ad }: { ad: Ad }) {
         )}
       </div>
 
-      {/* Call */}
+      {/* Contact button — gated */}
       {ad.contact && (
-        <a
-          href={`tel:${ad.contact.replace(/\s/g, '')}`}
+        <button
+          onClick={onContact}
           className={`
             flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors
             ${isBuy
@@ -192,8 +194,8 @@ function AdCard({ ad }: { ad: Ad }) {
               : 'bg-emerald-900/40 hover:bg-emerald-800/60 text-emerald-200 border border-emerald-800/50'}
           `}
         >
-          📞 {ad.contact}
-        </a>
+          📞 Aloqa qilish
+        </button>
       )}
     </div>
   );
@@ -428,19 +430,113 @@ function AIStrip({ tab, cat }: { tab: 'buy' | 'sell'; cat: Category }) {
   );
 }
 
+// ─── Paywall Modal ─────────────────────────────────────────────────────────────
+
+function PaywallModal({ onClose, onUpgrade }: { onClose: () => void; onUpgrade: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4" onClick={onClose}>
+      <div className="w-full max-w-sm bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl p-6 text-center space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="text-5xl">🔒</div>
+        <p className="text-white font-bold text-lg">3 ta bepul aloqa tugadi</p>
+        <p className="text-slate-400 text-sm leading-relaxed">
+          Platformadan foydalanishni davom ettirish uchun qulay tarifni tanlang.
+          Yoki yopilgan har bir bitimdan faqat <span className="text-amber-400 font-semibold">1.5%</span> to'lang.
+        </p>
+        <div className="space-y-2">
+          <button onClick={onUpgrade}
+            className="w-full py-3 bg-purple-700 hover:bg-purple-600 text-white text-sm font-bold rounded-xl transition-colors">
+            Tariflarni ko'rish →
+          </button>
+          <button onClick={onClose}
+            className="w-full py-2 text-slate-600 hover:text-slate-400 text-sm transition-colors">
+            Keyinroq
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Contact Modal (shown after auth passes) ───────────────────────────────────
+
+function ContactModal({ ad, onClose }: { ad: Ad; onClose: () => void }) {
+  const isBuy = ad.type === 'buy';
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4" onClick={onClose}>
+      <div className="w-full max-w-sm bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <p className="text-white font-bold text-base">{ad.product}</p>
+          <button onClick={onClose} className="text-slate-500 hover:text-white">✕</button>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2"><span>📦</span><span className="text-slate-300 text-sm">{ad.quantity}</span></div>
+          <div className="flex items-center gap-2"><span>📍</span><span className="text-slate-300 text-sm">{ad.location}</span></div>
+          {ad.price && <div className="flex items-center gap-2"><span>💵</span><span className={`text-sm font-bold ${isBuy ? 'text-blue-400' : 'text-emerald-400'}`}>{ad.price}</span></div>}
+        </div>
+        <a href={`tel:${ad.contact.replace(/\s/g, '')}`}
+          className={`flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold transition-colors
+            ${isBuy ? 'bg-blue-700 hover:bg-blue-600' : 'bg-emerald-700 hover:bg-emerald-600'}`}>
+          📞 {ad.contact}
+        </a>
+        <p className="text-slate-600 text-xs text-center">
+          Bu aloqa sizning bepul aloqalaringizdan birini sarfladi.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Bozor() {
   const navigate = useNavigate();
-  const [tab, setTab]       = useState<'buy' | 'sell'>('buy');
-  const [cat, setCat]       = useState<Category>('all');
+  const [tab, setTab]         = useState<'buy' | 'sell'>('buy');
+  const [cat, setCat]         = useState<Category>('all');
   const [userAds, setUserAds] = useState<Ad[]>(loadUserAds);
-  const [modal, setModal]   = useState(false);
-  const [search, setSearch] = useState('');
+  const [modal, setModal]     = useState(false);
+  const [search, setSearch]   = useState('');
+
+  // Auth / paywall state
+  const [authUser, setAuthUser]         = useState<UserProfile | null>(getUser);
+  const [showSignUp, setShowSignUp]     = useState(false);
+  const [showPaywall, setShowPaywall]   = useState(false);
+  const [contactAd, setContactAd]       = useState<Ad | null>(null);
+  const [pendingAd, setPendingAd]       = useState<Ad | null>(null);  // ad waiting for auth
 
   useEffect(() => { if (!modal) setUserAds(loadUserAds()); }, [modal]);
 
   const isBuy = tab === 'buy';
+
+  // Handle contact click — auth gate
+  const handleContact = (ad: Ad) => {
+    const u = getUser();
+    if (!u) {
+      setPendingAd(ad);
+      setShowSignUp(true);
+      return;
+    }
+    const result = useDealContact();
+    if (result === 'paywall') { setShowPaywall(true); return; }
+    setAuthUser(getUser());
+    setContactAd(ad);
+  };
+
+  // After sign-up success
+  const onSignUpSuccess = () => {
+    setShowSignUp(false);
+    setAuthUser(getUser());
+    if (pendingAd) {
+      const result = useDealContact();
+      if (result === 'ok') setContactAd(pendingAd);
+      else setShowPaywall(true);
+      setPendingAd(null);
+    }
+  };
+
+  // Free deals remaining
+  const freeLeft = authUser?.plan === 'free'
+    ? Math.max(0, FREE_LIMIT - (authUser.dealContactsUsed ?? 0))
+    : null;
 
   // All ads for current tab
   const baseAds = isBuy
@@ -505,6 +601,27 @@ export default function Bozor() {
             <span>+</span>
             <span className="hidden sm:inline">E'lon</span>
           </button>
+
+          {/* Free counter / user badge */}
+          {!authUser ? (
+            <button onClick={() => setShowSignUp(true)}
+              className="shrink-0 px-3 py-1.5 bg-emerald-800/50 hover:bg-emerald-700/60 text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-700/50 transition-colors">
+              🎁 Bepul kirish
+            </button>
+          ) : freeLeft !== null ? (
+            <button onClick={() => navigate('/pricing')}
+              className={`shrink-0 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${
+                freeLeft === 0
+                  ? 'bg-red-900/40 border-red-700/50 text-red-400 hover:bg-red-800/40'
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+              }`}>
+              {freeLeft === 0 ? '🔒 Limit tugadi' : `🎁 ${freeLeft} ta bepul`}
+            </button>
+          ) : (
+            <span className="shrink-0 px-2.5 py-1 bg-purple-900/30 text-purple-400 text-xs font-semibold rounded-lg border border-purple-800/50">
+              ⭐ Pro
+            </span>
+          )}
 
           <button onClick={() => navigate('/interview')} title="AI Maslahat" className="shrink-0 text-slate-500 hover:text-white text-lg transition-colors">🤖</button>
         </div>
@@ -576,13 +693,16 @@ export default function Bozor() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {ads.map(ad => <AdCard key={ad.id} ad={ad} />)}
+            {ads.map(ad => <AdCard key={ad.id} ad={ad} onContact={() => handleContact(ad)} />)}
           </div>
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modals */}
       {modal && <PostAdModal type={tab} onClose={() => setModal(false)} onPost={() => setUserAds(loadUserAds())} />}
+      {showSignUp && <SignUpModal onSuccess={onSignUpSuccess} onClose={() => { setShowSignUp(false); setPendingAd(null); }} />}
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} onUpgrade={() => { setShowPaywall(false); navigate('/pricing'); }} />}
+      {contactAd && <ContactModal ad={contactAd} onClose={() => setContactAd(null)} />}
 
       {/* Footer */}
       <div className="border-t border-slate-800 bg-slate-900/40 px-4 py-2.5 text-center">

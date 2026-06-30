@@ -201,8 +201,9 @@ export default function Landing() {
 
       </main>
 
-      <footer className="text-center text-slate-700 text-xs py-4 border-t border-slate-900 px-6">
-        BiznesPlan AI · Xakaton 2026 · Muammo 14 + 15
+      <footer className="text-center text-slate-700 text-xs py-4 border-t border-slate-900 px-6 flex items-center justify-center gap-4 flex-wrap">
+        <span>BiznesPlan AI · Xakaton 2026 · Muammo 14 + 15</span>
+        <Link to="/pricing" className="text-purple-600 hover:text-purple-400 transition-colors">Narxlar →</Link>
       </footer>
 
     </div>
