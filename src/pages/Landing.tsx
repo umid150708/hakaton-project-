@@ -23,13 +23,9 @@ export default function Landing() {
             <Link to="/pricing"   className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">Narxlar</Link>
           </div>
 
-          {/* Auth + CTA */}
+          {/* Auth */}
           <div className="flex items-center gap-2.5">
             <AuthButton />
-            <Link to="/bozor"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-colors active:scale-95">
-              Bozorga kirish →
-            </Link>
           </div>
         </div>
       </nav>
