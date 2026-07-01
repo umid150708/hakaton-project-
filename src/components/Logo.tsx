@@ -1,9 +1,9 @@
 /**
  * Logo.tsx — Bozorboy brand mark.
  *
- * An Uzbek Chust do'ppi (black skullcap with white qalampir embroidery) with a
- * white ro'mol (cloth) wrapped around its lower-left corner, set on a warm
- * cream→gold tile — the traditional-bozor identity.
+ * A "bozorboy" (market lad): the classic silhouette avatar wearing an Uzbek
+ * Chust do'ppi cocked to one side — black cap with white qalampir embroidery
+ * and a tumor-arch band — on a dark circular badge with a warm gold ring.
  */
 
 export function Logo({ size = 32, className = '', animated = false }: { size?: number; className?: string; animated?: boolean }) {
@@ -14,40 +14,38 @@ export function Logo({ size = 32, className = '', animated = false }: { size?: n
       className={`${animated ? 'logo-float' : ''} ${className}`}
     >
       <defs>
-        <linearGradient id="bb-tile" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#f8efd9" />
-          <stop offset="1" stopColor="#e7cd90" />
-        </linearGradient>
-        <linearGradient id="bb-dome" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#23233f" />
-          <stop offset="1" stopColor="#0d0d1a" />
-        </linearGradient>
+        <clipPath id="bb-clip"><circle cx="24" cy="24" r="23" /></clipPath>
       </defs>
 
-      {/* Warm tile */}
-      <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="url(#bb-tile)" />
-      <rect x="1.5" y="1.5" width="45" height="45" rx="13" fill="none" stroke="#00000012" />
+      {/* Badge */}
+      <circle cx="24" cy="24" r="23" fill="#26262c" />
 
-      {/* Do'ppi dome */}
-      <path d="M11 35 C11 18 16.5 11 24 11 C31.5 11 37 18 37 35 Z" fill="url(#bb-dome)" />
-
-      {/* Qalampir (almond) embroidery */}
-      <path d="M24 15 C21.4 17.1 21.4 22 24 24.4 C26.6 22 26.6 17.1 24 15 Z" fill="#f8efd9" />
-      <circle cx="24" cy="19.6" r="1.15" fill="#14142a" />
-      <circle cx="18.5" cy="21" r="1" fill="#f8efd9" />
-      <circle cx="29.5" cy="21" r="1" fill="#f8efd9" />
-
-      {/* Tumor-motif band (white chevrons) */}
-      <g stroke="#f8efd9" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none">
-        <path d="M19 32.6 l2.2 -3 l2.2 3" />
-        <path d="M25 32.6 l2.2 -3 l2.2 3" />
-        <path d="M31 32.6 l2.2 -3 l2.2 3" />
+      {/* Silhouette (clipped to the badge) */}
+      <g clipPath="url(#bb-clip)">
+        <path d="M9 48 C9 38 15.5 33.5 24 33.5 C32.5 33.5 39 38 39 48 Z" fill="#bcbcc4" />
+        <circle cx="24" cy="24" r="8.6" fill="#d2d2d9" />
       </g>
 
-      {/* Oq ro'mol — white cloth wrapped around the lower-left corner */}
-      <path d="M7 37.5 C4.3 31 6.2 23.2 12.7 21.2 C14 22.7 15 23.8 16.6 24.9 C11.4 27 10.4 33 14.2 37.5 Z" fill="#ffffff" />
-      <path d="M12.6 21.7 C11 25.6 11.2 31.5 13.9 36.6" stroke="#d8cfb0" strokeWidth="0.7" fill="none" />
-      <circle cx="9.6" cy="35.8" r="1.5" fill="#ffffff" stroke="#d8cfb0" strokeWidth="0.5" />
+      {/* Do'ppi — cocked to one side on the crown */}
+      <g transform="translate(22.5 15) rotate(-15)">
+        {/* dome + band */}
+        <path d="M-10 4 C-10 -6 -5 -10 0 -10 C5 -10 10 -6 10 4 Z" fill="#15152a" />
+        <rect x="-10.5" y="3" width="21" height="4.6" rx="1.6" fill="#101024" />
+        {/* qalampir (almond) embroidery */}
+        <path d="M0 -8 C-2.6 -6 -2.6 -1.4 0 0.6 C2.6 -1.4 2.6 -6 0 -8 Z" fill="#f5f0e6" />
+        <circle cx="0" cy="-3.6" r="0.9" fill="#15152a" />
+        <circle cx="-4.6" cy="-3" r="0.85" fill="#f5f0e6" />
+        <circle cx="4.6" cy="-3" r="0.85" fill="#f5f0e6" />
+        {/* tumor-arch band */}
+        <g stroke="#f5f0e6" strokeWidth="1.1" fill="none" strokeLinecap="round">
+          <path d="M-7.5 6.4 q1.7 -2.1 3.4 0" />
+          <path d="M-2.4 6.4 q1.7 -2.1 3.4 0" />
+          <path d="M2.7 6.4 q1.7 -2.1 3.4 0" />
+        </g>
+      </g>
+
+      {/* Warm gold ring */}
+      <circle cx="24" cy="24" r="22.4" fill="none" stroke="#d9a441" strokeWidth="1.4" />
     </svg>
   );
 }
