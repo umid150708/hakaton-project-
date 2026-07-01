@@ -13,7 +13,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAuth, useDealContact, FREE_LIMIT } from '../lib/auth';
 import { CATEGORIES, SAMPLE_BUY, SAMPLE_SELL, loadUserAds, type Ad, type Category } from '../lib/bozorData';
-import { listAds, reveal, payDealFee, computeFee, type Match } from '../lib/marketplace';
+import { marketplace, computeFee, type Match } from '../lib/marketplace';
 import { fmtSum } from '../lib/pricingConfig';
 
 import AdCard           from '../components/AdCard';
@@ -61,7 +61,7 @@ function DealModal({
     if (!isSignedIn) { onNeedSignup(); return; }
     setPhase('loading');
     try {
-      const r = await reveal(ad.id);
+      const r = await marketplace.reveal(ad.id);
       if ('contact' in r && r.contact) { setContact(r.contact); setPhase('revealed'); return; }
       if ('paywall' in r) {
         if (r.paywall === 'signup')    { onClose(); onNeedSignup(); return; }
@@ -77,8 +77,8 @@ function DealModal({
   const doPay = async () => {
     setPhase('paying');
     try {
-      await payDealFee(ad.id);
-      const r = await reveal(ad.id);
+      await marketplace.payDealFee(ad.id);
+      const r = await marketplace.reveal(ad.id);
       if ('contact' in r && r.contact) { setContact(r.contact); setPhase('revealed'); return; }
       setPhase('error');
     } catch { setPhase('error'); }
@@ -193,7 +193,7 @@ export default function Bozor() {
   // filter client-side so the category counts stay correct).
   useEffect(() => {
     let cancelled = false;
-    listAds(tab, 'all')
+    marketplace.listAds(tab, 'all')
       .then(ads => { if (!cancelled) setRemoteAds(ads); })
       .catch(() => { if (!cancelled) setRemoteAds(null); });
     return () => { cancelled = true; };

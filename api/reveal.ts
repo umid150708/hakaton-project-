@@ -10,25 +10,18 @@
 
 import { sbSelect, sbUpsert } from './_supabase';
 import { dealFee, type AdRow } from './_match';
+import { json, preflight, methodNotAllowed } from './_http';
 
 export const config = { runtime: 'edge' };
 
 const FREE_LIMIT = 3;
 const SUBSCRIPTION_PLANS = ['starter', 'pro', 'business'];
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json', ...cors } });
-
 interface ProfileRow { id: string; plan: string | null; deal_contacts_used: number | null }
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-  if (req.method !== 'POST')   return json({ error: 'Method not allowed' }, 405);
+  if (req.method === 'OPTIONS') return preflight();
+  if (req.method !== 'POST')   return methodNotAllowed();
 
   try {
     const { userId, adId } = await req.json();

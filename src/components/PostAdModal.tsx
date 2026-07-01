@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CATEGORIES, UNIT_GROUPS, ALL_UNITS, FREQ_OPTIONS, saveUserAd, type Ad, type Category } from '../lib/bozorData';
-import { createAd, type Match, type NewAdInput } from '../lib/marketplace';
+import { marketplace, type Match, type NewAdInput } from '../lib/marketplace';
 
 interface Props {
   type: 'buy' | 'sell';
@@ -95,7 +95,7 @@ export default function PostAdModal({ type, onClose, onPosted }: Props) {
     };
 
     try {
-      const { matches } = await createAd(input);
+      const { matches } = await marketplace.createAd(input);
       finish(matches);
     } catch {
       // Backend not ready — fall back to a local ad so posting still works.

@@ -12,17 +12,9 @@
 
 import { sbSelect, sbUpsert } from './_supabase';
 import { matchScore, MATCH_THRESHOLD, type AdRow } from './_match';
+import { json, preflight, methodNotAllowed } from './_http';
 
 export const config = { runtime: 'edge' };
-
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...cors } });
 
 /** Public view of an ad — everything except the phone number. */
 function publicAd(a: AdRow) {
@@ -31,7 +23,7 @@ function publicAd(a: AdRow) {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (req.method === 'OPTIONS') return preflight();
 
   try {
     if (req.method === 'GET') {
@@ -104,7 +96,7 @@ export default async function handler(req: Request): Promise<Response> {
       });
     }
 
-    return json({ error: 'Method not allowed' }, 405);
+    return methodNotAllowed();
   } catch (err) {
     return json({ error: 'ads error', detail: String(err) }, 500);
   }

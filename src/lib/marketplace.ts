@@ -113,52 +113,59 @@ export function computeFee(
   return Math.round(Math.min(Math.max(value * DEAL_FEE_PCT, DEAL_FEE_MIN), DEAL_FEE_MAX));
 }
 
-// ── API calls ──────────────────────────────────────────────────────────────────
+// ── Backend client ─────────────────────────────────────────────────────────────
 
-/** Load active ads from the shared backend. Throws on failure (caller falls back). */
-export async function listAds(type: 'buy' | 'sell', category: Category): Promise<Ad[]> {
-  const params = new URLSearchParams({ type });
-  if (category !== 'all') params.set('category', category);
-  const res = await fetch(`/api/ads?${params.toString()}`, { signal: AbortSignal.timeout(12_000) });
-  if (!res.ok) throw new Error(`ads ${res.status}`);
-  const data = await res.json() as { ads?: AdRowPublic[] };
-  return (data.ads ?? []).map(rowToAd);
+interface RequestOpts { method?: 'GET' | 'POST'; body?: unknown; timeoutMs?: number; throwOnError?: boolean }
+
+/**
+ * MarketplaceClient — single object that owns all calls to the ads backend.
+ * The one private request() method centralises fetch/JSON/timeout handling
+ * (DRY), so each endpoint method stays a one-liner.
+ */
+class MarketplaceClient {
+  private async request<T>(path: string, opts: RequestOpts = {}): Promise<T> {
+    const { method = 'GET', body, timeoutMs = 12_000, throwOnError = true } = opts;
+    const res = await fetch(path, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (throwOnError && !res.ok) throw new Error(`${path} ${res.status}`);
+    return res.json() as Promise<T>;
+  }
+
+  private get userId(): string | null { return getUser()?.id ?? null; }
+
+  /** Load active ads. Throws on failure so callers can fall back to local data. */
+  async listAds(type: 'buy' | 'sell', category: Category): Promise<Ad[]> {
+    const params = new URLSearchParams({ type });
+    if (category !== 'all') params.set('category', category);
+    const data = await this.request<{ ads?: AdRowPublic[] }>(`/api/ads?${params.toString()}`);
+    return (data.ads ?? []).map(rowToAd);
+  }
+
+  /** Post a new ad; returns the created ad and the poster's immediate matches. */
+  async createAd(input: NewAdInput): Promise<{ ad: Ad; matches: Match[] }> {
+    const data = await this.request<{ ad: AdRowPublic; matches: { ad: AdRowPublic; score: number }[] }>(
+      '/api/ads', { method: 'POST', body: { ad: input, ownerId: this.userId }, timeoutMs: 15_000 },
+    );
+    return {
+      ad: rowToAd(data.ad),
+      matches: (data.matches ?? []).map(m => ({ ad: rowToAd(m.ad), score: m.score })),
+    };
+  }
+
+  /** Ask the server whether the current user may see this ad's contact. */
+  reveal(adId: string): Promise<RevealResult> {
+    return this.request<RevealResult>('/api/reveal', { method: 'POST', body: { userId: this.userId, adId } });
+  }
+
+  /** Simulated payment: record the platform fee for this deal. */
+  payDealFee(adId: string): Promise<{ ok: boolean; amount: number }> {
+    return this.request('/api/deal', { method: 'POST', body: { userId: this.userId, adId } });
+  }
 }
 
-/** Post a new ad; returns the created ad and the poster's immediate matches. */
-export async function createAd(input: NewAdInput): Promise<{ ad: Ad; matches: Match[] }> {
-  const res = await fetch('/api/ads', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ad: input, ownerId: getUser()?.id ?? null }),
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!res.ok) throw new Error(`createAd ${res.status}`);
-  const data = await res.json() as { ad: AdRowPublic; matches: { ad: AdRowPublic; score: number }[] };
-  return {
-    ad: rowToAd(data.ad),
-    matches: (data.matches ?? []).map(m => ({ ad: rowToAd(m.ad), score: m.score })),
-  };
-}
-
-/** Ask the server whether the current user may see this ad's contact. */
-export async function reveal(adId: string): Promise<RevealResult> {
-  const res = await fetch('/api/reveal', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: getUser()?.id ?? null, adId }),
-    signal: AbortSignal.timeout(12_000),
-  });
-  return res.json() as Promise<RevealResult>;
-}
-
-/** Simulated payment: record the platform fee for this deal. */
-export async function payDealFee(adId: string): Promise<{ ok: boolean; amount: number }> {
-  const res = await fetch('/api/deal', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: getUser()?.id ?? null, adId }),
-    signal: AbortSignal.timeout(12_000),
-  });
-  return res.json() as Promise<{ ok: boolean; amount: number }>;
-}
+/** Shared singleton — the app's one handle to the marketplace backend. */
+export const marketplace = new MarketplaceClient();

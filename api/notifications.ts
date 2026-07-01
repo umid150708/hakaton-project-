@@ -6,16 +6,9 @@
  */
 
 import { sbSelect, sbUpsert } from './_supabase';
+import { json, preflight, methodNotAllowed } from './_http';
 
 export const config = { runtime: 'edge' };
-
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json', ...cors } });
 
 interface NotifRow {
   id: string; user_id: string; kind: string; ad_id: string | null; my_ad_id: string | null;
@@ -23,7 +16,7 @@ interface NotifRow {
 }
 
 export default async function handler(req: Request): Promise<Response> {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  if (req.method === 'OPTIONS') return preflight();
 
   try {
     if (req.method === 'GET') {
@@ -47,7 +40,7 @@ export default async function handler(req: Request): Promise<Response> {
       return json({ ok: true });
     }
 
-    return json({ error: 'Method not allowed' }, 405);
+    return methodNotAllowed();
   } catch (err) {
     return json({ error: 'notifications error', detail: String(err) }, 500);
   }
