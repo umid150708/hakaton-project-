@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { signUpEmail, signInEmail, signInGoogle } from '../lib/auth';
 
 interface Props {
@@ -56,7 +57,7 @@ export default function AuthModal({ onSuccess, onClose, initialMode = 'signup' }
     }
   };
 
-  return (
+  return createPortal((
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm px-4 pb-4 sm:pb-0" onClick={onClose}>
       <div className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
 
@@ -101,7 +102,7 @@ export default function AuthModal({ onSuccess, onClose, initialMode = 'signup' }
           <div>
             <label className="text-slate-400 text-xs font-medium mb-1.5 block">Email</label>
             <input value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="aziz@mail.uz" type="email" autoFocus
+              placeholder="aziz@mail.uz" type="email"
               className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 focus:border-emerald-500 rounded-xl text-white text-sm placeholder-slate-500 outline-none transition-colors" />
           </div>
 
@@ -130,7 +131,7 @@ export default function AuthModal({ onSuccess, onClose, initialMode = 'signup' }
         </div>
       </div>
     </div>
-  );
+  ), document.body);
 }
 
 /** Map common Supabase auth errors to Uzbek. */
