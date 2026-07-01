@@ -89,3 +89,43 @@ body { font-family: 'Inter', system-ui, sans-serif; }
   animation: ticker-scroll 60s linear infinite;
 }
 .ticker-track:hover { animation-play-state: paused; }
+
+/* ── Bozorboy brand — traditional bozor vibe ── */
+
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2.5px); }
+}
+.logo-float { animation: logo-float 3.6s ease-in-out infinite; }
+
+/* Warm hero glow — gold (bozor/textiles) + emerald */
+.bozor-warm {
+  background:
+    radial-gradient(ellipse 55% 42% at 50% -4%, rgba(217,119,6,0.14), transparent 70%),
+    radial-gradient(ellipse 70% 45% at 50% 0%,  rgba(16,185,129,0.08), transparent 72%);
+}
+
+/* Ikat-style border accent (repeating warm chevrons) */
+.ikat-border {
+  height: 3px;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    #d97706 0, #d97706 6px,
+    #0d0d1a 6px, #0d0d1a 12px,
+    #059669 12px, #059669 18px,
+    #0d0d1a 18px, #0d0d1a 24px
+  );
+  background-size: 34px 3px;
+  opacity: 0.85;
+}
+
+/* Staggered fade-up for hero pieces */
+.rise { opacity: 0; animation: slideUpFade 0.55s ease-out forwards; }
+.rise-1 { animation-delay: 0.05s; }
+.rise-2 { animation-delay: 0.16s; }
+.rise-3 { animation-delay: 0.28s; }
+.rise-4 { animation-delay: 0.40s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-float, .ticker-track, .rise { animation: none; opacity: 1; }
+}

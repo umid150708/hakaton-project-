@@ -267,7 +267,7 @@ export default function ChatBot() {
           <div className="flex items-center gap-2 flex-1">
             <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center text-sm">🤖</div>
             <div>
-              <p className="text-white font-semibold text-sm leading-tight">Biznes Maslahatchi AI</p>
+              <p className="text-white font-semibold text-sm leading-tight">Bozorboy Maslahatchi</p>
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
                 <p className="text-emerald-400 text-xs">Onlayn</p>

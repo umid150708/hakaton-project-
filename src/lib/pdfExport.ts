@@ -28,7 +28,7 @@ export function downloadPlanPdf(plan: BusinessPlan, meta: PlanMeta): void {
 
   const footer = () => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(150);
-    doc.text(uz(`BiznesPlan AI · ${meta.date}`), M, H - 24);
+    doc.text(uz(`Bozorboy · ${meta.date}`), M, H - 24);
     doc.text(String(page), W - M, H - 24, { align: 'right' });
     doc.setTextColor(20);
   };

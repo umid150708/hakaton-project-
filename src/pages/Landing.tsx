@@ -1,5 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import AuthButton from '../components/AuthButton';
+import { Brand, Logo } from '../components/Logo';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -11,10 +12,7 @@ export default function Landing() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-800/60 bg-zinc-950/85 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-zinc-950 text-sm">B</div>
-            <span className="font-bold text-white tracking-tight">BiznesPlan AI</span>
-          </div>
+          <Brand size={34} animated />
 
           {/* Links */}
           <div className="hidden lg:flex items-center gap-7">
@@ -34,29 +32,29 @@ export default function Landing() {
       <section className="relative pt-36 pb-16 px-6 overflow-hidden">
         {/* Dot grid */}
         <div className="dot-grid absolute inset-0" />
-        {/* Radial glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(16,185,129,0.10),transparent)]" />
+        {/* Warm bozor glow — gold + emerald */}
+        <div className="bozor-warm absolute inset-0" />
 
         <div className="relative max-w-4xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-700/60 rounded-full text-xs text-zinc-400 mb-10 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Xakaton 2026 · Muammo 14 + 15 · O'zbekiston
+          <div className="rise rise-1 inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-amber-700/40 rounded-full text-xs text-amber-300/90 mb-10 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            An'anaviy bozor · Raqamli platforma · O'zbekiston
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none mb-6">
-            Ulgurji savdoni<br />
-            <span className="gradient-text">yangi darajaga oling</span>
+          <h1 className="rise rise-2 text-5xl md:text-7xl font-black tracking-tight leading-none mb-6">
+            Butun O'zbekiston bozori —<br />
+            <span className="gradient-text">bir platformada</span>
           </h1>
 
-          <p className="text-zinc-400 text-lg md:text-xl leading-relaxed mb-12 max-w-2xl mx-auto">
-            Chorsu, Ipodrom va butun O'zbekiston bo'yicha xaridorlar va sotuvchilarni
-            birlashtiruvchi B2B platforma — vositachisiz, tezkor, AI yordamida.
+          <p className="rise rise-3 text-zinc-400 text-lg md:text-xl leading-relaxed mb-12 max-w-2xl mx-auto">
+            Chorsu, Ipodrom va butun O'zbekiston bo'yicha xaridor va sotuvchini
+            bevosita bog'laydi — vositachisiz, tezkor, <span className="text-amber-300/90">Bozorboy</span> AI yordamida.
           </p>
 
           {/* CTAs */}
-          <div className="flex items-center justify-center gap-4 flex-wrap">
+          <div className="rise rise-4 flex items-center justify-center gap-4 flex-wrap">
             <Link to="/bozor"
               className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-emerald-950 text-base active:scale-95">
               Bozorga kirish →
@@ -267,11 +265,12 @@ export default function Landing() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-zinc-800/50 px-6 py-6 mt-auto">
+      <div className="ikat-border mt-auto" />
+      <footer className="border-t border-zinc-800/50 px-6 py-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-black text-zinc-950 text-xs">B</div>
-            <span className="text-zinc-600 text-sm font-medium">BiznesPlan AI · 2026</span>
+            <Logo size={26} />
+            <span className="text-zinc-600 text-sm font-medium">Bozorboy · 2026</span>
           </div>
           <Link to="/pricing" className="text-zinc-600 hover:text-zinc-300 text-sm transition-colors font-medium">
             Narxlar →

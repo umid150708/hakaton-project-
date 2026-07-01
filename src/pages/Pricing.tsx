@@ -1,5 +1,5 @@
 /**
- * Pricing.tsx — BiznesPlan AI plans & deal-fee page
+ * Pricing.tsx — Bozorboy plans & deal-fee page
  * All constants live in src/lib/pricingConfig.ts.
  */
 
@@ -11,6 +11,7 @@ import {
   AVG_DEAL_SUM, AVG_DEALS_PER_MONTH,
   planColor, fmtSum,
 } from '../lib/pricingConfig';
+import { Logo } from '../components/Logo';
 
 // ─── ROI Calculator ────────────────────────────────────────────────────────────
 
@@ -161,8 +162,8 @@ export default function Pricing() {
         <div className="max-w-5xl mx-auto flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="text-slate-500 hover:text-white text-xl leading-none">←</button>
           <div className="flex items-center gap-2 flex-1">
-            <div className="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center text-slate-950 font-bold text-xs">B</div>
-            <span className="text-white font-semibold text-sm">BiznesPlan AI</span>
+            <Logo size={26} />
+            <span className="text-white font-semibold text-sm">Bozorboy</span>
           </div>
           {user && <span className="text-slate-500 text-xs">Salom, {user.name.split(' ')[0]} 👋</span>}
         </div>
@@ -251,7 +252,7 @@ export default function Pricing() {
                 {[
                   { label: 'UzEx rasmiy tovar birjasi (uzex.uz)', rate: '0.18%', note: "faqat standart tovarlar: paxta, bug'doy, metall", highlight: false },
                   { label: "O'zbekiston norasmiy dallollari", rate: '3–5%', note: 'soliq yo\'q, hujjat yo\'q, AI yo\'q', highlight: false },
-                  { label: 'BiznesPlan AI — SME B2B platforma', rate: `${DEAL_FEE_PCT}%`, note: 'AI + kashfiyot + shaffoflik', highlight: true },
+                  { label: 'Bozorboy — SME B2B platforma', rate: `${DEAL_FEE_PCT}%`, note: 'AI + kashfiyot + shaffoflik', highlight: true },
                 ].map(r => (
                   <div key={r.label} className={`px-3 py-2.5 rounded-lg ${r.highlight ? 'bg-amber-900/25 border border-amber-700/40' : ''}`}>
                     <div className="flex items-center justify-between gap-3">
@@ -422,7 +423,7 @@ export default function Pricing() {
             <button onClick={() => navigate('/interview')} className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors">🤖 AI Maslahatchi</button>
             <button onClick={() => navigate('/bozor')} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl border border-slate-700 transition-colors">📊 Bozorga qaytish</button>
           </div>
-          <p className="text-slate-700 text-xs pt-2">BiznesPlan AI · Xakaton 2026 · O'zbekiston</p>
+          <p className="text-slate-700 text-xs pt-2">Bozorboy · Xakaton 2026 · O'zbekiston</p>
         </div>
       </div>
     </div>

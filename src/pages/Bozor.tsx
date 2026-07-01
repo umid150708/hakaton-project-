@@ -398,7 +398,7 @@ export default function Bozor() {
       )}
 
       <footer className="border-t border-zinc-800 bg-zinc-900/40 px-4 py-2.5 text-center space-y-0.5">
-        <p className="text-zinc-700 text-xs">Chorsu · Ipodrom ulgurji bozori · 2026-yil iyun · BiznesPlan AI</p>
+        <p className="text-zinc-700 text-xs">Chorsu · Ipodrom ulgurji bozori · 2026-yil iyun · Bozorboy</p>
         <p className="text-zinc-700 text-[11px]">
           O'rtacha ulgurji narxlar — indikativ, manba:{' '}
           <a href="https://uzex.uz" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-zinc-300">UzEx</a> ·{' '}
