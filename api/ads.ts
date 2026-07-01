@@ -1,10 +1,12 @@
 /**
  * api/ads.ts — Shared marketplace ads (server-side, service_role).
  *
- *   GET  /api/ads?type=buy&category=grain  → active ads WITHOUT contact numbers
- *   POST /api/ads  { ad, ownerId }         → insert ad, run matching, create
- *                                            notifications for matched owners,
- *                                            and return the poster's own matches
+ *   GET  /api/ads?type=buy&category=grain    → active ads WITHOUT contact numbers
+ *   POST /api/ads  { ad, ownerId }           → insert ad, run matching, create
+ *                                              notifications for matched owners,
+ *                                              and return the poster's own matches
+ *   PUT  /api/ads  { id, ownerId, patch }    → update fields on an ad you own
+ *                                              (price, quantity, status, etc.)
  *
  * Contact numbers are never returned here — the client gets them only through
  * /api/reveal after an eligibility/payment check.
@@ -15,6 +17,8 @@ import { matchScore, MATCH_THRESHOLD, type AdRow } from './_match';
 import { json, preflight, methodNotAllowed } from './_http';
 
 export const config = { runtime: 'edge' };
+
+const AD_STATUSES = ['active', 'inactive', 'sold'];
 
 /** Public view of an ad — everything except the phone number. */
 function publicAd(a: AdRow) {
@@ -94,6 +98,36 @@ export default async function handler(req: Request): Promise<Response> {
         ad: publicAd(saved),
         matches: matches.map(m => ({ ad: publicAd(m.ad), score: m.score })),
       });
+    }
+
+    if (req.method === 'PUT') {
+      const body = await req.json();
+      const id = String(body.id ?? '');
+      const ownerId = String(body.ownerId ?? '');
+      if (!id || !ownerId) return json({ error: 'id and ownerId required' }, 400);
+
+      const [existing] = await sbSelect<AdRow>('ads', `id=eq.${id}&limit=1`);
+      if (!existing) return json({ error: 'ad not found' }, 404);
+      if (existing.owner_id !== ownerId) return json({ error: 'forbidden' }, 403);
+
+      const patch = body.patch ?? {};
+      const row: Record<string, unknown> = { id: existing.id };
+      if ('status' in patch)        row.status         = AD_STATUSES.includes(patch.status) ? patch.status : existing.status;
+      if ('product' in patch)       row.product        = strOrNull(patch.product) ?? existing.product;
+      if ('quantityValue' in patch) row.quantity_value = numOrNull(patch.quantityValue);
+      if ('quantityMax' in patch)   row.quantity_max   = numOrNull(patch.quantityMax);
+      if ('quantityUnit' in patch)  row.quantity_unit  = strOrNull(patch.quantityUnit);
+      if ('quantityFreq' in patch)  row.quantity_freq  = strOrNull(patch.quantityFreq);
+      if ('region' in patch)        row.region         = strOrNull(patch.region);
+      if ('district' in patch)      row.district       = strOrNull(patch.district);
+      if ('location' in patch)      row.location       = strOrNull(patch.location);
+      if ('priceValue' in patch)    row.price_value    = numOrNull(patch.priceValue);
+      if ('priceMax' in patch)      row.price_max      = numOrNull(patch.priceMax);
+      if ('priceUnit' in patch)     row.price_unit     = strOrNull(patch.priceUnit);
+      if ('contact' in patch)       row.contact        = strOrNull(patch.contact);
+
+      const saved = await sbUpsert<Record<string, unknown>>('ads', row) as unknown as AdRow;
+      return json({ ad: publicAd(saved) });
     }
 
     return methodNotAllowed();

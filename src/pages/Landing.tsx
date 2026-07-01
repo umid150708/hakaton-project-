@@ -336,6 +336,7 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-6">
             <Link to="/oqitish" className="link-quiet text-muted hover:text-ink text-sm font-medium">O'quv dasturi</Link>
+            <Link to="/docs" className="link-quiet text-muted hover:text-ink text-sm font-medium">API</Link>
             <Link to="/pricing" className="link-quiet text-muted hover:text-ink text-sm font-medium">Narxlar →</Link>
           </div>
         </div>
