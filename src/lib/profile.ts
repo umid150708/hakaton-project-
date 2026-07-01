@@ -7,7 +7,7 @@
  * user's RLS-protected Supabase row. This context powers tailored AI answers.
  */
 
-import { updateProfile, type UserProfile, BIZ_TYPE_LABELS, type BizType } from './auth';
+import { updateProfile, type UserProfile, BIZ_TYPE_LABELS, COLLATERAL_LABELS, type BizType } from './auth';
 
 // ── Known Uzbek regions for location detection ────────────────────────────────
 
@@ -77,10 +77,15 @@ export function learnFromMessage(text: string): UserProfile | null {
 export function profileSummary(u: UserProfile | null): string {
   if (!u) return '';
   const parts: string[] = [];
-  if (u.bizType)     parts.push(BIZ_TYPE_LABELS[u.bizType]);
-  if (u.location)    parts.push(u.location);
-  if (u.disability)  parts.push(`${u.disability} guruh nogironlik`);
-  if (u.revenueBand) parts.push(`yillik daromad ${u.revenueBand}`);
-  if (u.employees)   parts.push(`${u.employees} xodim`);
+  if (u.businessName) parts.push(`"${u.businessName}"`);
+  if (u.bizType)      parts.push(BIZ_TYPE_LABELS[u.bizType]);
+  if (u.regType)      parts.push(u.regType.toUpperCase());
+  if (u.location)     parts.push(u.location);
+  if (u.yearsInBiz)   parts.push(`biznes yoshi: ${u.yearsInBiz} yil`);
+  if (u.employees)    parts.push(`${u.employees} xodim`);
+  if (u.revenueBand)  parts.push(`daromad ${u.revenueBand}`);
+  if (u.collateral && u.collateral !== 'none') parts.push(`garov: ${COLLATERAL_LABELS[u.collateral]}`);
+  if (u.disability)   parts.push(`${u.disability} guruh nogironlik`);
+  if (u.bio)          parts.push(`qo'shimcha: ${u.bio.slice(0, 120)}`);
   return parts.join(', ');
 }

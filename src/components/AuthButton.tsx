@@ -9,11 +9,13 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth, signOut } from '../lib/auth';
 import AuthModal from './AuthModal';
 
 export default function AuthButton() {
-  const user = useAuth();
+  const user     = useAuth();
+  const navigate = useNavigate();
   const [modal, setModal] = useState<null | 'signup' | 'signin'>(null);
   const [menu, setMenu]   = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -42,8 +44,13 @@ export default function AuthButton() {
               {user.name && <p className="text-white text-sm font-medium truncate">{user.name}</p>}
               <p className="text-zinc-500 text-xs truncate">{user.email || user.phone}</p>
             </div>
+            <button onClick={() => { navigate('/profile'); setMenu(false); }}
+              className="w-full text-left px-3 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors flex items-center gap-2">
+              <span className="text-zinc-500">👤</span> Profil
+            </button>
+            <div className="border-t border-zinc-800" />
             <button onClick={() => { void signOut(); setMenu(false); }}
-              className="w-full text-left px-3 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors">
+              className="w-full text-left px-3 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-red-400 transition-colors">
               Chiqish
             </button>
           </div>

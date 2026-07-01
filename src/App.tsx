@@ -4,6 +4,7 @@ import Landing from './pages/Landing';
 import Interview from './pages/Interview';
 import Bozor from './pages/Bozor';
 import Pricing from './pages/Pricing';
+import Profile from './pages/Profile';
 import PriceTicker from './components/PriceTicker';
 import { initAuth } from './lib/auth';
 
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/interview" element={<Interview />} />
         <Route path="/bozor" element={<Bozor />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );

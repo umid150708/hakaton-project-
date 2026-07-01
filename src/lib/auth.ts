@@ -15,6 +15,9 @@ import { supabase } from './supabaseClient';
 
 export type Plan = 'free' | 'starter' | 'pro' | 'business' | 'deal_fee';
 export type BizType = 'savdo' | 'ishlab_chiqarish' | 'xizmat' | 'qishloq' | 'qurilish' | 'boshqa';
+export type RegType = 'yatt' | 'mchj' | 'boshqa';
+export type Collateral = 'none' | 'real_estate' | 'vehicle' | 'both';
+export type YearsInBiz = '<1' | '1-3' | '3-5' | '5+';
 
 export interface UserProfile {
   id?: string;
@@ -26,11 +29,18 @@ export interface UserProfile {
   dealContactsUsed: number;
   joinedAt: string;
 
-  // Learned context (powers tailored AI advice)
+  // Structured context (powers tailored AI advice)
   disability?: 'I' | 'II' | 'III';
   location?: string;
   revenueBand?: '<500mln' | '500mln-1mlrd' | '>1mlrd';
   employees?: '0' | '1-5' | '5-20' | '20+';
+
+  // Extended business profile
+  businessName?: string;
+  regType?: RegType;
+  yearsInBiz?: YearsInBiz;
+  collateral?: Collateral;
+  bio?: string;
 }
 
 const KEY = 'biznesplan_user_v1';
@@ -101,6 +111,11 @@ interface Row {
   employees: string | null;
   plan: string | null;
   deal_contacts_used: number | null;
+  business_name: string | null;
+  reg_type: string | null;
+  years_in_biz: string | null;
+  collateral: string | null;
+  bio: string | null;
 }
 
 function rowToProfile(r: Row): UserProfile {
@@ -117,6 +132,11 @@ function rowToProfile(r: Row): UserProfile {
     location:         r.location ?? undefined,
     revenueBand:      (r.revenue_band as UserProfile['revenueBand']) ?? undefined,
     employees:        (r.employees as UserProfile['employees']) ?? undefined,
+    businessName:     r.business_name ?? undefined,
+    regType:          (r.reg_type as RegType) ?? undefined,
+    yearsInBiz:       (r.years_in_biz as YearsInBiz) ?? undefined,
+    collateral:       (r.collateral as Collateral) ?? undefined,
+    bio:              r.bio ?? undefined,
   };
 }
 
@@ -173,13 +193,18 @@ export function updateProfile(patch: Partial<UserProfile>): UserProfile | null {
   setMirror(next);
 
   const rowPatch: Record<string, unknown> = {};
-  if ('name'        in patch) rowPatch.name         = patch.name;
-  if ('phone'       in patch) rowPatch.phone        = patch.phone;
-  if ('bizType'     in patch) rowPatch.biz_type     = patch.bizType;
-  if ('disability'  in patch) rowPatch.disability   = patch.disability ?? null;
-  if ('location'    in patch) rowPatch.location     = patch.location ?? null;
-  if ('revenueBand' in patch) rowPatch.revenue_band = patch.revenueBand ?? null;
-  if ('employees'   in patch) rowPatch.employees    = patch.employees ?? null;
+  if ('name'         in patch) rowPatch.name          = patch.name;
+  if ('phone'        in patch) rowPatch.phone         = patch.phone;
+  if ('bizType'      in patch) rowPatch.biz_type      = patch.bizType;
+  if ('disability'   in patch) rowPatch.disability    = patch.disability ?? null;
+  if ('location'     in patch) rowPatch.location      = patch.location ?? null;
+  if ('revenueBand'  in patch) rowPatch.revenue_band  = patch.revenueBand ?? null;
+  if ('employees'    in patch) rowPatch.employees     = patch.employees ?? null;
+  if ('businessName' in patch) rowPatch.business_name = patch.businessName ?? null;
+  if ('regType'      in patch) rowPatch.reg_type      = patch.regType ?? null;
+  if ('yearsInBiz'   in patch) rowPatch.years_in_biz  = patch.yearsInBiz ?? null;
+  if ('collateral'   in patch) rowPatch.collateral    = patch.collateral ?? null;
+  if ('bio'          in patch) rowPatch.bio           = patch.bio ?? null;
   if (Object.keys(rowPatch).length) patchRow(rowPatch);
 
   return next;
@@ -221,4 +246,17 @@ export const BIZ_TYPE_LABELS: Record<BizType, string> = {
   qishloq:          "Qishloq xo'jaligi",
   qurilish:         'Qurilish',
   boshqa:           'Boshqa',
+};
+
+export const REG_TYPE_LABELS: Record<RegType, string> = {
+  yatt:   'YaTT (Yakka tartibli tadbirkor)',
+  mchj:   'MChJ (Mas\'uliyati cheklangan jamiyat)',
+  boshqa: 'Boshqa shakl',
+};
+
+export const COLLATERAL_LABELS: Record<Collateral, string> = {
+  none:        "Yo'q",
+  real_estate: "Ko'chmas mulk",
+  vehicle:     'Avtomobil',
+  both:        'Ikkalasi ham',
 };
