@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  IconRosetteDiscountCheck, IconEdit, IconPlus, IconMapPin, IconBuildingStore,
+  IconBriefcase, IconClipboardText, IconCalendar, IconUsers, IconCoin,
+  IconBuildingBank, IconWheelchair, IconLayoutGrid, IconPackage, IconUser,
+  IconTag, IconWheat, IconMeat, IconCarrot, IconBuildingSkyscraper, IconBread,
+  IconShirt, IconPlant2, IconChevronLeft, type Icon,
+} from '@tabler/icons-react';
+import {
   useAuth, updateProfile, PLAN_NAMES,
   BIZ_TYPE_LABELS, REG_TYPE_LABELS, COLLATERAL_LABELS,
   type BizType, type RegType, type Collateral, type YearsInBiz,
 } from '../lib/auth';
-import { loadUserAds, CATEGORIES, type Ad } from '../lib/bozorData';
+import { loadUserAds, type Ad, type Category } from '../lib/bozorData';
 
 const REGIONS = [
   'Toshkent shahri', 'Toshkent viloyati', 'Samarqand', "Farg'ona",
@@ -13,11 +20,18 @@ const REGIONS = [
   'Navoiy', 'Sirdaryo', 'Xorazm', 'Termiz', 'Urganch', "Qo'qon",
 ];
 
+// Category → line icon for the listings grid.
+const CAT_ICON: Record<Category, Icon> = {
+  all: IconPackage, grain: IconWheat, meat: IconMeat, veg: IconCarrot,
+  build: IconBuildingSkyscraper, food: IconBread, textile: IconShirt,
+  agri: IconPlant2, other: IconPackage,
+};
+
 export default function Profile() {
   const navigate = useNavigate();
   const user     = useAuth();
 
-  // View (Instagram-style) is the default; editing is behind the "Tahrirlash" button.
+  // View (Instagram-style) is default; the form is behind "Tahrirlash".
   const [mode, setMode] = useState<'view' | 'edit'>(
     () => (typeof window !== 'undefined' && window.location.hash === '#edit') ? 'edit' : 'view'
   );
@@ -89,26 +103,20 @@ export default function Profile() {
 
   const initial = (businessName || name || user.email || 'U').charAt(0).toUpperCase();
   const handle  = user.email?.split('@')[0] || name?.trim().split(' ')[0]?.toLowerCase() || 'foydalanuvchi';
-
-  // One-line summary under the name: activity · reg · region.
-  const metaBits = [
-    bizType && BIZ_TYPE_LABELS[bizType as BizType],
-    regType && (regType as string).toUpperCase(),
-    location,
-  ].filter(Boolean);
+  const metaBits = [bizType && BIZ_TYPE_LABELS[bizType as BizType], regType && (regType as string).toUpperCase()].filter(Boolean);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white pb-24">
 
       {/* ── Nav bar ── */}
       <header className="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur border-b border-zinc-800/80">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <button
             onClick={() => (mode === 'edit' ? setMode('view') : navigate(-1))}
             className="text-zinc-400 hover:text-white flex items-center gap-1 text-sm">
-            <span className="text-lg leading-none">‹</span> {mode === 'edit' ? 'Bekor qilish' : 'Orqaga'}
+            <IconChevronLeft size={18} /> {mode === 'edit' ? 'Bekor qilish' : 'Orqaga'}
           </button>
-          <p className="text-white font-semibold text-sm">{mode === 'edit' ? 'Profilni tahrirlash' : 'Profil'}</p>
+          <p className="text-white font-medium text-sm">{mode === 'edit' ? 'Profilni tahrirlash' : 'Profil'}</p>
           {mode === 'edit'
             ? <button onClick={handleSave}
                 className={`text-sm font-semibold transition-colors ${saved ? 'text-emerald-400' : 'text-emerald-500 hover:text-emerald-400'}`}>
@@ -120,122 +128,137 @@ export default function Profile() {
 
       {mode === 'view' ? (
         // ═══════════════════════ INSTAGRAM-STYLE VIEW ═══════════════════════
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-7">
 
-          {/* ── Header: avatar + identity ── */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-12 pb-8 border-b border-zinc-800">
-            <div className="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-zinc-950 text-4xl sm:text-6xl font-black shrink-0 shadow-lg shadow-emerald-900/30">
+          {/* ── Header ── */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 pb-6 border-b border-zinc-800/70">
+            {/* Avatar with emerald ring */}
+            <div className="w-[88px] h-[88px] sm:w-24 sm:h-24 rounded-full bg-emerald-500 flex items-center justify-center text-emerald-950 text-4xl font-semibold shrink-0 ring-2 ring-emerald-700/50 ring-offset-4 ring-offset-zinc-950">
               {initial}
             </div>
 
             <div className="flex-1 min-w-0 w-full">
-              {/* Handle + actions */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-                <div className="flex items-center gap-2 justify-center sm:justify-start">
-                  <h1 className="text-white text-xl font-normal truncate">{handle}</h1>
-                  {user.plan !== 'free' && (
-                    <span title="Tasdiqlangan tarif" className="text-emerald-400 text-sm">✔︎</span>
-                  )}
+              {/* Name + actions */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-1.5 justify-center sm:justify-start min-w-0">
+                  <h1 className="text-white text-xl font-medium truncate">{name || 'Ismsiz'}</h1>
+                  {user.plan !== 'free' && <IconRosetteDiscountCheck size={19} className="text-emerald-500 shrink-0" />}
                 </div>
-                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                <div className="flex items-center gap-2 justify-center sm:justify-start sm:ml-auto">
                   <button onClick={() => setMode('edit')}
-                    className="px-4 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold transition-colors">
-                    Profilni tahrirlash
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-sm font-semibold transition-colors">
+                    <IconEdit size={15} /> Tahrirlash
                   </button>
                   <button onClick={() => navigate('/bozor')}
-                    className="px-4 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold transition-colors">
-                    + E'lon
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-sm font-semibold transition-colors">
+                    <IconPlus size={15} /> E'lon
                   </button>
                 </div>
+              </div>
+
+              {/* Handle · tarif · location */}
+              <div className="flex items-center gap-2.5 mt-2 flex-wrap justify-center sm:justify-start">
+                <span className="text-zinc-500 text-sm">@{handle}</span>
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${user.plan !== 'free' ? 'bg-emerald-950 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                  {PLAN_NAMES[user.plan]} tarif
+                </span>
+                {location && (
+                  <span className="text-zinc-400 text-sm flex items-center gap-1"><IconMapPin size={14} /> {location}</span>
+                )}
               </div>
 
               {/* Stats */}
-              <div className="flex items-center justify-around sm:justify-start sm:gap-10 mb-5">
-                <Stat n={userAds.length}          label="e'lon" />
-                <Stat n={user.dealContactsUsed}   label="bitim" />
-                <Stat n={`${pct}%`}               label="profil" highlight={pct >= 80} />
+              <div className="flex items-center gap-6 mt-4 justify-center sm:justify-start">
+                <Stat n={userAds.length}        label="e'lon" />
+                <Stat n={user.dealContactsUsed} label="bitim" />
+                <Stat n={`${pct}%`}             label="profil" highlight={pct >= 80} />
               </div>
 
-              {/* Name + business + bio */}
-              <div className="text-center sm:text-left space-y-0.5">
-                <p className="text-white text-sm font-semibold">{name || 'Ismsiz'}</p>
-                {businessName && <p className="text-zinc-200 text-sm">🏢 {businessName}</p>}
-                {metaBits.length > 0 && <p className="text-zinc-500 text-sm">{metaBits.join(' · ')}</p>}
-                {bio && <p className="text-zinc-400 text-sm whitespace-pre-line pt-1.5 leading-relaxed">{bio}</p>}
-                <p className="text-zinc-600 text-xs pt-1.5">
-                  {PLAN_NAMES[user.plan]} tarif · {user.email || user.phone}
-                </p>
-              </div>
+              {/* Business name + bio */}
+              {(businessName || metaBits.length > 0 || bio) && (
+                <div className="mt-4 text-center sm:text-left">
+                  {businessName && (
+                    <div className="text-zinc-200 text-sm font-medium flex items-center gap-1.5 justify-center sm:justify-start">
+                      <IconBuildingStore size={15} className="text-zinc-500" /> {businessName}
+                      {metaBits.length > 0 && <span className="text-zinc-500 font-normal">· {metaBits.join(' · ')}</span>}
+                    </div>
+                  )}
+                  {bio && <p className="text-zinc-400 text-sm leading-relaxed mt-1.5 whitespace-pre-line">{bio}</p>}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* ── Completeness nudge ── */}
+          {/* ── Completeness nudge (only if incomplete) ── */}
           {pct < 100 && (
             <button onClick={() => setMode('edit')}
-              className="mt-6 w-full text-left bg-zinc-900 border border-zinc-800 hover:border-emerald-700 rounded-2xl px-5 py-4 transition-colors group">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-zinc-200 text-sm font-medium">
-                  Profilingizni to'ldiring — AI aniqroq maslahat beradi
-                </p>
-                <span className="text-emerald-400 text-sm font-bold shrink-0 ml-3">{pct}%</span>
+              className="mt-5 w-full flex items-center gap-3 bg-zinc-900 border border-zinc-800 hover:border-emerald-800/60 rounded-xl px-4 py-3 transition-colors text-left">
+              <div className="flex-1">
+                <p className="text-zinc-300 text-sm">Profilingizni to'ldiring — AI aniqroq maslahat beradi</p>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-2">
+                  <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+                </div>
               </div>
-              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${pct}%` }} />
-              </div>
+              <span className="text-emerald-400 text-sm font-semibold shrink-0">{pct}%</span>
             </button>
           )}
 
-          {/* ── Business info "highlights" ── */}
+          {/* ── Business info chips ── */}
           {infoCards().length > 0 && (
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {infoCards().map(c => (
-                <div key={c.label} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 flex flex-col gap-1">
-                  <span className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center text-sm`}>{c.icon}</span>
-                  <p className="text-zinc-500 text-[11px] mt-1">{c.label}</p>
-                  <p className="text-white text-sm font-semibold leading-tight">{c.value}</p>
+                <div key={c.label} className="bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-3">
+                  <div className="flex items-center gap-1.5 text-zinc-500 text-xs">
+                    <c.icon size={14} className={c.color} /> {c.label}
+                  </div>
+                  <p className="text-white text-sm font-medium mt-1.5 leading-tight">{c.value}</p>
                 </div>
               ))}
             </div>
           )}
 
-          {/* ── Tab bar ── */}
-          <div className="mt-8 border-t border-zinc-800 flex justify-center">
-            <div className="flex items-center gap-2 px-4 py-3 border-t-2 border-white -mt-px text-white text-xs font-semibold tracking-widest uppercase">
-              <span>▦</span> E'lonlarim
+          {/* ── Tab ── */}
+          <div className="mt-6 border-t border-zinc-800/70">
+            <div className="inline-flex items-center gap-1.5 py-3 -mt-px border-t-2 border-emerald-500 text-white text-sm font-medium">
+              <IconLayoutGrid size={16} /> E'lonlarim
             </div>
           </div>
 
           {/* ── Listings grid (the "posts") ── */}
           {userAds.length === 0 ? (
-            <div className="py-16 text-center">
-              <div className="w-16 h-16 rounded-full border-2 border-zinc-700 flex items-center justify-center mx-auto mb-4 text-2xl">📦</div>
-              <p className="text-white font-semibold">Hali e'lon yo'q</p>
+            <div className="py-14 text-center">
+              <div className="w-16 h-16 rounded-full border-2 border-zinc-700 flex items-center justify-center mx-auto mb-4 text-zinc-500">
+                <IconPackage size={28} />
+              </div>
+              <p className="text-white font-medium">Hali e'lon yo'q</p>
               <p className="text-zinc-500 text-sm mt-1">Birinchi e'loningizni joylang — bozorda ko'rinasiz</p>
               <button onClick={() => navigate('/bozor')}
-                className="mt-4 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors">
-                Bozorga o'tish →
+                className="mt-4 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-sm font-semibold transition-colors">
+                Bozorga o'tish
               </button>
             </div>
           ) : (
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-              {userAds.map(ad => (
-                <button key={ad.id} onClick={() => navigate('/bozor')}
-                  className="aspect-square rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 p-3.5 flex flex-col justify-between text-left transition-colors overflow-hidden">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl">{CATEGORIES.find(c => c.id === ad.category)?.icon ?? '📦'}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                      ad.type === 'buy' ? 'bg-blue-500/15 text-blue-400' : 'bg-emerald-500/15 text-emerald-400'
-                    }`}>
-                      {ad.type === 'buy' ? 'Olaman' : 'Sotaman'}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-white text-sm font-semibold leading-snug line-clamp-2">{ad.product}</p>
-                    <p className="text-zinc-500 text-xs mt-0.5">{ad.quantity}</p>
-                    {ad.price && <p className="text-emerald-400 text-xs font-semibold mt-0.5 truncate">{ad.price}</p>}
-                  </div>
-                </button>
-              ))}
+            <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {userAds.map(ad => {
+                const Cat = CAT_ICON[ad.category] ?? IconPackage;
+                const isBuy = ad.type === 'buy';
+                return (
+                  <button key={ad.id} onClick={() => navigate('/bozor')}
+                    className="aspect-square rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 p-3.5 flex flex-col justify-between text-left transition-colors overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <Cat size={22} className="text-zinc-400" />
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isBuy ? 'bg-blue-950 text-blue-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                        {isBuy ? 'Olaman' : 'Sotaman'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium leading-snug line-clamp-2">{ad.product}</p>
+                      <p className="text-zinc-500 text-xs mt-0.5">{ad.quantity}</p>
+                      {ad.price && <p className="text-emerald-400 text-xs font-medium mt-0.5 truncate">{ad.price}</p>}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -260,11 +283,11 @@ export default function Profile() {
           {/* Personal */}
           <Section title="Shaxsiy ma'lumot">
             <Group>
-              <InputRow icon="👤" iconBg="bg-red-500/90" label="Ism familiya">
+              <InputRow icon={IconUser} iconBg="bg-red-500/90" label="Ism familiya">
                 <input value={name} onChange={e => setName(e.target.value)} placeholder="Aziz Karimov" className={inputCls} />
               </InputRow>
               <Divider />
-              <SelectRow icon="📍" iconBg="bg-blue-500/90" label="Joylashuv">
+              <SelectRow icon={IconMapPin} iconBg="bg-blue-500/90" label="Joylashuv">
                 <select value={location} onChange={e => setLocation(e.target.value)} className={selectCls}>
                   <option value="">Tanlang</option>
                   {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
@@ -276,7 +299,7 @@ export default function Profile() {
           {/* Disability */}
           <Section title="Imtiyozlar" hint="Nogironlik bo'lsa — soliq va kredit imtiyozlari bor">
             <Group>
-              <ChipRow icon="♿" iconBg="bg-purple-500/90" label="Nogironlik guruhi"
+              <ChipRow icon={IconWheelchair} iconBg="bg-purple-500/90" label="Nogironlik guruhi"
                 options={[{ value: '', label: "Yo'q" }, { value: 'I', label: 'I' }, { value: 'II', label: 'II' }, { value: 'III', label: 'III' }]}
                 value={disability} onChange={setDisability} />
             </Group>
@@ -285,18 +308,18 @@ export default function Profile() {
           {/* Business */}
           <Section title="Biznesingiz">
             <Group>
-              <InputRow icon="🏢" iconBg="bg-orange-500/90" label="Biznes nomi">
+              <InputRow icon={IconBuildingStore} iconBg="bg-orange-500/90" label="Biznes nomi">
                 <input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="Karimov Savdo" className={inputCls} />
               </InputRow>
               <Divider />
-              <SelectRow icon="🏷️" iconBg="bg-emerald-500/90" label="Faoliyat turi">
+              <SelectRow icon={IconTag} iconBg="bg-emerald-500/90" label="Faoliyat turi">
                 <select value={bizType} onChange={e => setBizType(e.target.value as BizType)} className={selectCls}>
                   <option value="">Tanlang</option>
                   {Object.entries(BIZ_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </SelectRow>
               <Divider />
-              <SelectRow icon="📋" iconBg="bg-sky-500/90" label="Ro'yxat shakli">
+              <SelectRow icon={IconClipboardText} iconBg="bg-sky-500/90" label="Ro'yxat shakli">
                 <select value={regType} onChange={e => setRegType(e.target.value as RegType)} className={selectCls}>
                   <option value="">Tanlang</option>
                   {Object.entries(REG_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -308,19 +331,19 @@ export default function Profile() {
           {/* Scale */}
           <Section title="Biznes ko'lami">
             <Group>
-              <ChipRow icon="📅" iconBg="bg-pink-500/90" label="Biznes yoshi"
+              <ChipRow icon={IconCalendar} iconBg="bg-pink-500/90" label="Biznes yoshi"
                 options={[{ value: '<1', label: '<1' }, { value: '1-3', label: '1–3' }, { value: '3-5', label: '3–5' }, { value: '5+', label: '5+' }]}
                 value={yearsInBiz} onChange={v => setYearsInBiz(v as YearsInBiz)} />
               <Divider />
-              <ChipRow icon="👥" iconBg="bg-teal-500/90" label="Xodimlar"
+              <ChipRow icon={IconUsers} iconBg="bg-teal-500/90" label="Xodimlar"
                 options={[{ value: '0', label: "O'zim" }, { value: '1-5', label: '1–5' }, { value: '5-20', label: '5–20' }, { value: '20+', label: '20+' }]}
                 value={employees} onChange={setEmployees} />
               <Divider />
-              <ChipRow icon="💰" iconBg="bg-amber-500/90" label="Yillik daromad"
+              <ChipRow icon={IconCoin} iconBg="bg-amber-500/90" label="Yillik daromad"
                 options={[{ value: '<500mln', label: '<500mln' }, { value: '500mln-1mlrd', label: '0.5–1mlrd' }, { value: '>1mlrd', label: '1mlrd+' }]}
                 value={revenueBand} onChange={setRevenueBand} />
               <Divider />
-              <SelectRow icon="🏦" iconBg="bg-indigo-500/90" label="Kredit garovi">
+              <SelectRow icon={IconBuildingBank} iconBg="bg-indigo-500/90" label="Kredit garovi">
                 <select value={collateral} onChange={e => setCollateral(e.target.value as Collateral)} className={selectCls}>
                   <option value="">Tanlang</option>
                   {Object.entries(COLLATERAL_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -342,7 +365,7 @@ export default function Profile() {
 
           {/* Big save */}
           <button onClick={handleSave}
-            className={`w-full py-3.5 rounded-2xl text-sm font-bold transition-all active:scale-95 ${saved ? 'bg-emerald-900 text-emerald-300 border border-emerald-700' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}`}>
+            className={`w-full py-3.5 rounded-2xl text-sm font-bold transition-all active:scale-95 ${saved ? 'bg-emerald-900 text-emerald-300 border border-emerald-700' : 'bg-emerald-500 hover:bg-emerald-400 text-emerald-950'}`}>
             {saved ? '✓ Saqlandi — AI endi profilingizni biladi' : 'Profilni saqlash'}
           </button>
 
@@ -354,16 +377,16 @@ export default function Profile() {
     </div>
   );
 
-  // ── Build the business-info highlight cards from filled fields ──
-  function infoCards(): { icon: string; bg: string; label: string; value: string }[] {
-    const cards: { icon: string; bg: string; label: string; value: string }[] = [];
-    if (bizType)     cards.push({ icon: '🏷️', bg: 'bg-emerald-500/90', label: 'Faoliyat',  value: BIZ_TYPE_LABELS[bizType as BizType] });
-    if (regType)     cards.push({ icon: '📋', bg: 'bg-sky-500/90',     label: 'Shakl',     value: REG_TYPE_LABELS[regType as RegType] });
-    if (yearsInBiz)  cards.push({ icon: '📅', bg: 'bg-pink-500/90',    label: 'Tajriba',   value: `${yearsInBiz} yil` });
-    if (employees)   cards.push({ icon: '👥', bg: 'bg-teal-500/90',    label: 'Xodimlar',  value: employees === '0' ? "O'zim" : `${employees} kishi` });
-    if (revenueBand) cards.push({ icon: '💰', bg: 'bg-amber-500/90',   label: 'Daromad',   value: revenueBand });
-    if (collateral && collateral !== 'none') cards.push({ icon: '🏦', bg: 'bg-indigo-500/90', label: 'Garov', value: COLLATERAL_LABELS[collateral as Collateral] });
-    if (disability)  cards.push({ icon: '♿', bg: 'bg-purple-500/90',  label: 'Nogironlik', value: `${disability} guruh` });
+  // ── Business-info chips from filled fields ──
+  function infoCards(): { icon: Icon; color: string; label: string; value: string }[] {
+    const cards: { icon: Icon; color: string; label: string; value: string }[] = [];
+    if (bizType)     cards.push({ icon: IconBriefcase,      color: 'text-emerald-400', label: 'Faoliyat',   value: BIZ_TYPE_LABELS[bizType as BizType] });
+    if (regType)     cards.push({ icon: IconClipboardText,  color: 'text-blue-400',    label: 'Shakl',      value: REG_TYPE_LABELS[regType as RegType] });
+    if (yearsInBiz)  cards.push({ icon: IconCalendar,       color: 'text-pink-400',    label: 'Tajriba',    value: `${yearsInBiz} yil` });
+    if (employees)   cards.push({ icon: IconUsers,          color: 'text-teal-400',    label: 'Xodimlar',   value: employees === '0' ? "O'zim" : `${employees} kishi` });
+    if (revenueBand) cards.push({ icon: IconCoin,           color: 'text-amber-400',   label: 'Daromad',    value: revenueBand });
+    if (collateral && collateral !== 'none') cards.push({ icon: IconBuildingBank, color: 'text-indigo-400', label: 'Garov', value: COLLATERAL_LABELS[collateral as Collateral] });
+    if (disability)  cards.push({ icon: IconWheelchair,     color: 'text-purple-400',  label: 'Nogironlik', value: `${disability} guruh` });
     return cards;
   }
 }
@@ -379,8 +402,8 @@ const selectCls = 'bg-transparent text-white text-sm text-right outline-none app
 
 function Stat({ n, label, highlight }: { n: number | string; label: string; highlight?: boolean }) {
   return (
-    <div className="text-center sm:text-left">
-      <span className={`text-base font-bold ${highlight ? 'text-emerald-400' : 'text-white'}`}>{n}</span>{' '}
+    <div>
+      <span className={`text-base font-semibold ${highlight ? 'text-emerald-400' : 'text-white'}`}>{n}</span>{' '}
       <span className="text-zinc-500 text-sm">{label}</span>
     </div>
   );
@@ -391,7 +414,7 @@ function Stat({ n, label, highlight }: { n: number | string; label: string; high
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wide px-4 mb-2">{title}</p>
+      <p className="text-zinc-500 text-xs font-semibold px-4 mb-2">{title}</p>
       {children}
       {hint && <p className="text-zinc-600 text-xs px-4 mt-2">{hint}</p>}
     </div>
@@ -406,24 +429,28 @@ function Divider() {
   return <div className="h-px bg-zinc-800 ml-[52px]" />;
 }
 
-function RowShell({ icon, iconBg, label, children }: { icon: string; iconBg: string; label: string; children: React.ReactNode }) {
+function IconSquare({ icon: Ic, iconBg }: { icon: Icon; iconBg: string }) {
+  return (
+    <span className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+      <Ic size={16} className="text-white" />
+    </span>
+  );
+}
+
+function InputRow({ icon, iconBg, label, children }: { icon: Icon; iconBg: string; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 min-h-[52px]">
-      <span className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center text-sm shrink-0`}>{icon}</span>
+      <IconSquare icon={icon} iconBg={iconBg} />
       <span className="text-white text-sm font-medium whitespace-nowrap">{label}</span>
       <div className="flex-1 flex justify-end min-w-0">{children}</div>
     </div>
   );
 }
 
-function InputRow(props: { icon: string; iconBg: string; label: string; children: React.ReactNode }) {
-  return <RowShell {...props} />;
-}
-
-function SelectRow({ icon, iconBg, label, children }: { icon: string; iconBg: string; label: string; children: React.ReactNode }) {
+function SelectRow({ icon, iconBg, label, children }: { icon: Icon; iconBg: string; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 min-h-[52px]">
-      <span className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center text-sm shrink-0`}>{icon}</span>
+      <IconSquare icon={icon} iconBg={iconBg} />
       <span className="text-white text-sm font-medium whitespace-nowrap">{label}</span>
       <div className="flex-1 flex justify-end items-center gap-1 min-w-0">
         {children}
@@ -434,13 +461,13 @@ function SelectRow({ icon, iconBg, label, children }: { icon: string; iconBg: st
 }
 
 function ChipRow({ icon, iconBg, label, options, value, onChange }: {
-  icon: string; iconBg: string; label: string;
+  icon: Icon; iconBg: string; label: string;
   options: { value: string; label: string }[];
   value: string; onChange: (v: string) => void;
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 min-h-[52px]">
-      <span className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center text-sm shrink-0`}>{icon}</span>
+      <IconSquare icon={icon} iconBg={iconBg} />
       <span className="text-white text-sm font-medium whitespace-nowrap">{label}</span>
       <div className="flex-1 flex justify-end gap-1.5 flex-wrap">
         {options.map(o => (
