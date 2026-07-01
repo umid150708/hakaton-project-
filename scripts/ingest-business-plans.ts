@@ -23,13 +23,17 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
+// Require the lib entry directly — pdf-parse's index runs a debug self-test on import.
+const pdfParse = require('pdf-parse/lib/pdf-parse.js') as (buf: Buffer) => Promise<{ text: string }>;
 const mammoth  = require('mammoth')  as { extractRawText: (opts: { path: string }) => Promise<{ value: string }> };
+const WordExtractor = require('word-extractor') as new () => { extract: (p: string) => Promise<{ getBody: () => string }> };
+const wordExtractor = new WordExtractor();
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const SUPABASE_URL      = process.env.SUPABASE_URL      ?? '';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY ?? '';
+// Prefer the service key (bypasses RLS so writes always succeed); fall back to anon.
+const SUPABASE_ANON_KEY = process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_ANON_KEY ?? '';
 // Use GEMINI_API_KEY_2 (AIzaSy... format) — the AQ. key doesn't support embeddings
 const GEMINI_KEY        = process.env.GEMINI_API_KEY_2 ?? process.env.GEMINI_API_KEY ?? '';
 const FILES_DIR         = process.env.BUSINESS_PLANS_DIR ?? path.join(process.env.HOME ?? '', 'Desktop/Business plans and idea');
@@ -40,6 +44,7 @@ const EMBEDDING_DIMS  = 768;   // truncated via MRL (max ivfflat supports is 200
 const CHUNK_SIZE    = 600;   // chars per chunk
 const CHUNK_OVERLAP = 120;   // overlap between chunks
 const DELAY_MS      = 1200;  // pause between Gemini embedding calls (rate limit safety)
+const MAX_CHUNKS_PER_FILE = 12;  // cap embeddings/file — front of a plan carries the key content
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -70,17 +75,27 @@ function isQualityContent(text: string): { ok: boolean; reason?: string } {
   // Minimum length
   if (text.length < 500) return { ok: false, reason: 'too short' };
 
-  // Must contain business-related keywords (in Uzbek or English)
-  const keywords = /(biznes|business|reja|plan|daromad|revenue|kredit|loan|bozor|market|moliya|finance|tahlil|analiz|analysis|xodim|employee|narx|price|solig'i|tax|foyda|profit|xarajat|cost|toshkent|uzbekistan|o'zbekiston)/i;
+  // Must contain business-related keywords — Latin Uzbek/English AND Cyrillic
+  // Uzbek/Russian (many of the sample plans are in Cyrillic).
+  const keywords = new RegExp([
+    // Latin
+    'biznes','business','reja','plan','daromad','revenue','kredit','loan','bozor','market',
+    'moliya','finance','tahlil','analiz','analysis','xodim','narx','price','soliq','tax',
+    'foyda','profit','xarajat','cost','toshkent','uzbekiston','xo\'jalik','loyiha',
+    // Cyrillic (Uzbek + Russian)
+    'бизнес','план','режа','лойиҳа','лойиха','даромад','доход','кредит','бозор','рынок',
+    'молия','таҳлил','нарх','цена','фойда','прибыль','харажат','затрат','хўжалик','хужалик',
+    'фермер','ишлаб','производств','маҳсулот','продукц','проект','инвестиц','тошкент','ўзбекистон',
+  ].join('|'), 'i');
 
   if (!keywords.test(text)) {
     return { ok: false, reason: 'no business keywords' };
   }
 
-  // Reject if mostly gibberish/corrupted
+  // Reject if mostly gibberish/corrupted (Cyrillic words run a bit longer)
   const words = text.split(/\s+/);
   const avgWordLen = text.length / words.length;
-  if (avgWordLen > 15 || avgWordLen < 2) {
+  if (avgWordLen > 20 || avgWordLen < 2) {
     return { ok: false, reason: 'corrupted text' };
   }
 
@@ -129,10 +144,10 @@ async function extractText(filePath: string): Promise<string> {
   }
 
   if (ext === '.doc') {
-    // .doc (Word 97-2003) — mammoth handles some .doc files too
+    // .doc (Word 97-2003 binary) — mammoth only does .docx; word-extractor reads .doc
     try {
-      const result = await mammoth.extractRawText({ path: filePath });
-      return result.value as string;
+      const doc = await wordExtractor.extract(filePath);
+      return doc.getBody();
     } catch {
       console.warn(`   ⚠ Could not parse .doc: ${path.basename(filePath)}`);
       return '';
@@ -225,7 +240,7 @@ async function main() {
       continue;
     }
 
-    const chunks   = chunkText(text);
+    const chunks   = chunkText(text).slice(0, MAX_CHUNKS_PER_FILE);
     const category = guessCategory(fileName);
     const title    = path.basename(fileName, path.extname(fileName)).replace(/[-_]/g, ' ');
 

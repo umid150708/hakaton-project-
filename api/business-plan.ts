@@ -39,11 +39,45 @@ Aynan shu 9 bo'limni shu tartibda yozing:
 
 QOIDALAR: har bir "body" — 2-4 abzas yoki "•" bilan punktlar. Professional o'zbek tilida. Raqamlarni aniq va real O'zbekiston sharoitiga mos bering. Umumiy bo'sh gaplardan qoching.`;
 
-async function generate(userPrompt: string): Promise<string> {
+// ── RAG: retrieve excerpts from the ingested real business plans ──────────────
+
+interface MatchRow { title: string; content: string; similarity: number }
+
+async function retrieveExamples(queryText: string): Promise<MatchRow[]> {
+  const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) return [];
+  try {
+    const embedding = await withGemini(async (genAI) => {
+      const em = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
+      const r = await em.embedContent({
+        content: { parts: [{ text: queryText.slice(0, 2000) }], role: 'user' },
+        taskType: 'RETRIEVAL_QUERY' as never,
+        outputDimensionality: 768,
+      } as never);
+      return Array.from(r.embedding.values);
+    });
+    // Pass all 3 params to avoid PostgREST function-overload ambiguity.
+    const res = await fetch(`${url}/rest/v1/rpc/match_business_plans`, {
+      method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query_embedding: embedding, match_count: 4, filter_category: null }),
+    });
+    if (!res.ok) return [];
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  } catch { return []; }
+}
+
+async function generate(userPrompt: string, examples: MatchRow[]): Promise<string> {
+  const exBlock = examples.length
+    ? `\n\nO'ZBEKISTON REAL BIZNES-REJALARIDAN NAMUNA PARCHALAR (uslub, tuzilma va real raqamlar uchun ilhom oling — nusxa ko'chirmang, foydalanuvchi biznesiga moslang):\n` +
+      examples.map((e, i) => `[Namuna ${i + 1} — ${e.title}]\n${e.content.slice(0, 600)}`).join('\n\n')
+    : '';
+
   return withGemini(async (genAI) => {
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      systemInstruction: SYSTEM,
+      systemInstruction: SYSTEM + exBlock,
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.6,
@@ -76,7 +110,10 @@ ${a.extra ? `QO'SHIMCHA: ${a.extra}` : ''}
 
 Ushbu ma'lumotlar asosida to'liq, professional biznes-reja tuz. Moliyaviy bo'limda berilgan investitsiya summasidan kelib chiqib aniq raqamlar bilan hisob-kitob qil.`;
 
-    const raw = await generate(userPrompt);
+    // RAG: ground the plan in the most similar ingested real business plans.
+    const examples = await retrieveExamples(`${profile} ${a.idea ?? ''} ${a.market ?? ''}`.trim());
+
+    const raw = await generate(userPrompt, examples);
     let plan: unknown;
     try { plan = JSON.parse(raw); }
     catch { return json({ error: 'parse', detail: raw.slice(0, 300) }, 502); }
