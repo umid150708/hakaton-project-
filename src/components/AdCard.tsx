@@ -13,10 +13,10 @@ function CatBadge({ cat }: { cat: Ad['category'] }) {
 
 interface Props {
   ad: Ad;
-  onContact: () => void;
+  onOpen: () => void;
 }
 
-export default function AdCard({ ad, onContact }: Props) {
+export default function AdCard({ ad, onOpen }: Props) {
   const isBuy = ad.type === 'buy';
 
   return (
@@ -65,17 +65,17 @@ export default function AdCard({ ad, onContact }: Props) {
           )}
         </div>
 
-        {/* Contact button */}
+        {/* Details button — opens deal terms; contact stays hidden until unlocked */}
         {ad.contact && (
           <button
-            onClick={onContact}
+            onClick={onOpen}
             className={`mt-1 w-full py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95
               ${isBuy
                 ? 'bg-blue-950/60 hover:bg-blue-900/80 text-blue-200 border border-blue-900/60 hover:border-blue-700'
                 : 'bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-200 border border-emerald-900/60 hover:border-emerald-700'
               }`}
           >
-            📞 Aloqa qilish
+            📋 Batafsil
           </button>
         )}
       </div>

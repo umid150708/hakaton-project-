@@ -17,51 +17,109 @@ import PostAdModal from '../components/PostAdModal';
 import AIStrip     from '../components/AIStrip';
 import SignUpModal from '../components/SignUpModal';
 
-// ─── Small local modals (too small to warrant own files) ───────────────────────
+// ─── Deal modal (terms → gated contact reveal) ─────────────────────────────────
 
-function PaywallModal({ onClose, onUpgrade }: { onClose: () => void; onUpgrade: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4" onClick={onClose}>
-      <div className="w-full max-w-sm bg-zinc-900 rounded-2xl border border-zinc-700 shadow-2xl p-6 text-center space-y-4" onClick={e => e.stopPropagation()}>
-        <div className="text-5xl">🔒</div>
-        <p className="text-white font-bold text-lg">3 ta bepul aloqa tugadi</p>
-        <p className="text-zinc-400 text-sm leading-relaxed">
-          Davom ettirish uchun tarifni tanlang yoki yopilgan bitimdan faqat{' '}
-          <span className="text-amber-400 font-semibold">1.5%</span> to'lang.
-        </p>
-        <div className="space-y-2">
-          <button onClick={onUpgrade} className="w-full py-3 bg-purple-700 hover:bg-purple-600 text-white text-sm font-bold rounded-xl transition-colors">
-            Tariflarni ko'rish →
-          </button>
-          <button onClick={onClose} className="w-full py-2 text-zinc-600 hover:text-zinc-400 text-sm transition-colors">
-            Keyinroq
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+type DealMode = 'signup' | 'reveal' | 'subscribe';
 
-function ContactModal({ ad, onClose }: { ad: Ad; onClose: () => void }) {
+/**
+ * DealModal — two-stage deal flow.
+ *   Stage 1: show deal conditions/terms; contact stays HIDDEN.
+ *   Stage 2 (after agreeing): contact is revealed — only reached if the user
+ *   is eligible (active subscription, deal-fee plan, or free trial left).
+ * Non-eligible users are routed to Pricing instead of seeing the contact.
+ */
+function DealModal({
+  ad, revealed, mode, freeLeft, onAgree, onClose,
+}: {
+  ad: Ad;
+  revealed: boolean;
+  mode: DealMode;
+  freeLeft: number | null;
+  onAgree: () => void;
+  onClose: () => void;
+}) {
   const isBuy = ad.type === 'buy';
+  const accent = isBuy ? 'text-blue-400' : 'text-emerald-400';
   const btnCls = isBuy ? 'bg-blue-700 hover:bg-blue-600' : 'bg-emerald-700 hover:bg-emerald-600';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4" onClick={onClose}>
       <div className="w-full max-w-sm bg-zinc-900 rounded-2xl border border-zinc-700 shadow-2xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <p className="text-white font-bold">{ad.product}</p>
-          <button onClick={onClose} className="text-zinc-500 hover:text-white">✕</button>
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-white font-bold leading-tight">{ad.product}</p>
+            <span className={`text-[11px] font-semibold ${accent}`}>{isBuy ? '🛒 Xaridor' : '💰 Sotuvchi'}</span>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white shrink-0">✕</button>
         </div>
-        <div className="space-y-2 text-sm">
+
+        {/* Deal facts */}
+        <div className="space-y-2 text-sm bg-zinc-800/50 rounded-xl p-3">
           <p className="text-zinc-300">📦 {ad.quantity}</p>
           <p className="text-zinc-300">📍 {ad.location}</p>
-          {ad.price && <p className={`font-bold ${isBuy ? 'text-blue-400' : 'text-emerald-400'}`}>💵 {ad.price}</p>}
+          {ad.price && <p className={`font-bold ${accent}`}>💵 {ad.price}</p>}
         </div>
-        <a href={`tel:${ad.contact.replace(/\s/g, '')}`}
-          className={`flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold transition-colors ${btnCls}`}>
-          📞 {ad.contact}
-        </a>
-        <p className="text-zinc-600 text-xs text-center">Bu aloqa bepul limitingizdan birini sarfladi.</p>
+
+        {revealed ? (
+          /* ── Stage 2: contact revealed ── */
+          <>
+            <a href={`tel:${ad.contact.replace(/\s/g, '')}`}
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold transition-colors ${btnCls}`}>
+              📞 {ad.contact}
+            </a>
+            <p className="text-zinc-600 text-xs text-center">
+              Kontakt ochildi{freeLeft !== null && ' — 1 ta bepul aloqa sarflandi'}. Bevosita bog'laning.
+            </p>
+          </>
+        ) : (
+          /* ── Stage 1: terms + gated action ── */
+          <>
+            <div className="rounded-xl border border-zinc-700/60 p-3 space-y-1.5">
+              <p className="text-zinc-300 text-xs font-semibold mb-1">Bitim shartlari</p>
+              {[
+                "Platforma xaridor va sotuvchini bevosita bog'laydi.",
+                'Sifat, narx va yetkazib berish tomonlar kelishuviga bog\'liq.',
+                'Kontakt faqat obuna yoki bepul limit orqali ochiladi.',
+                'Yopilgan bitimdan platforma xizmat haqi olinadi.',
+              ].map(t => (
+                <div key={t} className="flex items-start gap-2">
+                  <span className={`shrink-0 text-xs ${accent}`}>•</span>
+                  <span className="text-zinc-400 text-xs leading-relaxed">{t}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Contact locked */}
+            <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-zinc-800/60 border border-dashed border-zinc-700 text-zinc-500 text-sm">
+              🔒 +998 •• ••• •• ••
+            </div>
+
+            {mode === 'reveal' && (
+              <button onClick={onAgree} className={`w-full py-3 rounded-xl text-white text-sm font-bold transition-all active:scale-95 ${btnCls}`}>
+                ✓ Roziman — kontaktni ochish
+              </button>
+            )}
+            {mode === 'subscribe' && (
+              <button onClick={onAgree} className="w-full py-3 rounded-xl text-white text-sm font-bold bg-purple-700 hover:bg-purple-600 transition-all active:scale-95">
+                🔒 Ochish uchun obuna tanlash
+              </button>
+            )}
+            {mode === 'signup' && (
+              <button onClick={onAgree} className="w-full py-3 rounded-xl text-white text-sm font-bold bg-emerald-700 hover:bg-emerald-600 transition-all active:scale-95">
+                Ro'yxatdan o'tib ochish
+              </button>
+            )}
+
+            <p className="text-zinc-600 text-xs text-center">
+              {mode === 'reveal' && freeLeft !== null && `Bepul limit: ${freeLeft} ta qoldi`}
+              {mode === 'reveal' && freeLeft === null && 'Obunangiz faol — cheksiz aloqa'}
+              {mode === 'subscribe' && "Bepul limitingiz tugadi — kontaktni ochish uchun to'lov kerak"}
+              {mode === 'signup' && "Kontaktni ochish uchun avval ro'yxatdan o'ting"}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -81,12 +139,12 @@ export default function Bozor() {
   const [userAds, setUserAds]   = useState<Ad[]>(loadUserAds);
   const [showPostModal, setShowPostModal] = useState(false);
 
-  // Auth gate
-  const [authUser, setAuthUser]       = useState<UserProfile | null>(getUser);
-  const [showSignUp, setShowSignUp]   = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [contactAd, setContactAd]     = useState<Ad | null>(null);
-  const [pendingAd, setPendingAd]     = useState<Ad | null>(null);
+  // Auth gate + deal flow
+  const [authUser, setAuthUser]         = useState<UserProfile | null>(getUser);
+  const [showSignUp, setShowSignUp]     = useState(false);
+  const [dealAd, setDealAd]             = useState<Ad | null>(null);   // ad shown in DealModal
+  const [dealRevealed, setDealRevealed] = useState(false);            // contact unlocked?
+  const [pendingAd, setPendingAd]       = useState<Ad | null>(null);  // ad awaiting post-signup
 
   // Reload user ads when post modal closes
   useEffect(() => { if (!showPostModal) setUserAds(loadUserAds()); }, [showPostModal]);
@@ -107,33 +165,47 @@ export default function Bozor() {
     .filter(a => cat === 'all' || a.category === cat)
     .filter(a => !q || a.product.toLowerCase().includes(q) || a.location.toLowerCase().includes(q));
 
-  // ── Auth gate ─────────────────────────────────────────────────────────────────
+  // ── Deal flow ───────────────────────────────────────────────────────────────
+  // Clicking "Batafsil" opens the terms stage — contact stays hidden. The user
+  // only reaches the contact after agreeing AND being eligible (subscription or
+  // free trial). Ineligible users are routed to Pricing.
 
-  const handleContact = (ad: Ad) => {
-    const u = getUser();
-    if (!u) { setPendingAd(ad); setShowSignUp(true); return; }
-    const result = useDealContact();
-    if (result === 'paywall') { setShowPaywall(true); return; }
-    setAuthUser(getUser());
-    setContactAd(ad);
+  const openDeal = (ad: Ad) => {
+    setDealAd(ad);
+    setDealRevealed(false);
   };
-
-  const onSignUpSuccess = () => {
-    setShowSignUp(false);
-    setAuthUser(getUser());
-    if (!pendingAd) return;
-    const result = useDealContact();
-    result === 'ok' ? setContactAd(pendingAd) : setShowPaywall(true);
-    setPendingAd(null);
-  };
-
-  const switchTab = (t: 'buy' | 'sell') => { setTab(t); setCat('all'); setSearch(''); };
 
   // ── Free counter label ────────────────────────────────────────────────────────
 
   const freeLeft = authUser?.plan === 'free'
     ? Math.max(0, FREE_LIMIT - (authUser.dealContactsUsed ?? 0))
     : null;
+
+  // What the DealModal's action button should do for the current user
+  const dealMode: DealMode = !authUser
+    ? 'signup'
+    : authUser.plan !== 'free' || (freeLeft ?? 0) > 0
+      ? 'reveal'
+      : 'subscribe';
+
+  const agreeDeal = () => {
+    if (!dealAd) return;
+    if (dealMode === 'signup')    { setPendingAd(dealAd); setDealAd(null); setShowSignUp(true); return; }
+    if (dealMode === 'subscribe') { setDealAd(null); navigate('/pricing'); return; }
+    // reveal — consume a free contact (no-op for subscribers) then show
+    const result = useDealContact();
+    if (result === 'paywall') { setDealAd(null); navigate('/pricing'); return; }
+    setAuthUser(getUser());
+    setDealRevealed(true);
+  };
+
+  const onSignUpSuccess = () => {
+    setShowSignUp(false);
+    setAuthUser(getUser());
+    if (pendingAd) { openDeal(pendingAd); setPendingAd(null); }  // resume at terms stage
+  };
+
+  const switchTab = (t: 'buy' | 'sell') => { setTab(t); setCat('all'); setSearch(''); };
 
   const totalBuy  = [...userAds.filter(a => a.type === 'buy'),  ...SAMPLE_BUY].length;
   const totalSell = [...userAds.filter(a => a.type === 'sell'), ...SAMPLE_SELL].length;
@@ -273,7 +345,7 @@ export default function Bozor() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {visibleAds.map(ad => (
-              <AdCard key={ad.id} ad={ad} onContact={() => handleContact(ad)} />
+              <AdCard key={ad.id} ad={ad} onOpen={() => openDeal(ad)} />
             ))}
           </div>
         )}
@@ -282,8 +354,7 @@ export default function Bozor() {
       {/* ── Modals ── */}
       {showPostModal  && <PostAdModal type={tab} onClose={() => setShowPostModal(false)} onPost={() => setUserAds(loadUserAds())} />}
       {showSignUp     && <SignUpModal onSuccess={onSignUpSuccess} onClose={() => { setShowSignUp(false); setPendingAd(null); }} />}
-      {showPaywall    && <PaywallModal onClose={() => setShowPaywall(false)} onUpgrade={() => { setShowPaywall(false); navigate('/pricing'); }} />}
-      {contactAd      && <ContactModal ad={contactAd} onClose={() => setContactAd(null)} />}
+      {dealAd         && <DealModal ad={dealAd} revealed={dealRevealed} mode={dealMode} freeLeft={freeLeft} onAgree={agreeDeal} onClose={() => setDealAd(null)} />}
 
       <footer className="border-t border-zinc-800 bg-zinc-900/40 px-4 py-2.5 text-center">
         <p className="text-zinc-700 text-xs">Chorsu · Ipodrom ulgurji bozori · 2026-yil iyun · BiznesPlan AI</p>
