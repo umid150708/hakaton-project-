@@ -97,9 +97,8 @@ export default function Landing() {
             {/* Subtle brand tint */}
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-soft)] via-transparent to-transparent pointer-events-none" />
             <div className="relative flex flex-col flex-1">
-              <div className="flex items-start justify-between mb-8">
+              <div className="mb-8">
                 <span className="text-4xl">🏪</span>
-                <span className="text-[11px] text-faint border border-line rounded-full px-3 py-1 font-medium">Muammo 14</span>
               </div>
 
               <h2 className="text-2xl font-black text-ink mb-3 leading-tight tracking-tight">B2B Bozor</h2>
@@ -133,9 +132,8 @@ export default function Landing() {
             className="card-tap card-sell group relative flex flex-col bg-surface hover:bg-elevated border border-line rounded-3xl p-8 cursor-pointer overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--gold-soft)] via-transparent to-transparent pointer-events-none" />
             <div className="relative flex flex-col flex-1">
-              <div className="flex items-start justify-between mb-8">
+              <div className="mb-8">
                 <span className="text-4xl">🤖</span>
-                <span className="text-[11px] text-faint border border-line rounded-full px-3 py-1 font-medium">Muammo 15</span>
               </div>
 
               <h2 className="text-2xl font-black text-ink mb-3 tracking-tight">AI Maslahatchi</h2>
