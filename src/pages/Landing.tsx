@@ -166,9 +166,8 @@ export default function Landing() {
             className="card-tap group relative flex flex-col bg-surface hover:bg-elevated border border-line rounded-3xl p-8 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-transparent to-transparent pointer-events-none" />
             <div className="relative flex flex-col flex-1">
-              <div className="flex items-start justify-between mb-8">
+              <div className="mb-8">
                 <span className="text-4xl">🎓</span>
-                <span className="text-[11px] text-gold border border-gold/50 rounded-full px-3 py-1 font-medium">Yangi</span>
               </div>
 
               <h2 className="text-2xl font-black text-ink mb-3 tracking-tight">O'quv dasturi</h2>
