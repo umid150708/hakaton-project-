@@ -11,7 +11,7 @@ export default function ThemeToggle({ className = '' }: { className?: string }) 
 
   return (
     <button
-      onClick={toggle}
+      onClick={e => toggle({ x: e.clientX, y: e.clientY })}
       aria-label={isDark ? "Kunduzgi rejim" : "Tungi rejim"}
       title={isDark ? "Kunduzgi rejim" : "Tungi rejim"}
       className="btn-icon relative w-9 h-9 grid place-items-center rounded-full border border-line bg-surface text-gold hover:bg-elevated"

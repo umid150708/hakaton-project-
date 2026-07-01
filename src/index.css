@@ -88,11 +88,24 @@ body {
   color: var(--ink);
 }
 
-/* Smooth cross-fade when the theme flips (scoped to color props → no layout jank) */
+/* Fallback theme flip (browsers without the View Transitions API, or reduced-motion off):
+   a plain color cross-fade. Doesn't reach gradients/box-shadows/pseudo-elements, which is
+   why the primary path below (View Transitions) is preferred where supported. */
 html.theme-anim,
 html.theme-anim * {
   transition: background-color .35s ease, border-color .35s ease, color .35s ease, fill .35s ease, stroke .35s ease !important;
 }
+
+/* Primary theme flip (Chrome/Edge/Safari 18+): the JS side drives a circular clip-path
+   reveal on ::view-transition-new(root), so we disable the browser's default cross-fade
+   here to avoid the two animations fighting each other. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
 
 /* ────────────────────────────────────────────────────────────────────────────
    Motion — every interactive element should feel alive & relaxed
