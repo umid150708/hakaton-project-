@@ -62,6 +62,12 @@ function cacheSet(tab: string, cat: string, text: string) {
   } catch { /* storage full — ignore */ }
 }
 
+// A real brief is a full sentence. A token-truncated fragment is short and
+// ends mid-word/number (e.g. "...Namanganda 75") — reject those.
+function isComplete(text: string): boolean {
+  return text.length >= 60 && /[.!?…»)"']$/.test(text.trim());
+}
+
 // ── Prompt builder — passes real ad data for analysis ────────────────────────
 
 function buildPrompt(tab: 'buy' | 'sell', catLabel: string, ads: Ad[]): string {
@@ -133,6 +139,7 @@ export default function AIStrip({ tab, cat, ads }: Props) {
       body: JSON.stringify({
         system: ANALYST_SYSTEM,
         prompt: buildPrompt(tab, catLabel, ads),
+        maxTokens: 400,
       }),
       signal: AbortSignal.timeout(20_000),
     })
@@ -140,7 +147,9 @@ export default function AIStrip({ tab, cat, ads }: Props) {
       .then((data: { text?: string }) => {
         if (cancelled) return;
         const t = (data?.text ?? '').trim();
-        if (t) { setText(t); cacheSet(tab, cat, t); }
+        // Reject obviously-truncated fragments (e.g. "Mol go'shti Namanganda 75")
+        // rather than showing them — a valid brief is a full sentence.
+        if (t && isComplete(t)) { setText(t); cacheSet(tab, cat, t); }
         else setError(true);
       })
       .catch(() => { if (!cancelled) setError(true); })
@@ -159,7 +168,7 @@ export default function AIStrip({ tab, cat, ads }: Props) {
             AI Tahlil · {tab === 'buy' ? 'Xaridorlar' : 'Sotuvchilar'} · {catLabel}
           </p>
           {fromCache && !loading && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-slate-800 text-slate-500 rounded-full border border-slate-700">
+            <span className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 rounded-full border border-zinc-700">
               keshdan
             </span>
           )}
@@ -167,12 +176,12 @@ export default function AIStrip({ tab, cat, ads }: Props) {
 
         {loading ? (
           <div className="space-y-2">
-            <div className="h-3 bg-slate-800 rounded-full animate-pulse w-full" />
-            <div className="h-3 bg-slate-800 rounded-full animate-pulse w-[85%]" />
-            <div className="h-3 bg-slate-800 rounded-full animate-pulse w-[60%]" />
+            <div className="h-3 bg-zinc-800 rounded-full animate-pulse w-full" />
+            <div className="h-3 bg-zinc-800 rounded-full animate-pulse w-[85%]" />
+            <div className="h-3 bg-zinc-800 rounded-full animate-pulse w-[60%]" />
           </div>
         ) : error ? (
-          <p className="text-slate-500 text-sm">
+          <p className="text-zinc-500 text-sm">
             Tahlil yuklanmadi.{' '}
             <button
               onClick={() => setForceRefresh(n => n + 1)}
@@ -182,7 +191,7 @@ export default function AIStrip({ tab, cat, ads }: Props) {
             </button>
           </p>
         ) : (
-          <p className="text-slate-200 text-sm leading-relaxed">{text}</p>
+          <p className="text-zinc-200 text-sm leading-relaxed">{text}</p>
         )}
       </div>
 
@@ -190,7 +199,7 @@ export default function AIStrip({ tab, cat, ads }: Props) {
         <button
           onClick={() => setForceRefresh(n => n + 1)}
           title="Yangi tahlil"
-          className="shrink-0 text-slate-700 hover:text-purple-400 text-base transition-colors mt-0.5"
+          className="shrink-0 text-zinc-700 hover:text-purple-400 text-base transition-colors mt-0.5"
         >
           ↻
         </button>

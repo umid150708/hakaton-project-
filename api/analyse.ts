@@ -6,7 +6,9 @@
  *   2. Gemini (free, ~500 req/day per key)          — automatic fallback
  *
  * Accepts an optional `system` field so the caller can teach the model
- * writing style before passing market data.
+ * writing style before passing market data, and an optional `maxTokens`
+ * so deep multi-section analyses can request a longer answer than the
+ * short market brief.
  */
 
 import { withGemini } from './_gemini';
@@ -21,7 +23,7 @@ const cors = {
 
 // ── Groq ──────────────────────────────────────────────────────────────────────
 
-async function callGroq(system: string, prompt: string): Promise<string> {
+async function callGroq(system: string, prompt: string, maxTokens: number): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new Error('GROQ_API_KEY not configured');
 
@@ -36,7 +38,7 @@ async function callGroq(system: string, prompt: string): Promise<string> {
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages,
-      max_tokens: 300,
+      max_tokens: maxTokens,
       temperature: 0.6,
     }),
   });
@@ -50,11 +52,14 @@ async function callGroq(system: string, prompt: string): Promise<string> {
 
 // ── Gemini fallback ───────────────────────────────────────────────────────────
 
-async function callGemini(system: string, prompt: string): Promise<string> {
+async function callGemini(system: string, prompt: string, maxTokens: number): Promise<string> {
   return withGemini(async (genAI) => {
+    // gemini-1.5-flash is NON-thinking: the whole token budget goes to the
+    // visible answer. (gemini-2.5-flash spends the budget on hidden reasoning
+    // first, which truncated short briefs to a useless fragment.)
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: { maxOutputTokens: 300, temperature: 0.6 },
+      model: 'gemini-1.5-flash',
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.6 },
       systemInstruction: system,
     });
     const result = await model.generateContent(prompt);
@@ -70,10 +75,13 @@ export default async function handler(req: Request): Promise<Response> {
 
   let prompt: string;
   let system: string;
+  let maxTokens: number;
   try {
     const body = await req.json();
-    prompt = String(body.prompt ?? '').slice(0, 2000);
-    system = String(body.system ?? '').slice(0, 3000);
+    prompt = String(body.prompt ?? '').slice(0, 4000);
+    system = String(body.system ?? '').slice(0, 6000);
+    // Default 400 (short market brief); deep analyses may request up to 1500.
+    maxTokens = Math.min(Math.max(Math.round(Number(body.maxTokens)) || 400, 100), 1500);
     if (!prompt) throw new Error('empty prompt');
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid body' }), { status: 400, headers: cors });
@@ -85,15 +93,15 @@ export default async function handler(req: Request): Promise<Response> {
 
     if (process.env.GROQ_API_KEY) {
       try {
-        text = await callGroq(system, prompt);
+        text = await callGroq(system, prompt, maxTokens);
         provider = 'groq';
       } catch (err) {
         console.warn('Groq failed, falling back to Gemini:', String(err));
-        text = await callGemini(system, prompt);
+        text = await callGemini(system, prompt, maxTokens);
         provider = 'gemini-fallback';
       }
     } else {
-      text = await callGemini(system, prompt);
+      text = await callGemini(system, prompt, maxTokens);
       provider = 'gemini';
     }
 

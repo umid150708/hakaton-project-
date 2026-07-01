@@ -11,13 +11,25 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUser } from '../lib/auth';
+import { IconChartBar, IconSwords, IconBuildingSkyscraper, IconArrowRight, type Icon } from '@tabler/icons-react';
+import { getUser, useAuth } from '../lib/auth';
 import { learnFromMessage, profileSummary } from '../lib/profile';
+import {
+  ANALYSIS_META, analysisSystem, buildAnalysisPrompt, canAnalyse, type AnalysisType,
+} from '../lib/analysis';
+
+const ANALYSIS_ICON: Record<AnalysisType, Icon> = {
+  bozor:   IconChartBar,
+  raqobat: IconSwords,
+  sanoat:  IconBuildingSkyscraper,
+};
 
 interface ChatMessage {
   role: 'user' | 'bot';
   text: string;
   id: string;
+  kind?: 'analysis';   // rendered as a full-width titled card
+  title?: string;
 }
 
 interface HistoryItem {
@@ -89,6 +101,8 @@ function detectChips(botText: string): string[] {
 
 export default function ChatBot() {
   const navigate = useNavigate();
+  const user     = useAuth();
+  const ready    = canAnalyse(user);   // have enough profile for a tailored analysis?
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'bot', text: WELCOME_MESSAGE, id: 'welcome' },
   ]);
@@ -159,6 +173,52 @@ export default function ChatBot() {
     sendMessage(input);
   };
 
+  // Run one of the three structured analyses on the signed-in user's profile.
+  const runAnalysis = async (type: AnalysisType) => {
+    if (loading) return;
+    const u    = getUser();
+    const meta = ANALYSIS_META[type];
+
+    // Always echo the chosen analysis as a user message.
+    setMessages(prev => [...prev, { role: 'user', text: meta.label, id: Date.now().toString() }]);
+
+    // Need at least the business type to tailor the analysis.
+    if (!canAnalyse(u)) {
+      setMessages(prev => [...prev, {
+        role: 'bot',
+        id: Date.now().toString() + '_np',
+        text: "Aniq tahlil uchun avval profilingizni to'ldiring — kamida **biznes turingizni** kiriting. Shunda tahlil aynan sizning biznesingizga moslanadi.\n\nProfil → yuqoridagi hisobingiz orqali.",
+      }]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/analyse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system:    analysisSystem(type),
+          prompt:    buildAnalysisPrompt(type, u),
+          maxTokens: 1200,
+        }),
+        signal: AbortSignal.timeout(35_000),
+      });
+      const data = await res.json();
+      const text = (data?.text ?? '').trim() || "Tahlil olinmadi. Qaytadan urinib ko'ring.";
+      setMessages(prev => [...prev, {
+        role: 'bot', id: Date.now().toString() + '_an', text, kind: 'analysis', title: meta.label,
+      }]);
+    } catch (err) {
+      const errText = String(err).includes('timeout')
+        ? "Tahlil vaqti tugadi. Qaytadan urinib ko'ring."
+        : "Xatolik yuz berdi. Qaytadan urinib ko'ring.";
+      setMessages(prev => [...prev, { role: 'bot', id: Date.now().toString() + '_ae', text: errText }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Render bot text: strip markdown headers, render bullets, bold, newlines
   const formatText = (text: string) => {
     return text.split('\n').map((line, i, arr) => {
@@ -225,30 +285,46 @@ export default function ChatBot() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
           {messages.map(msg => (
-            <div
-              key={msg.id}
-              className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {msg.role === 'bot' && (
-                <div className="w-8 h-8 bg-emerald-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
-                  🤖
+            msg.kind === 'analysis' ? (
+              // Full-width titled analysis card
+              <div key={msg.id} className="flex gap-3 justify-start">
+                <div className="w-8 h-8 bg-emerald-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">🤖</div>
+                <div className="flex-1 min-w-0 bg-zinc-900 border border-zinc-800 rounded-2xl rounded-tl-sm overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-zinc-800 bg-emerald-950/20 flex items-center gap-2">
+                    <IconChartBar size={15} className="text-emerald-400" />
+                    <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wide">{msg.title}</span>
+                  </div>
+                  <div className="px-4 py-3 text-sm text-zinc-100 leading-relaxed [&_strong]:text-white [&_strong]:font-semibold">
+                    {formatText(msg.text)}
+                  </div>
                 </div>
-              )}
-              <div
-                className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-emerald-700 text-white rounded-tr-sm'
-                    : 'bg-zinc-800 text-zinc-100 rounded-tl-sm'
-                }`}
-              >
-                {formatText(msg.text)}
               </div>
-              {msg.role === 'user' && (
-                <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
-                  👤
+            ) : (
+              <div
+                key={msg.id}
+                className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {msg.role === 'bot' && (
+                  <div className="w-8 h-8 bg-emerald-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
+                    🤖
+                  </div>
+                )}
+                <div
+                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-emerald-700 text-white rounded-tr-sm'
+                      : 'bg-zinc-800 text-zinc-100 rounded-tl-sm'
+                  }`}
+                >
+                  {formatText(msg.text)}
                 </div>
-              )}
-            </div>
+                {msg.role === 'user' && (
+                  <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
+                    👤
+                  </div>
+                )}
+              </div>
+            )
           ))}
 
           {/* Typing dots */}
@@ -269,8 +345,37 @@ export default function ChatBot() {
         </div>
       </div>
 
+      {/* ── AI analysis modes ── */}
+      <div className="px-4 pt-2">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-zinc-600 text-xs">AI bozor tahlili:</p>
+            {!ready && (
+              <button onClick={() => navigate('/profile')}
+                className="flex items-center gap-1 text-emerald-500 hover:text-emerald-400 text-xs transition-colors">
+                Profilni to'ldiring <IconArrowRight size={13} />
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {(Object.keys(ANALYSIS_META) as AnalysisType[]).map(t => {
+              const m  = ANALYSIS_META[t];
+              const Ic = ANALYSIS_ICON[t];
+              return (
+                <button key={t} onClick={() => runAnalysis(t)} disabled={loading}
+                  className="flex flex-col gap-1 p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-emerald-700 text-left transition-colors disabled:opacity-50">
+                  <Ic size={18} className="text-emerald-400" />
+                  <span className="text-white text-xs font-semibold leading-tight">{m.label}</span>
+                  <span className="text-zinc-500 text-[11px] leading-tight">{m.sub}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* ── Quick question chips (always visible) ── */}
-      <div className="px-4 pb-2">
+      <div className="px-4 pb-2 pt-3">
         <div className="max-w-2xl mx-auto">
           <p className="text-zinc-600 text-xs mb-2">Tez savollar:</p>
           <div className="flex gap-2 flex-wrap">
