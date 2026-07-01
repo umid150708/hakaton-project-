@@ -1,11 +1,16 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Interview from './pages/Interview';
 import Bozor from './pages/Bozor';
 import Pricing from './pages/Pricing';
 import PriceTicker from './components/PriceTicker';
+import { initAuth } from './lib/auth';
 
 export default function App() {
+  // Wire Supabase session → auth store once, at startup
+  useEffect(() => { initAuth(); }, []);
+
   return (
     <BrowserRouter>
       {/* Average market prices — top of every page, distinct from ad prices */}

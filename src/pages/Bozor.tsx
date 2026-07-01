@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { getUser, useDealContact, FREE_LIMIT, type UserProfile } from '../lib/auth';
+import { useAuth, useDealContact, FREE_LIMIT } from '../lib/auth';
 import { CATEGORIES, SAMPLE_BUY, SAMPLE_SELL, loadUserAds, type Ad, type Category } from '../lib/bozorData';
 
 import AdCard      from '../components/AdCard';
@@ -140,7 +140,7 @@ export default function Bozor() {
   const [showPostModal, setShowPostModal] = useState(false);
 
   // Auth gate + deal flow
-  const [authUser, setAuthUser]         = useState<UserProfile | null>(getUser);
+  const authUser = useAuth();                                         // reactive current user
   const [showSignUp, setShowSignUp]     = useState(false);
   const [dealAd, setDealAd]             = useState<Ad | null>(null);   // ad shown in DealModal
   const [dealRevealed, setDealRevealed] = useState(false);            // contact unlocked?
@@ -195,13 +195,11 @@ export default function Bozor() {
     // reveal — consume a free contact (no-op for subscribers) then show
     const result = useDealContact();
     if (result === 'paywall') { setDealAd(null); navigate('/pricing'); return; }
-    setAuthUser(getUser());
     setDealRevealed(true);
   };
 
   const onSignUpSuccess = () => {
     setShowSignUp(false);
-    setAuthUser(getUser());
     if (pendingAd) { openDeal(pendingAd); setPendingAd(null); }  // resume at terms stage
   };
 

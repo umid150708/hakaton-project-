@@ -1,32 +1,28 @@
 /**
  * profile.ts — Per-user context learned from the chatbot conversation.
  *
- * As the user answers the bot (or clicks chips), we pattern-match facts
- * about them — disability group, location, revenue, employees, business
- * type — and store them on their UserProfile. This context is then sent
- * to the AI so advice is tailored to the exact person.
- *
- * Storage: localStorage (fast, via auth.ts) + Supabase (cross-device,
- * via /api/profile). localStorage is the cache; Supabase is the source
- * of truth that follows the user across devices.
+ * As the user answers the bot (or clicks chips), we pattern-match facts about
+ * them — disability group, location, revenue, employees, business type — and
+ * merge them onto their profile via updateProfile(), which persists to the
+ * user's RLS-protected Supabase row. This context powers tailored AI answers.
  */
 
-import { updateProfile, saveUser, type UserProfile, BIZ_TYPE_LABELS, type BizType } from './auth';
+import { updateProfile, type UserProfile, BIZ_TYPE_LABELS, type BizType } from './auth';
 
 // ── Known Uzbek regions for location detection ────────────────────────────────
 
 const REGIONS = [
   'Toshkent', 'Samarqand', "Farg'ona", 'Andijon', 'Namangan', 'Buxoro',
   'Nukus', 'Qarshi', 'Jizzax', 'Navoiy', 'Sirdaryo', 'Xorazm', 'Termiz',
-  'Qashqadaryo', 'Surxondaryo', 'Guliston', 'Urganch', 'Qo\'qon', 'Chirchiq',
+  'Qashqadaryo', 'Surxondaryo', 'Guliston', 'Urganch', "Qo'qon", 'Chirchiq',
 ];
 
 const BIZ_KEYWORDS: { match: RegExp; type: BizType }[] = [
-  { match: /savdo|do'kon|ulgurji|magazin/i,        type: 'savdo' },
+  { match: /savdo|do'kon|ulgurji|magazin/i,          type: 'savdo' },
   { match: /ishlab chiqar|zavod|fabrika|produksiya/i, type: 'ishlab_chiqarish' },
-  { match: /xizmat|servis|ko'rsat/i,                type: 'xizmat' },
-  { match: /qishloq|fermer|dehqon|hosil/i,          type: 'qishloq' },
-  { match: /qurilish|qurol|stroitel/i,              type: 'qurilish' },
+  { match: /xizmat|servis|ko'rsat/i,                  type: 'xizmat' },
+  { match: /qishloq|fermer|dehqon|hosil/i,            type: 'qishloq' },
+  { match: /qurilish|qurol|stroitel/i,                type: 'qurilish' },
 ];
 
 /**
@@ -37,12 +33,12 @@ export function extractProfile(text: string): Partial<UserProfile> {
   const t = text.toLowerCase();
   const patch: Partial<UserProfile> = {};
 
-  // Disability group — "I guruh", "II guruh", "III guruh"
+  // Disability group
   if (/\biii\s*guruh\b/i.test(text))      patch.disability = 'III';
   else if (/\bii\s*guruh\b/i.test(text))  patch.disability = 'II';
   else if (/\bi\s*guruh\b/i.test(text))   patch.disability = 'I';
 
-  // Location — first matching region name
+  // Location
   const region = REGIONS.find(r => text.toLowerCase().includes(r.toLowerCase()));
   if (region) patch.location = region;
 
@@ -65,19 +61,17 @@ export function extractProfile(text: string): Partial<UserProfile> {
 }
 
 /**
- * Apply extracted facts to the stored profile and persist to Supabase.
- * Returns the updated profile (or null if user not signed up / nothing learned).
+ * Apply extracted facts to the profile (persists to Supabase).
+ * Returns the updated profile, or null if nothing learned / not signed in.
  */
 export function learnFromMessage(text: string): UserProfile | null {
   const patch = extractProfile(text);
   if (Object.keys(patch).length === 0) return null;
-  const updated = updateProfile(patch);
-  if (updated) syncProfile(updated);
-  return updated;
+  return updateProfile(patch);
 }
 
 /**
- * Build a one-line Uzbek context string describing the user, for AI injection.
+ * One-line Uzbek context string describing the user, for AI injection.
  * Returns '' if we know nothing yet.
  */
 export function profileSummary(u: UserProfile | null): string {
@@ -89,69 +83,4 @@ export function profileSummary(u: UserProfile | null): string {
   if (u.revenueBand) parts.push(`yillik daromad ${u.revenueBand}`);
   if (u.employees)   parts.push(`${u.employees} xodim`);
   return parts.join(', ');
-}
-
-// ── Supabase sync (cross-device persistence) ──────────────────────────────────
-
-/** Fire-and-forget: persist the profile to Supabase by phone. */
-export function syncProfile(u: UserProfile): void {
-  if (!u.phone) return;
-  fetch('/api/profile', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      phone:        u.phone,
-      name:         u.name,
-      biz_type:     u.bizType,
-      disability:   u.disability ?? null,
-      location:     u.location ?? null,
-      revenue_band: u.revenueBand ?? null,
-      employees:    u.employees ?? null,
-    }),
-  }).catch(() => { /* silent — localStorage is the working copy */ });
-}
-
-/**
- * Sign in a returning user by phone: pull their profile from Supabase and
- * restore it into localStorage. Returns the user, or null if not found.
- */
-export async function signInByPhone(phone: string): Promise<UserProfile | null> {
-  try {
-    const res = await fetch(`/api/profile?phone=${encodeURIComponent(phone)}`);
-    if (!res.ok) return null;
-    const row = await res.json();
-    if (!row || !row.phone) return null;
-    const user: UserProfile = {
-      name:        row.name ?? '',
-      phone:       row.phone,
-      bizType:     (row.biz_type as UserProfile['bizType']) ?? 'savdo',
-      plan:        'free',
-      dealContactsUsed: 0,
-      joinedAt:    new Date().toISOString(),
-      disability:  row.disability ?? undefined,
-      location:    row.location ?? undefined,
-      revenueBand: row.revenue_band ?? undefined,
-      employees:   row.employees ?? undefined,
-    };
-    saveUser(user);
-    return user;
-  } catch {
-    return null;
-  }
-}
-
-/** Hydrate localStorage profile from Supabase (e.g. user on a new device). */
-export async function hydrateProfile(phone: string): Promise<void> {
-  try {
-    const res = await fetch(`/api/profile?phone=${encodeURIComponent(phone)}`);
-    if (!res.ok) return;
-    const row = await res.json();
-    if (!row || !row.phone) return;
-    updateProfile({
-      disability:  row.disability ?? undefined,
-      location:    row.location ?? undefined,
-      revenueBand: row.revenue_band ?? undefined,
-      employees:   row.employees ?? undefined,
-    });
-  } catch { /* offline / not found — keep local copy */ }
 }

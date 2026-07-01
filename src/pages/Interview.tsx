@@ -12,7 +12,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUser } from '../lib/auth';
-import { learnFromMessage, profileSummary, hydrateProfile } from '../lib/profile';
+import { learnFromMessage, profileSummary } from '../lib/profile';
 
 interface ChatMessage {
   role: 'user' | 'bot';
@@ -102,12 +102,6 @@ export default function ChatBot() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
-
-  // On mount, pull any cross-device context from Supabase into localStorage
-  useEffect(() => {
-    const u = getUser();
-    if (u?.phone) hydrateProfile(u.phone);
-  }, []);
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
