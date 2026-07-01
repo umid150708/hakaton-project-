@@ -159,16 +159,16 @@ export default function AIStrip({ tab, cat, ads }: Props) {
   }, [tab, cat, forceRefresh]);
 
   return (
-    <div className="rounded-xl border border-purple-900/40 bg-purple-950/15 px-4 py-3 flex items-start gap-3">
+    <div className="rounded-xl border border-line bg-gold-soft px-4 py-3 flex items-start gap-3">
       <span className="text-lg shrink-0 mt-0.5">🤖</span>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-2">
-          <p className="text-purple-300 text-xs font-semibold uppercase tracking-wide">
+          <p className="text-gold text-xs font-semibold uppercase tracking-wide">
             AI Tahlil · {tab === 'buy' ? 'Xaridorlar' : 'Sotuvchilar'} · {catLabel}
           </p>
           {fromCache && !loading && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 rounded-full border border-zinc-700">
+            <span className="text-[10px] px-1.5 py-0.5 bg-elevated text-faint rounded-full border border-line-strong">
               keshdan
             </span>
           )}
@@ -176,22 +176,22 @@ export default function AIStrip({ tab, cat, ads }: Props) {
 
         {loading ? (
           <div className="space-y-2">
-            <div className="h-3 bg-zinc-800 rounded-full animate-pulse w-full" />
-            <div className="h-3 bg-zinc-800 rounded-full animate-pulse w-[85%]" />
-            <div className="h-3 bg-zinc-800 rounded-full animate-pulse w-[60%]" />
+            <div className="h-3 bg-elevated rounded-full animate-pulse w-full" />
+            <div className="h-3 bg-elevated rounded-full animate-pulse w-[85%]" />
+            <div className="h-3 bg-elevated rounded-full animate-pulse w-[60%]" />
           </div>
         ) : error ? (
-          <p className="text-zinc-500 text-sm">
+          <p className="text-faint text-sm">
             Tahlil yuklanmadi.{' '}
             <button
               onClick={() => setForceRefresh(n => n + 1)}
-              className="text-purple-400 hover:text-purple-300 underline transition-colors"
+              className="text-gold hover:opacity-80 underline transition-colors link-quiet"
             >
               Qayta urinish
             </button>
           </p>
         ) : (
-          <p className="text-zinc-200 text-sm leading-relaxed">{text}</p>
+          <p className="text-muted text-sm leading-relaxed">{text}</p>
         )}
       </div>
 
@@ -199,7 +199,7 @@ export default function AIStrip({ tab, cat, ads }: Props) {
         <button
           onClick={() => setForceRefresh(n => n + 1)}
           title="Yangi tahlil"
-          className="shrink-0 text-zinc-700 hover:text-purple-400 text-base transition-colors mt-0.5"
+          className="shrink-0 text-faint hover:text-gold text-base transition-colors mt-0.5 btn-icon"
         >
           ↻
         </button>

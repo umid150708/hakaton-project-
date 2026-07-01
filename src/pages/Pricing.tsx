@@ -12,6 +12,7 @@ import {
   planColor, fmtSum,
 } from '../lib/pricingConfig';
 import { Logo } from '../components/Logo';
+import ThemeToggle from '../components/ThemeToggle';
 
 // ─── ROI Calculator ────────────────────────────────────────────────────────────
 
@@ -27,20 +28,20 @@ function ROICalc() {
   const cheapest = dealFeeM <= starterM ? 'deal' : starterM <= proM ? 'starter' : 'pro';
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6">
-      <h3 className="text-white font-bold text-lg mb-1">💡 Qaysi model foydali?</h3>
-      <p className="text-slate-500 text-sm mb-5">Oylik bitimlaringizni kiriting — hisoblaylik.</p>
+    <div className="bg-surface rounded-2xl border border-line-strong p-6">
+      <h3 className="text-ink font-bold text-lg mb-1">💡 Qaysi model foydali?</h3>
+      <p className="text-faint text-sm mb-5">Oylik bitimlaringizni kiriting — hisoblaylik.</p>
 
       <div className="grid grid-cols-2 gap-4 mb-5">
         <div>
-          <label className="text-slate-400 text-xs mb-1.5 block">Oyda necha bitim?</label>
+          <label className="text-muted text-xs mb-1.5 block">Oyda necha bitim?</label>
           <input type="range" min={1} max={30} value={deals} onChange={e => setDeals(+e.target.value)} className="w-full accent-purple-500" />
-          <p className="text-white font-bold text-lg mt-1">{deals} ta bitim/oy</p>
+          <p className="text-ink font-bold text-lg mt-1">{deals} ta bitim/oy</p>
         </div>
         <div>
-          <label className="text-slate-400 text-xs mb-1.5 block">O'rtacha bitim hajmi</label>
+          <label className="text-muted text-xs mb-1.5 block">O'rtacha bitim hajmi</label>
           <input type="range" min={5} max={500} step={5} value={avgM} onChange={e => setAvgM(+e.target.value)} className="w-full accent-purple-500" />
-          <p className="text-white font-bold text-lg mt-1">{avgM} mln so'm</p>
+          <p className="text-ink font-bold text-lg mt-1">{avgM} mln so'm</p>
         </div>
       </div>
 
@@ -51,16 +52,16 @@ function ROICalc() {
           { key: 'pro',     label: 'Pro plan',             value: '399 ming' },
         ].map(opt => (
           <div key={opt.key} className={`rounded-xl p-3 border text-center transition-all ${
-            cheapest === opt.key ? 'bg-emerald-900/30 border-emerald-700' : 'bg-slate-800 border-slate-700'
+            cheapest === opt.key ? 'bg-brand-soft border-brand' : 'bg-elevated border-line-strong'
           }`}>
-            <p className="text-slate-400 text-xs mb-1">{opt.label}</p>
-            <p className="text-white font-bold text-base">{opt.value}</p>
-            <p className="text-slate-500 text-[11px] mt-0.5">so'm/oy</p>
-            {cheapest === opt.key && <p className="text-emerald-400 text-[10px] mt-1 font-semibold">✓ Arzon</p>}
+            <p className="text-muted text-xs mb-1">{opt.label}</p>
+            <p className="text-ink font-bold text-base">{opt.value}</p>
+            <p className="text-faint text-[11px] mt-0.5">so'm/oy</p>
+            {cheapest === opt.key && <p className="text-brand text-[10px] mt-1 font-semibold">✓ Arzon</p>}
           </div>
         ))}
       </div>
-      <p className="text-slate-600 text-xs mt-3 text-center">
+      <p className="text-faint text-xs mt-3 text-center">
         Stat.uz o'rtacha: ~{AVG_DEALS_PER_MONTH} bitim/oy · ~{AVG_DEAL_SUM / 1_000_000}M so'm/bitim
       </p>
     </div>
@@ -84,12 +85,12 @@ function PlanCard({ plan, billing, chosen, onChoose }: PlanCardProps) {
   return (
     <div className={`relative rounded-2xl border p-6 flex flex-col gap-5 transition-all ${
       isPro
-        ? 'bg-purple-950/30 border-purple-600 shadow-xl shadow-purple-900/20 scale-[1.02]'
-        : 'bg-slate-900 border-slate-700 hover:border-slate-500'
+        ? 'bg-gold-soft border-line-strong shadow-xl shadow-purple-900/20 scale-[1.02]'
+        : 'bg-surface border-line-strong hover:border-line-strong'
     }`}>
       {plan.badge && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="text-xs px-3 py-1 bg-purple-600 text-white rounded-full font-bold shadow-lg">⭐ {plan.badge}</span>
+          <span className="text-xs px-3 py-1 bg-gold-soft text-gold rounded-full font-bold shadow-lg">⭐ {plan.badge}</span>
         </div>
       )}
 
@@ -98,25 +99,25 @@ function PlanCard({ plan, billing, chosen, onChoose }: PlanCardProps) {
           <span className="text-2xl">{plan.icon}</span>
           <span className={`font-bold text-lg ${planColor(plan.color, 'text')}`}>{plan.name}</span>
         </div>
-        <p className="text-slate-400 text-xs">{plan.tagline}</p>
+        <p className="text-muted text-xs">{plan.tagline}</p>
       </div>
 
       <div>
         <div className="flex items-end gap-1">
-          <span className="text-3xl font-bold text-white">{fmtSum(price)}</span>
-          <span className="text-slate-500 text-sm mb-1">so'm/oy</span>
+          <span className="text-3xl font-bold text-ink">{fmtSum(price)}</span>
+          <span className="text-faint text-sm mb-1">so'm/oy</span>
         </div>
         {billing === 'yearly'
-          ? <p className="text-xs text-slate-500 mt-1">Yillik: <span className="text-white font-semibold">{fmtSum(plan.yearlyPrice)}</span> so'm <span className="text-emerald-400 font-semibold ml-1">−{plan.yearSave}%</span></p>
-          : <p className="text-xs text-slate-600 mt-1">yillik tanlasangiz tejaladi</p>
+          ? <p className="text-xs text-faint mt-1">Yillik: <span className="text-ink font-semibold">{fmtSum(plan.yearlyPrice)}</span> so'm <span className="text-brand font-semibold ml-1">−{plan.yearSave}%</span></p>
+          : <p className="text-xs text-faint mt-1">yillik tanlasangiz tejaladi</p>
         }
-        <p className="text-slate-600 text-[11px] mt-1.5">📌 {plan.bestFor}</p>
+        <p className="text-faint text-[11px] mt-1.5">📌 {plan.bestFor}</p>
       </div>
 
       <button
         onClick={() => onChoose(plan.id)}
-        className={`py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-95 ${
-          isChosen ? 'bg-green-600' : planColor(plan.color, 'bg')
+        className={`py-2.5 rounded-xl text-white text-sm font-bold transition-all active:scale-95 btn-cta ${
+          isChosen ? 'bg-brand' : planColor(plan.color, 'bg')
         }`}
       >
         {isChosen ? '✓ Tanlandi!' : `${plan.name} rejasini tanlash`}
@@ -126,13 +127,13 @@ function PlanCard({ plan, billing, chosen, onChoose }: PlanCardProps) {
         {plan.features.map(f => (
           <div key={f} className="flex items-start gap-2">
             <span className={`shrink-0 text-sm ${planColor(plan.color, 'text')}`}>✓</span>
-            <span className="text-slate-300 text-xs leading-relaxed">{f}</span>
+            <span className="text-muted text-xs leading-relaxed">{f}</span>
           </div>
         ))}
         {plan.notIncluded?.map(f => (
           <div key={f} className="flex items-start gap-2">
-            <span className="shrink-0 text-slate-700 text-sm">✗</span>
-            <span className="text-slate-700 text-xs leading-relaxed">{f}</span>
+            <span className="shrink-0 text-faint text-sm">✗</span>
+            <span className="text-faint text-xs leading-relaxed">{f}</span>
           </div>
         ))}
       </div>
@@ -155,17 +156,18 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-page text-ink">
 
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur border-b border-slate-800 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-page/95 backdrop-blur border-b border-line px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-slate-500 hover:text-white text-xl leading-none">←</button>
+          <button onClick={() => navigate(-1)} className="text-faint hover:text-ink text-xl leading-none btn-icon">←</button>
           <div className="flex items-center gap-2 flex-1">
             <Logo size={26} />
-            <span className="text-white font-semibold text-sm">Bozorboy</span>
+            <span className="text-ink font-semibold text-sm">Bozorboy</span>
           </div>
-          {user && <span className="text-slate-500 text-xs">Salom, {user.name.split(' ')[0]} 👋</span>}
+          {user && <span className="text-faint text-xs">Salom, {user.name.split(' ')[0]} 👋</span>}
+          <ThemeToggle />
         </div>
       </header>
 
@@ -173,49 +175,49 @@ export default function Pricing() {
 
         {/* Hero */}
         <div className="text-center space-y-4">
-          <span className="inline-block text-xs px-3 py-1 bg-purple-900/40 text-purple-400 rounded-full border border-purple-800 font-medium">
+          <span className="inline-block text-xs px-3 py-1 bg-gold-soft text-gold rounded-full border border-line-strong font-medium">
             Tadbirkorlar uchun — O'zbekiston #1 B2B platformasi
           </span>
           <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
             Har bir bitimdan ko'proq<br />
-            <span className="text-purple-400">daromad oling</span>
+            <span className="text-gold">daromad oling</span>
           </h1>
-          <p className="text-slate-400 max-w-xl mx-auto text-sm leading-relaxed">
-            Birinchi <span className="text-white font-semibold">3 ta aloqa bepul</span>.
+          <p className="text-muted max-w-xl mx-auto text-sm leading-relaxed">
+            Birinchi <span className="text-ink font-semibold">3 ta aloqa bepul</span>.
             Keyin biznesingizga mos modelni tanlang — obuna yoki bitim foizi.
           </p>
 
-          <div className="inline-flex bg-slate-900 border border-slate-700 rounded-xl p-1 gap-1">
+          <div className="inline-flex bg-surface border border-line-strong rounded-xl p-1 gap-1">
             <button onClick={() => setBilling('monthly')}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-white'}`}>
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all btn-soft ${billing === 'monthly' ? 'bg-elevated text-ink' : 'text-faint hover:text-ink'}`}>
               Oylik
             </button>
             <button onClick={() => setBilling('yearly')}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${billing === 'yearly' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-white'}`}>
+              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 btn-soft ${billing === 'yearly' ? 'bg-elevated text-ink' : 'text-faint hover:text-ink'}`}>
               Yillik
-              <span className="text-xs px-1.5 py-0.5 bg-emerald-800/60 text-emerald-400 rounded-full border border-emerald-700/50">−25%</span>
+              <span className="text-xs px-1.5 py-0.5 bg-brand-soft text-brand rounded-full border border-brand">−25%</span>
             </button>
           </div>
         </div>
 
         {/* Free tier callout */}
-        <div className="bg-slate-900 rounded-2xl border border-slate-700 p-5 flex flex-col sm:flex-row items-center gap-4">
+        <div className="bg-surface rounded-2xl border border-line-strong p-5 flex flex-col sm:flex-row items-center gap-4">
           <div className="text-4xl shrink-0">🎁</div>
           <div className="flex-1 text-center sm:text-left">
-            <p className="text-white font-bold text-lg">Bepul boshlang — karta kerak emas</p>
-            <p className="text-slate-400 text-sm mt-0.5">
-              Har bir yangi tadbirkorga <span className="text-white font-semibold">3 ta bepul aloqa</span>. Sinab ko'ring, keyin tanlang.
+            <p className="text-ink font-bold text-lg">Bepul boshlang — karta kerak emas</p>
+            <p className="text-muted text-sm mt-0.5">
+              Har bir yangi tadbirkorga <span className="text-ink font-semibold">3 ta bepul aloqa</span>. Sinab ko'ring, keyin tanlang.
             </p>
           </div>
-          <button onClick={() => navigate('/bozor')} className="shrink-0 px-5 py-2.5 bg-white text-slate-950 text-sm font-bold rounded-xl hover:bg-slate-100 transition-colors">
+          <button onClick={() => navigate('/bozor')} className="shrink-0 px-5 py-2.5 bg-white text-slate-950 text-sm font-bold rounded-xl hover:bg-slate-100 transition-colors btn-cta">
             Bepul boshlash →
           </button>
         </div>
 
         {/* Subscription plans */}
         <div>
-          <h2 className="text-white font-bold text-xl mb-2 text-center">Obuna rejalari</h2>
-          <p className="text-slate-500 text-sm text-center mb-8">
+          <h2 className="text-ink font-bold text-xl mb-2 text-center">Obuna rejalari</h2>
+          <p className="text-faint text-sm text-center mb-8">
             Ko'p bitim yopsangiz — obuna bitim foizidan arzonroq chiqadi
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -227,45 +229,45 @@ export default function Pricing() {
 
         {/* Divider */}
         <div className="flex items-center gap-4">
-          <div className="flex-1 h-px bg-slate-800" />
-          <span className="text-slate-600 text-sm font-medium shrink-0">YOKI</span>
-          <div className="flex-1 h-px bg-slate-800" />
+          <div className="flex-1 h-px bg-elevated" />
+          <span className="text-faint text-sm font-medium shrink-0">YOKI</span>
+          <div className="flex-1 h-px bg-elevated" />
         </div>
 
         {/* Deal fee */}
         <div>
-          <h2 className="text-white font-bold text-xl mb-2 text-center">Bitim foizi modeli</h2>
-          <p className="text-slate-500 text-sm text-center mb-6">
+          <h2 className="text-ink font-bold text-xl mb-2 text-center">Bitim foizi modeli</h2>
+          <p className="text-faint text-sm text-center mb-6">
             Obuna yo'q — faqat muvaffaqiyatli yopilgan bitimdan foiz
           </p>
 
-          <div className="bg-slate-900 rounded-2xl border border-amber-900/50 p-6 max-w-2xl mx-auto">
+          <div className="bg-surface rounded-2xl border border-line-strong p-6 max-w-2xl mx-auto">
             <div className="text-center mb-6">
-              <p className="text-7xl font-black text-amber-400">{DEAL_FEE_PCT}%</p>
-              <p className="text-slate-400 text-sm mt-2">yopilgan har bir bitim summasidan</p>
+              <p className="text-7xl font-black text-gold">{DEAL_FEE_PCT}%</p>
+              <p className="text-muted text-sm mt-2">yopilgan har bir bitim summasidan</p>
             </div>
 
             {/* Why 1.5% — sourced */}
-            <div className="bg-slate-800/60 rounded-xl p-4 mb-5">
-              <p className="text-white text-sm font-semibold mb-3">Nima uchun aynan {DEAL_FEE_PCT}%? — manba asosida</p>
+            <div className="bg-elevated/60 rounded-xl p-4 mb-5">
+              <p className="text-ink text-sm font-semibold mb-3">Nima uchun aynan {DEAL_FEE_PCT}%? — manba asosida</p>
               <div className="space-y-2">
                 {[
                   { label: 'UzEx rasmiy tovar birjasi (uzex.uz)', rate: '0.18%', note: "faqat standart tovarlar: paxta, bug'doy, metall", highlight: false },
                   { label: "O'zbekiston norasmiy dallollari", rate: '3–5%', note: 'soliq yo\'q, hujjat yo\'q, AI yo\'q', highlight: false },
                   { label: 'Bozorboy — SME B2B platforma', rate: `${DEAL_FEE_PCT}%`, note: 'AI + kashfiyot + shaffoflik', highlight: true },
                 ].map(r => (
-                  <div key={r.label} className={`px-3 py-2.5 rounded-lg ${r.highlight ? 'bg-amber-900/25 border border-amber-700/40' : ''}`}>
+                  <div key={r.label} className={`px-3 py-2.5 rounded-lg ${r.highlight ? 'bg-gold-soft border border-line-strong' : ''}`}>
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-slate-300 text-xs font-medium">{r.label}</span>
-                      <span className={`font-bold text-base shrink-0 ${r.highlight ? 'text-amber-400' : r.rate.includes('3–5') ? 'text-red-400' : 'text-slate-400'}`}>{r.rate}</span>
+                      <span className="text-muted text-xs font-medium">{r.label}</span>
+                      <span className={`font-bold text-base shrink-0 ${r.highlight ? 'text-gold' : r.rate.includes('3–5') ? 'text-red-400' : 'text-muted'}`}>{r.rate}</span>
                     </div>
-                    <p className="text-slate-600 text-[10px] mt-0.5">{r.note}</p>
+                    <p className="text-faint text-[10px] mt-0.5">{r.note}</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 pt-3 border-t border-slate-700/50 space-y-1">
-                <p className="text-slate-600 text-[10px]">📊 UzEx manba: uzex.uz/en/pages/online-exchange-trades-tariff</p>
-                <p className="text-slate-600 text-[10px]">📊 stat.uz · invexi.org — 2025-yil yanvar–fevral: 46 477 kichik optom korxona · 46 819B so'm / 2 oy → ~34M so'm/bitim</p>
+              <div className="mt-3 pt-3 border-t border-line space-y-1">
+                <p className="text-faint text-[10px]">📊 UzEx manba: uzex.uz/en/pages/online-exchange-trades-tariff</p>
+                <p className="text-faint text-[10px]">📊 stat.uz · invexi.org — 2025-yil yanvar–fevral: 46 477 kichik optom korxona · 46 819B so'm / 2 oy → ~34M so'm/bitim</p>
               </div>
             </div>
 
@@ -276,25 +278,25 @@ export default function Pricing() {
                 { label: "O'rtacha bitim", deal: `${AVG_DEAL_SUM / 1_000_000}M so'm`, fee: '510 000 so\'m', sub: '≈ stat.uz o\'rtacha' },
                 { label: 'Katta bitim', deal: '100M so\'m', fee: '1 500 000 so\'m', sub: 'dalloldan 2× arzon' },
               ].map(s => (
-                <div key={s.label} className="text-center bg-slate-800 rounded-xl p-3">
-                  <p className="text-slate-500 text-[10px] mb-1">{s.label}</p>
-                  <p className="text-white font-bold text-sm">{s.deal}</p>
-                  <p className="text-amber-400 font-bold text-sm">{s.fee}</p>
-                  <p className="text-slate-600 text-[10px] mt-0.5">{s.sub}</p>
+                <div key={s.label} className="text-center bg-elevated rounded-xl p-3">
+                  <p className="text-faint text-[10px] mb-1">{s.label}</p>
+                  <p className="text-ink font-bold text-sm">{s.deal}</p>
+                  <p className="text-gold font-bold text-sm">{s.fee}</p>
+                  <p className="text-faint text-[10px] mt-0.5">{s.sub}</p>
                 </div>
               ))}
             </div>
 
-            <div className="flex gap-3 text-xs text-slate-600 mb-5">
-              <span>Min: <span className="text-slate-400 font-medium">{fmtSum(DEAL_FEE_MIN)} so'm</span></span>
+            <div className="flex gap-3 text-xs text-faint mb-5">
+              <span>Min: <span className="text-muted font-medium">{fmtSum(DEAL_FEE_MIN)} so'm</span></span>
               <span>·</span>
-              <span>Max: <span className="text-slate-400 font-medium">{fmtSum(DEAL_FEE_MAX)} so'm</span></span>
+              <span>Max: <span className="text-muted font-medium">{fmtSum(DEAL_FEE_MAX)} so'm</span></span>
             </div>
 
             <button
               onClick={() => choose('deal_fee')}
-              className={`w-full py-3 rounded-xl text-slate-950 text-sm font-bold transition-all active:scale-95 ${
-                chosen === 'deal_fee' ? 'bg-green-500' : 'bg-amber-400 hover:bg-amber-300'
+              className={`w-full py-3 rounded-xl text-slate-950 text-sm font-bold transition-all active:scale-95 btn-cta ${
+                chosen === 'deal_fee' ? 'bg-brand' : 'bg-gold-soft hover:bg-gold-soft'
               }`}
             >
               {chosen === 'deal_fee' ? '✓ Tanlandi!' : '🤝 Bitim foizi modelini tanlash'}
@@ -307,19 +309,19 @@ export default function Pricing() {
 
         {/* Comparison table */}
         <div>
-          <h2 className="text-white font-bold text-xl mb-6 text-center">To'liq taqqoslash</h2>
-          <div className="overflow-x-auto rounded-2xl border border-slate-800">
+          <h2 className="text-ink font-bold text-xl mb-6 text-center">To'liq taqqoslash</h2>
+          <div className="overflow-x-auto rounded-2xl border border-line">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-900">
-                  <th className="text-left px-4 py-3 text-slate-400 font-medium">Xususiyat</th>
-                  <th className="text-center px-3 py-3 text-slate-500 font-medium">Bepul</th>
-                  <th className="text-center px-3 py-3 text-blue-400 font-medium">Starter</th>
-                  <th className="text-center px-3 py-3 text-purple-400 font-semibold">Pro ⭐</th>
-                  <th className="text-center px-3 py-3 text-emerald-400 font-medium">Biznes</th>
+                <tr className="border-b border-line bg-surface">
+                  <th className="text-left px-4 py-3 text-muted font-medium">Xususiyat</th>
+                  <th className="text-center px-3 py-3 text-faint font-medium">Bepul</th>
+                  <th className="text-center px-3 py-3 text-sky font-medium">Starter</th>
+                  <th className="text-center px-3 py-3 text-gold font-semibold">Pro ⭐</th>
+                  <th className="text-center px-3 py-3 text-brand font-medium">Biznes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-[var(--line)]">
                 {[
                   { f: "E'lon joylash",          free:'✓',    s:'✓',     p:'✓',  b:'✓' },
                   { f: 'Aloqa (kontakt)',          free:'3 ta', s:'30/oy', p:'∞',  b:'∞' },
@@ -330,27 +332,27 @@ export default function Pricing() {
                   { f: "Ko'p foydalanuvchi",        free:'–',    s:'–',     p:'–',  b:'5 ta' },
                   { f: 'Shaxsiy menejer',           free:'–',    s:'–',     p:'–',  b:'✓' },
                 ].map(row => (
-                  <tr key={row.f} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="px-4 py-2.5 text-slate-300 text-xs">{row.f}</td>
-                    <td className="px-3 py-2.5 text-center text-xs text-slate-600">{row.free}</td>
-                    <td className="px-3 py-2.5 text-center text-xs text-blue-400">{row.s}</td>
-                    <td className="px-3 py-2.5 text-center text-xs text-purple-400 font-medium">{row.p}</td>
-                    <td className="px-3 py-2.5 text-center text-xs text-emerald-400">{row.b}</td>
+                  <tr key={row.f} className="hover:bg-surface/40 transition-colors">
+                    <td className="px-4 py-2.5 text-muted text-xs">{row.f}</td>
+                    <td className="px-3 py-2.5 text-center text-xs text-faint">{row.free}</td>
+                    <td className="px-3 py-2.5 text-center text-xs text-sky">{row.s}</td>
+                    <td className="px-3 py-2.5 text-center text-xs text-gold font-medium">{row.p}</td>
+                    <td className="px-3 py-2.5 text-center text-xs text-brand">{row.b}</td>
                   </tr>
                 ))}
-                <tr className="bg-slate-900 border-t border-slate-700">
-                  <td className="px-4 py-3 text-white font-semibold text-xs">Oylik narx</td>
-                  <td className="px-3 py-3 text-center text-slate-500 text-xs font-bold">0</td>
-                  <td className="px-3 py-3 text-center text-blue-400 text-xs font-bold">149 000</td>
-                  <td className="px-3 py-3 text-center text-purple-400 text-xs font-bold">399 000</td>
-                  <td className="px-3 py-3 text-center text-emerald-400 text-xs font-bold">899 000</td>
+                <tr className="bg-surface border-t border-line-strong">
+                  <td className="px-4 py-3 text-ink font-semibold text-xs">Oylik narx</td>
+                  <td className="px-3 py-3 text-center text-faint text-xs font-bold">0</td>
+                  <td className="px-3 py-3 text-center text-sky text-xs font-bold">149 000</td>
+                  <td className="px-3 py-3 text-center text-gold text-xs font-bold">399 000</td>
+                  <td className="px-3 py-3 text-center text-brand text-xs font-bold">899 000</td>
                 </tr>
-                <tr className="bg-slate-900">
-                  <td className="px-4 py-3 text-white font-semibold text-xs">Yillik narx</td>
-                  <td className="px-3 py-3 text-center text-slate-500 text-xs font-bold">0</td>
-                  <td className="px-3 py-3 text-center text-xs"><span className="text-blue-400 font-bold">1 490 000</span><span className="block text-emerald-500 text-[10px]">−17%</span></td>
-                  <td className="px-3 py-3 text-center text-xs"><span className="text-purple-400 font-bold">3 590 000</span><span className="block text-emerald-500 text-[10px]">−25%</span></td>
-                  <td className="px-3 py-3 text-center text-xs"><span className="text-emerald-400 font-bold">7 990 000</span><span className="block text-emerald-500 text-[10px]">−26%</span></td>
+                <tr className="bg-surface">
+                  <td className="px-4 py-3 text-ink font-semibold text-xs">Yillik narx</td>
+                  <td className="px-3 py-3 text-center text-faint text-xs font-bold">0</td>
+                  <td className="px-3 py-3 text-center text-xs"><span className="text-sky font-bold">1 490 000</span><span className="block text-brand text-[10px]">−17%</span></td>
+                  <td className="px-3 py-3 text-center text-xs"><span className="text-gold font-bold">3 590 000</span><span className="block text-brand text-[10px]">−25%</span></td>
+                  <td className="px-3 py-3 text-center text-xs"><span className="text-brand font-bold">7 990 000</span><span className="block text-brand text-[10px]">−26%</span></td>
                 </tr>
               </tbody>
             </table>
@@ -358,49 +360,49 @@ export default function Pricing() {
         </div>
 
         {/* Data sources */}
-        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-5">
-          <p className="text-slate-500 text-xs uppercase tracking-wider mb-3 font-medium">📊 Narxlar asosi — rasmiy manbalar</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-500">
+        <div className="bg-surface/50 border border-line rounded-2xl p-5">
+          <p className="text-faint text-xs uppercase tracking-wider mb-3 font-medium">📊 Narxlar asosi — rasmiy manbalar</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-faint">
             <div className="space-y-1">
-              <p className="text-slate-400 font-medium">O'rtacha bitim (~34M so'm):</p>
+              <p className="text-muted font-medium">O'rtacha bitim (~34M so'm):</p>
               <p>• stat.uz / invexi.org — 2025-yil yanvar–fevral</p>
               <p>• 46 477 kichik optom korxona → 46 819B so'm / 2 oy</p>
               <p>• ~508M so'm/oy/korxona ÷ ~15 bitim = ~34M so'm/bitim</p>
             </div>
             <div className="space-y-1">
-              <p className="text-slate-400 font-medium">1.5% komissiya asosi:</p>
+              <p className="text-muted font-medium">1.5% komissiya asosi:</p>
               <p>• UzEx rasmiy birja: 0.18% (uzex.uz)</p>
               <p>• Norasmiy dallollar: 3–5%</p>
               <p>• Uzum Market (B2C): 10–35%</p>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap gap-3 text-[10px] text-slate-700">
+          <div className="mt-3 pt-3 border-t border-line flex flex-wrap gap-3 text-[10px] text-faint">
             {[
               { label: 'invexi.org — Wholesale Jan–Feb 2025', url: 'https://invexi.org/press/retail-and-wholesale-trade-turnover-in-the-republic-of-uzbekistan-january-february-2025/' },
               { label: 'uzex.uz — Exchange tariffs', url: 'https://uzex.uz/en/pages/online-exchange-trades-tariff' },
               { label: 'invexi.org — SME indicators 2024', url: 'https://invexi.org/press/key-indicators-of-small-entrepreneurship-in-the-republic-of-uzbekistan-for-2024/' },
               { label: 'stat.uz — National Statistics', url: 'https://stat.uz' },
             ].map(s => (
-              <a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:text-slate-500 underline transition-colors">{s.label}</a>
+              <a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer" className="hover:text-faint underline transition-colors link-quiet">{s.label}</a>
             ))}
           </div>
         </div>
 
         {/* FAQ */}
         <div className="max-w-2xl mx-auto space-y-3">
-          <h2 className="text-white font-bold text-xl mb-6 text-center">Ko'p so'raladigan savollar</h2>
+          <h2 className="text-ink font-bold text-xl mb-6 text-center">Ko'p so'raladigan savollar</h2>
           {[
             { q: '3 ta bepul aloqa tugagach nima bo\'ladi?', a: 'Tarifni tanlashingiz so\'raladi. Sotuvchi kontaktini ko\'rish uchun obuna yoki bitim foizi modelini tanlang.' },
             { q: 'Bitim foizi qanday hisoblanadi?', a: `Bitim yopilgach, platformada summasini kiriting. Biz ${DEAL_FEE_PCT}% hisoblaymiz (min ${fmtSum(DEAL_FEE_MIN)}, max ${fmtSum(DEAL_FEE_MAX)} so'm). To'lov Payme orqali.` },
             { q: 'Yillik obunadan qachon foydalanish kerak?', a: 'Agar oyiga 3+ ta bitim yopsangiz, yillik obuna bitim foizidan arzonroq. ROI kalkulyatorimizda o\'zingiz hisoblang.' },
             { q: 'Rejani o\'zgartirish mumkinmi?', a: 'Ha, istalgan vaqtda yuqori rejaga o\'tish mumkin. Pastga tushish keyingi to\'lov sanasidan kuchga kiradi.' },
           ].map(faq => (
-            <details key={faq.q} className="bg-slate-900 border border-slate-800 rounded-xl p-4 group">
-              <summary className="text-white text-sm font-semibold cursor-pointer list-none flex items-center justify-between gap-3">
+            <details key={faq.q} className="bg-surface border border-line rounded-xl p-4 group">
+              <summary className="text-ink text-sm font-semibold cursor-pointer list-none flex items-center justify-between gap-3">
                 {faq.q}
-                <span className="text-slate-600 group-open:text-white transition-colors shrink-0">+</span>
+                <span className="text-faint group-open:text-ink transition-colors shrink-0">+</span>
               </summary>
-              <p className="text-slate-400 text-sm mt-3 leading-relaxed">{faq.a}</p>
+              <p className="text-muted text-sm mt-3 leading-relaxed">{faq.a}</p>
             </details>
           ))}
         </div>
@@ -409,21 +411,21 @@ export default function Pricing() {
         <div className="text-center space-y-4">
           <div className="flex flex-wrap justify-center gap-4">
             {["🔒 To'lovlar xavfsiz", '↩️ 14 kun ichida qaytarish', '📞 Qo\'llab-quvvatlash: 1140', "🇺🇿 O'zbekiston uchun yaratilgan"].map(t => (
-              <span key={t} className="text-slate-500 text-xs px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-full">{t}</span>
+              <span key={t} className="text-faint text-xs px-3 py-1.5 bg-surface border border-line rounded-full">{t}</span>
             ))}
           </div>
         </div>
       </div>
 
       {/* Footer CTA */}
-      <div className="border-t border-slate-800 bg-slate-900/50 mt-10">
+      <div className="border-t border-line bg-surface/50 mt-10">
         <div className="max-w-5xl mx-auto px-4 py-8 text-center space-y-4">
-          <p className="text-white font-bold text-lg">Hali ham savolingiz bormi?</p>
+          <p className="text-ink font-bold text-lg">Hali ham savolingiz bormi?</p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <button onClick={() => navigate('/interview')} className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold rounded-xl transition-colors">🤖 AI Maslahatchi</button>
-            <button onClick={() => navigate('/bozor')} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl border border-slate-700 transition-colors">📊 Bozorga qaytish</button>
+            <button onClick={() => navigate('/interview')} className="px-5 py-2.5 bg-brand hover:bg-brand-hover text-brand-ink text-sm font-semibold rounded-xl transition-colors btn-cta">🤖 AI Maslahatchi</button>
+            <button onClick={() => navigate('/bozor')} className="px-5 py-2.5 bg-elevated hover:bg-elevated text-ink text-sm font-semibold rounded-xl border border-line-strong transition-colors btn-soft">📊 Bozorga qaytish</button>
           </div>
-          <p className="text-slate-700 text-xs pt-2">Bozorboy · Xakaton 2026 · O'zbekiston</p>
+          <p className="text-faint text-xs pt-2">Bozorboy · Xakaton 2026 · O'zbekiston</p>
         </div>
       </div>
     </div>

@@ -50,13 +50,13 @@ function fmt(n: number): string {
 }
 
 function TickerItem({ p }: { p: PriceEntry }) {
-  const color = p.trend === 'up' ? 'text-emerald-400' : p.trend === 'down' ? 'text-rose-400' : 'text-zinc-500';
+  const color = p.trend === 'up' ? 'text-brand' : p.trend === 'down' ? 'text-rose-400' : 'text-faint';
   const arrow = p.trend === 'up' ? '▲' : p.trend === 'down' ? '▼' : '■';
   return (
-    <span className="inline-flex items-center gap-2 px-5 border-r border-zinc-800/60">
+    <span className="inline-flex items-center gap-2 px-5 border-r border-line/60">
       <span className="text-sm">{p.emoji}</span>
-      <span className="text-zinc-300 text-xs font-medium">{p.name}</span>
-      <span className="text-white text-xs font-bold tabular-nums">{fmt(p.uzPrice)} so'm/{p.unit}</span>
+      <span className="text-muted text-xs font-medium">{p.name}</span>
+      <span className="text-ink text-xs font-bold tabular-nums">{fmt(p.uzPrice)} so'm/{p.unit}</span>
       <span className={`text-[11px] font-bold tabular-nums ${color}`}>
         {arrow} {p.changePct > 0 ? '+' : ''}{p.changePct}%
       </span>
@@ -87,12 +87,12 @@ export default function PriceTicker() {
   const items = [...snap.data, ...snap.data];
 
   return (
-    <div className="w-full bg-zinc-950 border-b border-zinc-800 overflow-hidden flex items-stretch">
+    <div className="w-full bg-page border-b border-line overflow-hidden flex items-stretch">
       {/* Fixed label — makes clear these are indicative AVERAGES, not ads */}
-      <div className="shrink-0 flex items-center gap-1.5 px-4 bg-zinc-900 border-r border-zinc-800 z-10"
+      <div className="shrink-0 flex items-center gap-1.5 px-4 bg-surface border-r border-line z-10"
         title="Indikativ o'rtacha ulgurji narxlar — UzEx birja kotirovkalari va stat.uz monitoringi asosida (rasmiy jonli ma'lumot emas)">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="text-emerald-400 text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+        <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+        <span className="text-brand text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
           O'rtacha ulgurji narxlar
         </span>
       </div>
@@ -106,9 +106,9 @@ export default function PriceTicker() {
 
       {/* Pinned source — legitimacy + honesty */}
       <a href="https://uzex.uz" target="_blank" rel="noopener noreferrer"
-        className="shrink-0 hidden md:flex items-center gap-1.5 px-3 bg-zinc-900 border-l border-zinc-800 text-zinc-500 hover:text-zinc-300 text-[10px] font-medium whitespace-nowrap transition-colors z-10"
+        className="shrink-0 hidden md:flex items-center gap-1.5 px-3 bg-surface border-l border-line text-faint hover:text-muted text-[10px] font-medium whitespace-nowrap transition-colors z-10 link-quiet"
         title="Manba: UzEx (birja kotirovkalari) va stat.uz (narx monitoringi). Ko'rsatilgan narxlar indikativ o'rtacha qiymatlar.">
-        <span className="text-zinc-600">indikativ ·</span> Manba: UzEx · stat.uz
+        <span className="text-faint">indikativ ·</span> Manba: UzEx · stat.uz
       </a>
     </div>
   );

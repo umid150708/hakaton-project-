@@ -5,7 +5,7 @@ function CatBadge({ cat }: { cat: Ad['category'] }) {
   const c = CATEGORIES.find(x => x.id === cat);
   if (!c || cat === 'all') return null;
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700/60 text-zinc-400 font-medium">
+    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg bg-elevated border border-line-strong/60 text-muted font-medium">
       {c.icon} {c.label}
     </span>
   );
@@ -20,10 +20,10 @@ export default function AdCard({ ad, onOpen }: Props) {
   const isBuy = ad.type === 'buy';
 
   return (
-    <div className={`group relative flex flex-col bg-zinc-900 rounded-2xl border transition-all duration-200 overflow-hidden
+    <div className={`group relative flex flex-col bg-surface rounded-2xl border transition-all duration-200 overflow-hidden
       ${isBuy
-        ? 'border-zinc-800 card-buy hover:-translate-y-0.5'
-        : 'border-zinc-800 card-sell hover:-translate-y-0.5'
+        ? 'border-line card-buy hover:-translate-y-0.5'
+        : 'border-line card-sell hover:-translate-y-0.5'
       }`}
     >
       {/* Top accent line */}
@@ -33,10 +33,10 @@ export default function AdCard({ ad, onOpen }: Props) {
 
         {/* Header: product + date/new badge */}
         <div className="flex items-start justify-between gap-2">
-          <p className="text-white font-semibold text-sm leading-snug flex-1 tracking-tight">{ad.product}</p>
+          <p className="text-ink font-semibold text-sm leading-snug flex-1 tracking-tight">{ad.product}</p>
           {ad.sample
-            ? <span className="text-zinc-700 text-[10px] shrink-0 font-medium tabular-nums">{ad.date}</span>
-            : <span className="text-[10px] px-2 py-0.5 bg-amber-500/15 text-amber-400 rounded-full border border-amber-500/25 font-bold shrink-0 tracking-wide">YO'Q</span>
+            ? <span className="text-faint text-[10px] shrink-0 font-medium tabular-nums">{ad.date}</span>
+            : <span className="text-[10px] px-2 py-0.5 bg-gold-soft text-gold rounded-full border border-line-strong font-bold shrink-0 tracking-wide">YO'Q</span>
           }
         </div>
 
@@ -47,18 +47,18 @@ export default function AdCard({ ad, onOpen }: Props) {
         <div className="space-y-2 flex-1">
           <div className="flex items-center gap-2.5">
             <span className="text-sm shrink-0">📦</span>
-            <span className={`text-sm font-bold ${isBuy ? 'text-blue-300' : 'text-emerald-300'}`}>
+            <span className={`text-sm font-bold ${isBuy ? 'text-sky' : 'text-brand'}`}>
               {ad.quantity}
             </span>
           </div>
           <div className="flex items-center gap-2.5">
             <span className="text-sm shrink-0">📍</span>
-            <span className="text-zinc-300 text-sm">{ad.location}</span>
+            <span className="text-muted text-sm">{ad.location}</span>
           </div>
           {ad.price && (
             <div className="flex items-center gap-2.5">
               <span className="text-sm shrink-0">💵</span>
-              <span className={`text-sm font-bold ${isBuy ? 'text-blue-400' : 'text-emerald-400'}`}>
+              <span className={`text-sm font-bold ${isBuy ? 'text-sky' : 'text-brand'}`}>
                 {ad.price}
               </span>
             </div>
@@ -69,10 +69,10 @@ export default function AdCard({ ad, onOpen }: Props) {
         {ad.contact && (
           <button
             onClick={onOpen}
-            className={`mt-1 w-full py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95
+            className={`mt-1 w-full py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 btn-soft
               ${isBuy
-                ? 'bg-blue-950/60 hover:bg-blue-900/80 text-blue-200 border border-blue-900/60 hover:border-blue-700'
-                : 'bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-200 border border-emerald-900/60 hover:border-emerald-700'
+                ? 'bg-sky/10 hover:bg-sky/20 text-sky border border-sky/40 hover:border-sky/60'
+                : 'bg-brand-soft hover:bg-emerald-900/80 text-brand border border-brand hover:border-emerald-700'
               }`}
           >
             📋 Batafsil

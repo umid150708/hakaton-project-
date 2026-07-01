@@ -18,6 +18,7 @@ import {
   ANALYSIS_META, analysisSystem, buildAnalysisPrompt, canAnalyse, type AnalysisType,
 } from '../lib/analysis';
 import BusinessPlanWizard from '../components/BusinessPlanWizard';
+import ThemeToggle from '../components/ThemeToggle';
 
 const ANALYSIS_ICON: Record<AnalysisType, Icon> = {
   bozor:   IconChartBar,
@@ -255,34 +256,35 @@ export default function ChatBot() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col">
+    <div className="min-h-screen bg-page flex flex-col">
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur border-b border-zinc-800 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-page/95 backdrop-blur border-b border-line px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="text-zinc-500 hover:text-white text-xl leading-none"
+            className="text-faint hover:text-ink text-xl leading-none btn-icon"
           >←</button>
           <div className="flex items-center gap-2 flex-1">
-            <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center text-sm">🤖</div>
+            <div className="w-8 h-8 bg-brand rounded-full flex items-center justify-center text-sm">🤖</div>
             <div>
-              <p className="text-white font-semibold text-sm leading-tight">Bozorboy Maslahatchi</p>
+              <p className="text-ink font-semibold text-sm leading-tight">Bozorboy Maslahatchi</p>
               <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                <p className="text-emerald-400 text-xs">Onlayn</p>
+                <span className="w-1.5 h-1.5 bg-brand rounded-full" />
+                <p className="text-brand text-xs">Onlayn</p>
               </div>
             </div>
           </div>
+          <ThemeToggle />
           <button
             onClick={() => setShowPlan(true)}
-            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 bg-brand hover:bg-brand-hover text-brand-ink text-xs font-semibold rounded-lg transition-colors btn-cta"
           >
             <IconFileText size={14} /> Biznes reja
           </button>
           <button
             onClick={() => navigate('/bozor')}
-            className="hidden sm:block px-3 py-1.5 bg-blue-800 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+            className="hidden sm:block px-3 py-1.5 bg-sky hover:bg-sky/90 text-white text-xs font-medium rounded-lg transition-colors btn-cta"
           >
             Bozor narxlari →
           </button>
@@ -296,13 +298,13 @@ export default function ChatBot() {
             msg.kind === 'analysis' ? (
               // Full-width titled analysis card
               <div key={msg.id} className="flex gap-3 justify-start">
-                <div className="w-8 h-8 bg-emerald-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">🤖</div>
-                <div className="flex-1 min-w-0 bg-zinc-900 border border-zinc-800 rounded-2xl rounded-tl-sm overflow-hidden">
-                  <div className="px-4 py-2.5 border-b border-zinc-800 bg-emerald-950/20 flex items-center gap-2">
-                    <IconChartBar size={15} className="text-emerald-400" />
-                    <span className="text-emerald-400 text-xs font-semibold uppercase tracking-wide">{msg.title}</span>
+                <div className="w-8 h-8 bg-brand rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">🤖</div>
+                <div className="flex-1 min-w-0 bg-surface border border-line rounded-2xl rounded-tl-sm overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-line bg-brand-soft flex items-center gap-2">
+                    <IconChartBar size={15} className="text-brand" />
+                    <span className="text-brand text-xs font-semibold uppercase tracking-wide">{msg.title}</span>
                   </div>
-                  <div className="px-4 py-3 text-sm text-zinc-100 leading-relaxed [&_strong]:text-white [&_strong]:font-semibold">
+                  <div className="px-4 py-3 text-sm text-ink leading-relaxed [&_strong]:text-ink [&_strong]:font-semibold">
                     {formatText(msg.text)}
                   </div>
                 </div>
@@ -313,21 +315,21 @@ export default function ChatBot() {
                 className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.role === 'bot' && (
-                  <div className="w-8 h-8 bg-emerald-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
+                  <div className="w-8 h-8 bg-brand rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
                     🤖
                   </div>
                 )}
                 <div
                   className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-emerald-700 text-white rounded-tr-sm'
-                      : 'bg-zinc-800 text-zinc-100 rounded-tl-sm'
+                      ? 'bg-brand text-brand-ink rounded-tr-sm'
+                      : 'bg-elevated text-ink rounded-tl-sm'
                   }`}
                 >
                   {formatText(msg.text)}
                 </div>
                 {msg.role === 'user' && (
-                  <div className="w-8 h-8 bg-zinc-700 rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
+                  <div className="w-8 h-8 bg-elevated rounded-full flex items-center justify-center text-sm shrink-0 mt-0.5">
                     👤
                   </div>
                 )}
@@ -338,13 +340,13 @@ export default function ChatBot() {
           {/* Typing dots */}
           {loading && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 bg-emerald-700 rounded-full flex items-center justify-center text-sm shrink-0">
+              <div className="w-8 h-8 bg-brand rounded-full flex items-center justify-center text-sm shrink-0">
                 🤖
               </div>
-              <div className="bg-zinc-800 px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="bg-elevated px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
+                <span className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           )}
@@ -357,10 +359,10 @@ export default function ChatBot() {
       <div className="px-4 pt-2">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-zinc-600 text-xs">AI bozor tahlili:</p>
+            <p className="text-faint text-xs">AI bozor tahlili:</p>
             {!ready && (
               <button onClick={() => navigate('/profile')}
-                className="flex items-center gap-1 text-emerald-500 hover:text-emerald-400 text-xs transition-colors">
+                className="flex items-center gap-1 text-brand hover:text-brand text-xs transition-colors link-quiet">
                 Profilni to'ldiring <IconArrowRight size={13} />
               </button>
             )}
@@ -371,10 +373,10 @@ export default function ChatBot() {
               const Ic = ANALYSIS_ICON[t];
               return (
                 <button key={t} onClick={() => runAnalysis(t)} disabled={loading}
-                  className="flex flex-col gap-1 p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-emerald-700 text-left transition-colors disabled:opacity-50">
-                  <Ic size={18} className="text-emerald-400" />
-                  <span className="text-white text-xs font-semibold leading-tight">{m.label}</span>
-                  <span className="text-zinc-500 text-[11px] leading-tight">{m.sub}</span>
+                  className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface border border-line hover:border-brand text-left transition-colors disabled:opacity-50 card-tap">
+                  <Ic size={18} className="text-brand" />
+                  <span className="text-ink text-xs font-semibold leading-tight">{m.label}</span>
+                  <span className="text-faint text-[11px] leading-tight">{m.sub}</span>
                 </button>
               );
             })}
@@ -385,14 +387,14 @@ export default function ChatBot() {
       {/* ── Quick question chips (always visible) ── */}
       <div className="px-4 pb-2 pt-3">
         <div className="max-w-2xl mx-auto">
-          <p className="text-zinc-600 text-xs mb-2">Tez savollar:</p>
+          <p className="text-faint text-xs mb-2">Tez savollar:</p>
           <div className="flex gap-2 flex-wrap">
             {chips.map((q, i) => (
               <button
                 key={i}
                 onClick={() => sendMessage(q)}
                 disabled={loading}
-                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs rounded-full transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 bg-elevated hover:bg-elevated border border-line-strong text-muted text-xs rounded-full transition-colors disabled:opacity-50 btn-soft"
               >
                 {q}
               </button>
@@ -402,7 +404,7 @@ export default function ChatBot() {
       </div>
 
       {/* ── Input ── */}
-      <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3">
+      <div className="border-t border-line bg-page px-4 py-3">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto flex gap-2">
           <input
             ref={inputRef}
@@ -410,12 +412,12 @@ export default function ChatBot() {
             onChange={e => setInput(e.target.value)}
             placeholder="Savolingizni yozing..."
             disabled={loading}
-            className="flex-1 px-4 py-3 bg-zinc-800 border border-zinc-700 focus:border-emerald-600 rounded-xl text-white text-sm placeholder-zinc-500 outline-none transition-colors disabled:opacity-60"
+            className="flex-1 px-4 py-3 bg-elevated border border-line-strong focus:border-brand rounded-xl text-ink text-sm placeholder:text-faint outline-none transition-colors disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={!input.trim() || loading}
-            className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white rounded-xl transition-colors"
+            className="px-4 py-3 bg-brand hover:bg-brand-hover disabled:bg-elevated disabled:text-faint text-brand-ink rounded-xl transition-colors btn-icon"
           >
             {loading
               ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin block" />
@@ -423,7 +425,7 @@ export default function ChatBot() {
             }
           </button>
         </form>
-        <p className="text-center text-zinc-700 text-xs mt-2">
+        <p className="text-center text-faint text-xs mt-2">
           Savdo-sanoat palatasi · soliq.uz · lex.uz · Ijtimoiy himoya milliy agentligi
         </p>
       </div>

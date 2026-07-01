@@ -13,6 +13,7 @@ import {
   type BizType, type RegType, type Collateral, type YearsInBiz,
 } from '../lib/auth';
 import { loadUserAds, type Ad, type Category } from '../lib/bozorData';
+import ThemeToggle from '../components/ThemeToggle';
 
 const REGIONS = [
   'Toshkent shahri', 'Toshkent viloyati', 'Samarqand', "Farg'ona",
@@ -92,10 +93,10 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-page flex items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-zinc-400 text-sm">Profilni ko'rish uchun hisobingizga kiring.</p>
-          <button onClick={() => navigate('/')} className="mt-4 text-emerald-400 text-sm hover:text-emerald-300">← Bosh sahifa</button>
+          <p className="text-muted text-sm">Profilni ko'rish uchun hisobingizga kiring.</p>
+          <button onClick={() => navigate('/')} className="mt-4 text-brand text-sm hover:text-brand link-quiet">← Bosh sahifa</button>
         </div>
       </div>
     );
@@ -106,23 +107,26 @@ export default function Profile() {
   const metaBits = [bizType && BIZ_TYPE_LABELS[bizType as BizType], regType && (regType as string).toUpperCase()].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white pb-24">
+    <div className="min-h-screen bg-page text-ink pb-24">
 
       {/* ── Nav bar ── */}
-      <header className="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur border-b border-zinc-800/80">
+      <header className="sticky top-0 z-40 bg-page/90 backdrop-blur border-b border-line">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <button
             onClick={() => (mode === 'edit' ? setMode('view') : navigate(-1))}
-            className="text-zinc-400 hover:text-white flex items-center gap-1 text-sm">
+            className="text-muted hover:text-ink flex items-center gap-1 text-sm btn-icon">
             <IconChevronLeft size={18} /> {mode === 'edit' ? 'Bekor qilish' : 'Orqaga'}
           </button>
-          <p className="text-white font-medium text-sm">{mode === 'edit' ? 'Profilni tahrirlash' : 'Profil'}</p>
-          {mode === 'edit'
-            ? <button onClick={handleSave}
-                className={`text-sm font-semibold transition-colors ${saved ? 'text-emerald-400' : 'text-emerald-500 hover:text-emerald-400'}`}>
-                {saved ? '✓ Saqlandi' : 'Saqlash'}
-              </button>
-            : <button onClick={() => setMode('edit')} className="text-zinc-400 hover:text-white text-sm">Tahrirlash</button>}
+          <p className="text-ink font-medium text-sm">{mode === 'edit' ? 'Profilni tahrirlash' : 'Profil'}</p>
+          <div className="flex items-center gap-3">
+            {mode === 'edit'
+              ? <button onClick={handleSave}
+                  className={`text-sm font-semibold transition-colors ${saved ? 'text-brand' : 'text-brand hover:text-brand'}`}>
+                  {saved ? '✓ Saqlandi' : 'Saqlash'}
+                </button>
+              : <button onClick={() => setMode('edit')} className="text-muted hover:text-ink text-sm">Tahrirlash</button>}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -131,9 +135,9 @@ export default function Profile() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-7">
 
           {/* ── Header ── */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 pb-6 border-b border-zinc-800/70">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 pb-6 border-b border-line">
             {/* Avatar with emerald ring */}
-            <div className="w-[88px] h-[88px] sm:w-24 sm:h-24 rounded-full bg-emerald-500 flex items-center justify-center text-emerald-950 text-4xl font-semibold shrink-0 ring-2 ring-emerald-700/50 ring-offset-4 ring-offset-zinc-950">
+            <div className="w-[88px] h-[88px] sm:w-24 sm:h-24 rounded-full bg-brand flex items-center justify-center text-brand-ink text-4xl font-semibold shrink-0 ring-2 ring-brand ring-offset-4 ring-offset-[var(--page)]">
               {initial}
             </div>
 
@@ -141,16 +145,16 @@ export default function Profile() {
               {/* Name + actions */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 <div className="flex items-center gap-1.5 justify-center sm:justify-start min-w-0">
-                  <h1 className="text-white text-xl font-medium truncate">{name || 'Ismsiz'}</h1>
-                  {user.plan !== 'free' && <IconRosetteDiscountCheck size={19} className="text-emerald-500 shrink-0" />}
+                  <h1 className="text-ink text-xl font-medium truncate">{name || 'Ismsiz'}</h1>
+                  {user.plan !== 'free' && <IconRosetteDiscountCheck size={19} className="text-brand shrink-0" />}
                 </div>
                 <div className="flex items-center gap-2 justify-center sm:justify-start sm:ml-auto">
                   <button onClick={() => setMode('edit')}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-sm font-semibold transition-colors">
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-ink text-sm font-semibold transition-colors btn-cta">
                     <IconEdit size={15} /> Tahrirlash
                   </button>
                   <button onClick={() => navigate('/bozor')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-sm font-semibold transition-colors">
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-line hover:border-line-strong text-muted text-sm font-semibold transition-colors btn-soft">
                     <IconPlus size={15} /> E'lon
                   </button>
                 </div>
@@ -158,12 +162,12 @@ export default function Profile() {
 
               {/* Handle · tarif · location */}
               <div className="flex items-center gap-2.5 mt-2 flex-wrap justify-center sm:justify-start">
-                <span className="text-zinc-500 text-sm">@{handle}</span>
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${user.plan !== 'free' ? 'bg-emerald-950 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                <span className="text-faint text-sm">@{handle}</span>
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${user.plan !== 'free' ? 'bg-brand-soft text-brand' : 'bg-elevated text-muted'}`}>
                   {PLAN_NAMES[user.plan]} tarif
                 </span>
                 {location && (
-                  <span className="text-zinc-400 text-sm flex items-center gap-1"><IconMapPin size={14} /> {location}</span>
+                  <span className="text-muted text-sm flex items-center gap-1"><IconMapPin size={14} /> {location}</span>
                 )}
               </div>
 
@@ -178,12 +182,12 @@ export default function Profile() {
               {(businessName || metaBits.length > 0 || bio) && (
                 <div className="mt-4 text-center sm:text-left">
                   {businessName && (
-                    <div className="text-zinc-200 text-sm font-medium flex items-center gap-1.5 justify-center sm:justify-start">
-                      <IconBuildingStore size={15} className="text-zinc-500" /> {businessName}
-                      {metaBits.length > 0 && <span className="text-zinc-500 font-normal">· {metaBits.join(' · ')}</span>}
+                    <div className="text-muted text-sm font-medium flex items-center gap-1.5 justify-center sm:justify-start">
+                      <IconBuildingStore size={15} className="text-faint" /> {businessName}
+                      {metaBits.length > 0 && <span className="text-faint font-normal">· {metaBits.join(' · ')}</span>}
                     </div>
                   )}
-                  {bio && <p className="text-zinc-400 text-sm leading-relaxed mt-1.5 whitespace-pre-line">{bio}</p>}
+                  {bio && <p className="text-muted text-sm leading-relaxed mt-1.5 whitespace-pre-line">{bio}</p>}
                 </div>
               )}
             </div>
@@ -192,14 +196,14 @@ export default function Profile() {
           {/* ── Completeness nudge (only if incomplete) ── */}
           {pct < 100 && (
             <button onClick={() => setMode('edit')}
-              className="mt-5 w-full flex items-center gap-3 bg-zinc-900 border border-zinc-800 hover:border-emerald-800/60 rounded-xl px-4 py-3 transition-colors text-left">
+              className="mt-5 w-full flex items-center gap-3 bg-surface border border-line hover:border-brand rounded-xl px-4 py-3 transition-colors text-left btn-soft">
               <div className="flex-1">
-                <p className="text-zinc-300 text-sm">Profilingizni to'ldiring — AI aniqroq maslahat beradi</p>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-2">
-                  <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+                <p className="text-muted text-sm">Profilingizni to'ldiring — AI aniqroq maslahat beradi</p>
+                <div className="h-1.5 bg-elevated rounded-full overflow-hidden mt-2">
+                  <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${pct}%` }} />
                 </div>
               </div>
-              <span className="text-emerald-400 text-sm font-semibold shrink-0">{pct}%</span>
+              <span className="text-brand text-sm font-semibold shrink-0">{pct}%</span>
             </button>
           )}
 
@@ -207,19 +211,19 @@ export default function Profile() {
           {infoCards().length > 0 && (
             <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {infoCards().map(c => (
-                <div key={c.label} className="bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-3">
-                  <div className="flex items-center gap-1.5 text-zinc-500 text-xs">
+                <div key={c.label} className="bg-surface border border-line rounded-xl px-3.5 py-3">
+                  <div className="flex items-center gap-1.5 text-faint text-xs">
                     <c.icon size={14} className={c.color} /> {c.label}
                   </div>
-                  <p className="text-white text-sm font-medium mt-1.5 leading-tight">{c.value}</p>
+                  <p className="text-ink text-sm font-medium mt-1.5 leading-tight">{c.value}</p>
                 </div>
               ))}
             </div>
           )}
 
           {/* ── Tab ── */}
-          <div className="mt-6 border-t border-zinc-800/70">
-            <div className="inline-flex items-center gap-1.5 py-3 -mt-px border-t-2 border-emerald-500 text-white text-sm font-medium">
+          <div className="mt-6 border-t border-line">
+            <div className="inline-flex items-center gap-1.5 py-3 -mt-px border-t-2 border-brand text-ink text-sm font-medium">
               <IconLayoutGrid size={16} /> E'lonlarim
             </div>
           </div>
@@ -227,13 +231,13 @@ export default function Profile() {
           {/* ── Listings grid (the "posts") ── */}
           {userAds.length === 0 ? (
             <div className="py-14 text-center">
-              <div className="w-16 h-16 rounded-full border-2 border-zinc-700 flex items-center justify-center mx-auto mb-4 text-zinc-500">
+              <div className="w-16 h-16 rounded-full border-2 border-line-strong flex items-center justify-center mx-auto mb-4 text-faint">
                 <IconPackage size={28} />
               </div>
-              <p className="text-white font-medium">Hali e'lon yo'q</p>
-              <p className="text-zinc-500 text-sm mt-1">Birinchi e'loningizni joylang — bozorda ko'rinasiz</p>
+              <p className="text-ink font-medium">Hali e'lon yo'q</p>
+              <p className="text-faint text-sm mt-1">Birinchi e'loningizni joylang — bozorda ko'rinasiz</p>
               <button onClick={() => navigate('/bozor')}
-                className="mt-4 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 text-sm font-semibold transition-colors">
+                className="mt-4 px-4 py-2 rounded-xl bg-brand hover:bg-brand-hover text-brand-ink text-sm font-semibold transition-colors btn-cta">
                 Bozorga o'tish
               </button>
             </div>
@@ -244,17 +248,17 @@ export default function Profile() {
                 const isBuy = ad.type === 'buy';
                 return (
                   <button key={ad.id} onClick={() => navigate('/bozor')}
-                    className="aspect-square rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 p-3.5 flex flex-col justify-between text-left transition-colors overflow-hidden">
+                    className="aspect-square rounded-xl bg-surface border border-line hover:border-line-strong p-3.5 flex flex-col justify-between text-left transition-colors overflow-hidden card-tap">
                     <div className="flex items-center justify-between">
-                      <Cat size={22} className="text-zinc-400" />
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isBuy ? 'bg-blue-950 text-blue-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                      <Cat size={22} className="text-muted" />
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${isBuy ? 'bg-sky/10 text-sky' : 'bg-brand-soft text-brand'}`}>
                         {isBuy ? 'Olaman' : 'Sotaman'}
                       </span>
                     </div>
                     <div>
-                      <p className="text-white text-sm font-medium leading-snug line-clamp-2">{ad.product}</p>
-                      <p className="text-zinc-500 text-xs mt-0.5">{ad.quantity}</p>
-                      {ad.price && <p className="text-emerald-400 text-xs font-medium mt-0.5 truncate">{ad.price}</p>}
+                      <p className="text-ink text-sm font-medium leading-snug line-clamp-2">{ad.product}</p>
+                      <p className="text-faint text-xs mt-0.5">{ad.quantity}</p>
+                      {ad.price && <p className="text-brand text-xs font-medium mt-0.5 truncate">{ad.price}</p>}
                     </div>
                   </button>
                 );
@@ -268,16 +272,16 @@ export default function Profile() {
         <div className="max-w-xl mx-auto px-4 py-5 space-y-6">
 
           {/* Completeness */}
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 px-5 py-4">
+          <div className="bg-surface rounded-2xl border border-line px-5 py-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-zinc-300 text-sm font-medium">Profil to'ldirilgani</p>
-              <p className={`text-sm font-bold ${pct >= 80 ? 'text-emerald-400' : pct >= 40 ? 'text-yellow-400' : 'text-zinc-500'}`}>{pct}%</p>
+              <p className="text-muted text-sm font-medium">Profil to'ldirilgani</p>
+              <p className={`text-sm font-bold ${pct >= 80 ? 'text-brand' : pct >= 40 ? 'text-gold' : 'text-faint'}`}>{pct}%</p>
             </div>
-            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full transition-all duration-500 ${pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-yellow-500' : 'bg-zinc-600'}`}
+            <div className="h-1.5 bg-elevated rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-500 ${pct >= 80 ? 'bg-brand' : pct >= 40 ? 'bg-gold' : 'bg-elevated'}`}
                 style={{ width: `${pct}%` }} />
             </div>
-            <p className="text-zinc-600 text-xs mt-2">To'liq profil = aniqroq AI maslahat</p>
+            <p className="text-faint text-xs mt-2">To'liq profil = aniqroq AI maslahat</p>
           </div>
 
           {/* Personal */}
@@ -358,18 +362,18 @@ export default function Profile() {
               <div className="p-4">
                 <textarea value={bio} onChange={e => setBio(e.target.value)} rows={4}
                   placeholder="Masalan: do'konim Chorsu yaqinida, kiyim-kechak sotamiz. Kapitalbank'dan kredit olganman, muddat tugayapti. Yangi ombor ochmoqchiman..."
-                  className="w-full bg-transparent text-white text-sm placeholder-zinc-600 outline-none resize-none leading-relaxed" />
+                  className="w-full bg-transparent text-ink text-sm placeholder:text-faint outline-none resize-none leading-relaxed" />
               </div>
             </Group>
           </Section>
 
           {/* Big save */}
           <button onClick={handleSave}
-            className={`w-full py-3.5 rounded-2xl text-sm font-bold transition-all active:scale-95 ${saved ? 'bg-emerald-900 text-emerald-300 border border-emerald-700' : 'bg-emerald-500 hover:bg-emerald-400 text-emerald-950'}`}>
+            className={`w-full py-3.5 rounded-2xl text-sm font-bold transition-all active:scale-95 btn-cta ${saved ? 'bg-brand-soft text-brand border border-brand' : 'bg-brand hover:bg-brand-hover text-brand-ink'}`}>
             {saved ? '✓ Saqlandi — AI endi profilingizni biladi' : 'Profilni saqlash'}
           </button>
 
-          <p className="text-zinc-700 text-xs text-center">
+          <p className="text-faint text-xs text-center">
             Ma'lumotlaringiz faqat AI maslahatini yaxshilash uchun ishlatiladi
           </p>
         </div>
@@ -380,13 +384,13 @@ export default function Profile() {
   // ── Business-info chips from filled fields ──
   function infoCards(): { icon: Icon; color: string; label: string; value: string }[] {
     const cards: { icon: Icon; color: string; label: string; value: string }[] = [];
-    if (bizType)     cards.push({ icon: IconBriefcase,      color: 'text-emerald-400', label: 'Faoliyat',   value: BIZ_TYPE_LABELS[bizType as BizType] });
-    if (regType)     cards.push({ icon: IconClipboardText,  color: 'text-blue-400',    label: 'Shakl',      value: REG_TYPE_LABELS[regType as RegType] });
-    if (yearsInBiz)  cards.push({ icon: IconCalendar,       color: 'text-pink-400',    label: 'Tajriba',    value: `${yearsInBiz} yil` });
-    if (employees)   cards.push({ icon: IconUsers,          color: 'text-teal-400',    label: 'Xodimlar',   value: employees === '0' ? "O'zim" : `${employees} kishi` });
-    if (revenueBand) cards.push({ icon: IconCoin,           color: 'text-amber-400',   label: 'Daromad',    value: revenueBand });
-    if (collateral && collateral !== 'none') cards.push({ icon: IconBuildingBank, color: 'text-indigo-400', label: 'Garov', value: COLLATERAL_LABELS[collateral as Collateral] });
-    if (disability)  cards.push({ icon: IconWheelchair,     color: 'text-purple-400',  label: 'Nogironlik', value: `${disability} guruh` });
+    if (bizType)     cards.push({ icon: IconBriefcase,      color: 'text-brand', label: 'Faoliyat',   value: BIZ_TYPE_LABELS[bizType as BizType] });
+    if (regType)     cards.push({ icon: IconClipboardText,  color: 'text-sky',    label: 'Shakl',      value: REG_TYPE_LABELS[regType as RegType] });
+    if (yearsInBiz)  cards.push({ icon: IconCalendar,       color: 'text-muted',    label: 'Tajriba',    value: `${yearsInBiz} yil` });
+    if (employees)   cards.push({ icon: IconUsers,          color: 'text-muted',    label: 'Xodimlar',   value: employees === '0' ? "O'zim" : `${employees} kishi` });
+    if (revenueBand) cards.push({ icon: IconCoin,           color: 'text-gold',   label: 'Daromad',    value: revenueBand });
+    if (collateral && collateral !== 'none') cards.push({ icon: IconBuildingBank, color: 'text-muted', label: 'Garov', value: COLLATERAL_LABELS[collateral as Collateral] });
+    if (disability)  cards.push({ icon: IconWheelchair,     color: 'text-gold',  label: 'Nogironlik', value: `${disability} guruh` });
     return cards;
   }
 }
@@ -395,16 +399,16 @@ export default function Profile() {
 type UserRevenue   = '<500mln' | '500mln-1mlrd' | '>1mlrd';
 type UserEmployees = '0' | '1-5' | '5-20' | '20+';
 
-const inputCls  = 'w-full bg-transparent text-white text-sm text-right placeholder-zinc-600 outline-none';
-const selectCls = 'bg-transparent text-white text-sm text-right outline-none appearance-none cursor-pointer max-w-[180px] [&>option]:bg-zinc-900';
+const inputCls  = 'w-full bg-transparent text-ink text-sm text-right placeholder:text-faint outline-none';
+const selectCls = 'bg-transparent text-ink text-sm text-right outline-none appearance-none cursor-pointer max-w-[180px] [&>option]:bg-surface';
 
 // ── Instagram stat cell ────────────────────────────────────────────────────────
 
 function Stat({ n, label, highlight }: { n: number | string; label: string; highlight?: boolean }) {
   return (
     <div>
-      <span className={`text-base font-semibold ${highlight ? 'text-emerald-400' : 'text-white'}`}>{n}</span>{' '}
-      <span className="text-zinc-500 text-sm">{label}</span>
+      <span className={`text-base font-semibold ${highlight ? 'text-brand' : 'text-ink'}`}>{n}</span>{' '}
+      <span className="text-faint text-sm">{label}</span>
     </div>
   );
 }
@@ -414,19 +418,19 @@ function Stat({ n, label, highlight }: { n: number | string; label: string; high
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-zinc-500 text-xs font-semibold px-4 mb-2">{title}</p>
+      <p className="text-faint text-xs font-semibold px-4 mb-2">{title}</p>
       {children}
-      {hint && <p className="text-zinc-600 text-xs px-4 mt-2">{hint}</p>}
+      {hint && <p className="text-faint text-xs px-4 mt-2">{hint}</p>}
     </div>
   );
 }
 
 function Group({ children }: { children: React.ReactNode }) {
-  return <div className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">{children}</div>;
+  return <div className="bg-surface rounded-2xl border border-line overflow-hidden">{children}</div>;
 }
 
 function Divider() {
-  return <div className="h-px bg-zinc-800 ml-[52px]" />;
+  return <div className="h-px bg-elevated ml-[52px]" />;
 }
 
 function IconSquare({ icon: Ic, iconBg }: { icon: Icon; iconBg: string }) {
@@ -441,7 +445,7 @@ function InputRow({ icon, iconBg, label, children }: { icon: Icon; iconBg: strin
   return (
     <div className="flex items-center gap-3 px-4 py-3 min-h-[52px]">
       <IconSquare icon={icon} iconBg={iconBg} />
-      <span className="text-white text-sm font-medium whitespace-nowrap">{label}</span>
+      <span className="text-ink text-sm font-medium whitespace-nowrap">{label}</span>
       <div className="flex-1 flex justify-end min-w-0">{children}</div>
     </div>
   );
@@ -451,10 +455,10 @@ function SelectRow({ icon, iconBg, label, children }: { icon: Icon; iconBg: stri
   return (
     <div className="flex items-center gap-3 px-4 py-3 min-h-[52px]">
       <IconSquare icon={icon} iconBg={iconBg} />
-      <span className="text-white text-sm font-medium whitespace-nowrap">{label}</span>
+      <span className="text-ink text-sm font-medium whitespace-nowrap">{label}</span>
       <div className="flex-1 flex justify-end items-center gap-1 min-w-0">
         {children}
-        <span className="text-zinc-600 text-xs shrink-0">▾</span>
+        <span className="text-faint text-xs shrink-0">▾</span>
       </div>
     </div>
   );
@@ -468,12 +472,12 @@ function ChipRow({ icon, iconBg, label, options, value, onChange }: {
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 min-h-[52px]">
       <IconSquare icon={icon} iconBg={iconBg} />
-      <span className="text-white text-sm font-medium whitespace-nowrap">{label}</span>
+      <span className="text-ink text-sm font-medium whitespace-nowrap">{label}</span>
       <div className="flex-1 flex justify-end gap-1.5 flex-wrap">
         {options.map(o => (
           <button key={o.value} onClick={() => onChange(o.value)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-              value === o.value ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors btn-soft ${
+              value === o.value ? 'bg-brand text-brand-ink' : 'bg-elevated text-muted hover:text-ink'
             }`}>
             {o.label}
           </button>

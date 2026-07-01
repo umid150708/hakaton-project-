@@ -2,8 +2,11 @@
  * Logo.tsx — Bozorboy brand mark.
  *
  * A "bozorboy" (market lad): the classic silhouette avatar wearing an Uzbek
- * Chust do'ppi cocked to one side — black cap with white qalampir embroidery
- * and a tumor-arch band — on a dark circular badge with a warm gold ring.
+ * Chust do'ppi cocked to one side. The cap is embroidered the traditional way —
+ * shaded navy dome, cream qalampir (pepper) almonds with gold veins, and a
+ * tumor-arch band — on a dark circular badge with a warm gold ring.
+ *
+ * NOTE: keep public/bozorboy.svg (the favicon) in sync with this SVG.
  */
 
 export function Logo({ size = 32, className = '', animated = false }: { size?: number; className?: string; animated?: boolean }) {
@@ -15,32 +18,62 @@ export function Logo({ size = 32, className = '', animated = false }: { size?: n
     >
       <defs>
         <clipPath id="bb-clip"><circle cx="24" cy="24" r="23" /></clipPath>
+        <linearGradient id="bb-dome" x1="0" y1="-10" x2="0" y2="7" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#2a2a52" />
+          <stop offset="0.55" stopColor="#191934" />
+          <stop offset="1" stopColor="#0e0e22" />
+        </linearGradient>
+        <linearGradient id="bb-band" x1="0" y1="3" x2="0" y2="8" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#14142c" />
+          <stop offset="1" stopColor="#0a0a1c" />
+        </linearGradient>
+        <radialGradient id="bb-badge" cx="0.35" cy="0.28" r="0.9">
+          <stop offset="0" stopColor="#2f2f37" />
+          <stop offset="1" stopColor="#212127" />
+        </radialGradient>
       </defs>
 
       {/* Badge */}
-      <circle cx="24" cy="24" r="23" fill="#26262c" />
+      <circle cx="24" cy="24" r="23" fill="url(#bb-badge)" />
 
       {/* Silhouette (clipped to the badge) */}
       <g clipPath="url(#bb-clip)">
         <path d="M9 48 C9 38 15.5 33.5 24 33.5 C32.5 33.5 39 38 39 48 Z" fill="#bcbcc4" />
         <circle cx="24" cy="24" r="8.6" fill="#d2d2d9" />
+        {/* soft contact shadow under the cap */}
+        <ellipse cx="23" cy="18.5" rx="10" ry="3.2" fill="#000000" opacity="0.16" />
       </g>
 
       {/* Do'ppi — cocked to one side on the crown */}
       <g transform="translate(22.5 15) rotate(-15)">
-        {/* dome + band */}
-        <path d="M-10 4 C-10 -6 -5 -10 0 -10 C5 -10 10 -6 10 4 Z" fill="#15152a" />
-        <rect x="-10.5" y="3" width="21" height="4.6" rx="1.6" fill="#101024" />
-        {/* qalampir (almond) embroidery */}
-        <path d="M0 -8 C-2.6 -6 -2.6 -1.4 0 0.6 C2.6 -1.4 2.6 -6 0 -8 Z" fill="#f5f0e6" />
-        <circle cx="0" cy="-3.6" r="0.9" fill="#15152a" />
-        <circle cx="-4.6" cy="-3" r="0.85" fill="#f5f0e6" />
-        <circle cx="4.6" cy="-3" r="0.85" fill="#f5f0e6" />
-        {/* tumor-arch band */}
-        <g stroke="#f5f0e6" strokeWidth="1.1" fill="none" strokeLinecap="round">
-          <path d="M-7.5 6.4 q1.7 -2.1 3.4 0" />
-          <path d="M-2.4 6.4 q1.7 -2.1 3.4 0" />
-          <path d="M2.7 6.4 q1.7 -2.1 3.4 0" />
+        {/* dome + band (shaded) */}
+        <path d="M-10 4 C-10 -6 -5 -10 0 -10 C5 -10 10 -6 10 4 Z" fill="url(#bb-dome)" />
+        <rect x="-10.5" y="3" width="21" height="4.8" rx="1.7" fill="url(#bb-band)" />
+        {/* crown highlight for a rounded, real feel */}
+        <path d="M-7 -1.5 C-6 -6.5 -2.4 -8.8 0.6 -8.8" stroke="#3d3d70" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.7" />
+
+        {/* qalampir (pepper almonds) — fanned across the dome, gold-veined */}
+        <g>
+          {[-5, 0, 5].map((x, i) => (
+            <g key={i} transform={`translate(${x} -3.4) rotate(${x * 2.4})`}>
+              <path d="M0 -4.4 C-1.9 -2.6 -1.9 1.1 0 2.6 C1.9 1.1 1.9 -2.6 0 -4.4 Z" fill="#f5f0e6" />
+              <path d="M0 -3.4 L0 1.7" stroke="#c99a34" strokeWidth="0.5" strokeLinecap="round" />
+            </g>
+          ))}
+        </g>
+
+        {/* tumor-arch band with gold stitch dots */}
+        <g stroke="#f5f0e6" strokeWidth="1" fill="none" strokeLinecap="round">
+          <path d="M-8.6 6.6 q1.5 -1.9 3 0" />
+          <path d="M-4 6.6 q1.5 -1.9 3 0" />
+          <path d="M0.6 6.6 q1.5 -1.9 3 0" />
+          <path d="M5.2 6.6 q1.5 -1.9 3 0" />
+        </g>
+        <g fill="#d9a441">
+          <circle cx="-7.1" cy="6.7" r="0.5" />
+          <circle cx="-2.5" cy="6.7" r="0.5" />
+          <circle cx="2.1" cy="6.7" r="0.5" />
+          <circle cx="6.7" cy="6.7" r="0.5" />
         </g>
       </g>
 
@@ -50,13 +83,13 @@ export function Logo({ size = 32, className = '', animated = false }: { size?: n
   );
 }
 
-/** Logo + wordmark. */
+/** Logo + wordmark. The 3rd "o" of Bozorboy is fused with a "$" sign. */
 export function Brand({ size = 32, className = '', animated = false }: { size?: number; className?: string; animated?: boolean }) {
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <Logo size={size} animated={animated} />
-      <span className="font-black text-white tracking-tight" style={{ fontSize: size * 0.56 }}>
-        Bozor<span className="text-amber-400">boy</span>
+      <span className="font-black text-ink tracking-tight" style={{ fontSize: size * 0.56 }}>
+        Bozor<span className="text-gold">b<span className="dollar-o">o</span>y</span>
       </span>
     </div>
   );

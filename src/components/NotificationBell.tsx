@@ -43,43 +43,43 @@ export default function NotificationBell() {
   return (
     <div className="relative shrink-0" ref={ref}>
       <button onClick={() => setOpen(o => !o)} title="Bildirishnomalar"
-        className="relative w-9 h-9 flex items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600 text-zinc-300 transition-colors">
+        className="relative w-9 h-9 flex items-center justify-center rounded-lg bg-surface border border-line hover:border-line-strong text-muted transition-colors btn-icon">
         <IconBell size={18} />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-emerald-950 text-[10px] font-bold flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-brand text-brand-ink text-[10px] font-bold flex items-center justify-center">
             {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-50">
-          <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
-            <span className="text-white text-sm font-semibold">Mos bitimlar</span>
+        <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-surface border border-line-strong rounded-xl shadow-2xl overflow-hidden z-50">
+          <div className="px-4 py-2.5 border-b border-line flex items-center justify-between">
+            <span className="text-ink text-sm font-semibold">Mos bitimlar</span>
             {unread > 0 && (
-              <button onClick={readAll} className="text-emerald-400 hover:text-emerald-300 text-xs">Hammasini o'qildi</button>
+              <button onClick={readAll} className="text-brand hover:text-brand text-xs link-quiet">Hammasini o'qildi</button>
             )}
           </div>
 
           <div className="max-h-96 overflow-y-auto">
             {items.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <p className="text-zinc-400 text-sm">Hozircha mos bitim yo'q</p>
-                <p className="text-zinc-600 text-xs mt-1">E'lon joylang — mos takliflar shu yerda chiqadi</p>
+                <p className="text-muted text-sm">Hozircha mos bitim yo'q</p>
+                <p className="text-faint text-xs mt-1">E'lon joylang — mos takliflar shu yerda chiqadi</p>
               </div>
             ) : (
               items.map(n => (
                 <button key={n.id} onClick={() => openItem(n.ad_id)}
-                  className={`w-full text-left px-4 py-3 border-b border-zinc-800/60 hover:bg-zinc-800/50 transition-colors ${n.read ? '' : 'bg-emerald-950/10'}`}>
+                  className={`w-full text-left px-4 py-3 border-b border-line hover:bg-elevated transition-colors btn-soft ${n.read ? '' : 'bg-brand-soft'}`}>
                   <div className="flex items-start gap-2">
-                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />}
+                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-brand mt-1.5 shrink-0" />}
                     <div className="min-w-0 flex-1">
-                      <p className="text-white text-sm font-medium leading-snug">{n.title ?? 'Mos bitim'}</p>
-                      {n.body && <p className="text-zinc-400 text-xs mt-0.5 leading-snug">{n.body}</p>}
-                      <p className="text-emerald-400 text-xs mt-1">Ko'rish →</p>
+                      <p className="text-ink text-sm font-medium leading-snug">{n.title ?? 'Mos bitim'}</p>
+                      {n.body && <p className="text-muted text-xs mt-0.5 leading-snug">{n.body}</p>}
+                      <p className="text-brand text-xs mt-1">Ko'rish →</p>
                     </div>
                     {n.score != null && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-bold shrink-0">{n.score}%</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-soft text-brand font-bold shrink-0">{n.score}%</span>
                     )}
                   </div>
                 </button>

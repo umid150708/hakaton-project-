@@ -35,42 +35,42 @@ export default function AuthButton() {
         {/* Chip → opens profile popover (shows details) */}
         <div className="relative" ref={menuRef}>
           <button onClick={() => setMenu(m => !m)}
-            className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-emerald-500 transition-colors">
-            <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">{initial}</span>
-            <span className="text-white text-sm font-medium max-w-[100px] truncate">{label}</span>
-            <span className="text-zinc-500 text-xs">▾</span>
+            className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-surface border border-line-strong hover:border-brand transition-colors btn-icon">
+            <span className="w-6 h-6 rounded-lg bg-brand text-brand-ink text-xs font-bold flex items-center justify-center">{initial}</span>
+            <span className="text-ink text-sm font-medium max-w-[100px] truncate">{label}</span>
+            <span className="text-faint text-xs">▾</span>
           </button>
 
           {menu && (
-            <div className="absolute right-0 mt-2 w-72 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-50">
-              <div className="px-4 py-3 border-b border-zinc-800">
+            <div className="absolute right-0 mt-2 w-72 bg-surface border border-line-strong rounded-xl shadow-2xl overflow-hidden z-50">
+              <div className="px-4 py-3 border-b border-line">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold">{label.charAt(0)}</div>
+                  <div className="w-12 h-12 rounded-full bg-brand flex items-center justify-center text-brand-ink font-bold">{label.charAt(0)}</div>
                   <div className="flex-1">
-                    <p className="text-white text-sm font-semibold truncate">{user.name || label}</p>
-                    <p className="text-zinc-500 text-xs truncate">{user.email || user.phone}</p>
+                    <p className="text-ink text-sm font-semibold truncate">{user.name || label}</p>
+                    <p className="text-faint text-xs truncate">{user.email || user.phone}</p>
                   </div>
                 </div>
-                <div className="mt-3 text-zinc-400 text-xs space-y-1">
-                  {user.businessName && <div><strong className="text-zinc-300">Tashkilot:</strong> {user.businessName}</div>}
-                  {user.bizType && <div><strong className="text-zinc-300">Biznes turi:</strong> {user.bizType}</div>}
-                  {user.disability && <div><strong className="text-zinc-300">Nogironlik:</strong> {user.disability}</div>}
-                  {user.location && <div><strong className="text-zinc-300">Hudud:</strong> {user.location}</div>}
-                  {user.revenueBand && <div><strong className="text-zinc-300">Tushum:</strong> {user.revenueBand}</div>}
-                  {user.employees && <div><strong className="text-zinc-300">Xodimlar:</strong> {user.employees}</div>}
+                <div className="mt-3 text-muted text-xs space-y-1">
+                  {user.businessName && <div><strong className="text-muted">Tashkilot:</strong> {user.businessName}</div>}
+                  {user.bizType && <div><strong className="text-muted">Biznes turi:</strong> {user.bizType}</div>}
+                  {user.disability && <div><strong className="text-muted">Nogironlik:</strong> {user.disability}</div>}
+                  {user.location && <div><strong className="text-muted">Hudud:</strong> {user.location}</div>}
+                  {user.revenueBand && <div><strong className="text-muted">Tushum:</strong> {user.revenueBand}</div>}
+                  {user.employees && <div><strong className="text-muted">Xodimlar:</strong> {user.employees}</div>}
                 </div>
               </div>
               <div className="px-3 py-2 grid gap-1">
                 <button onClick={() => { setMenu(false); navigate('/profile'); }}
-                  className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors">
+                  className="w-full text-left px-3 py-2 text-sm text-muted hover:bg-elevated rounded-lg transition-colors btn-soft">
                   Profilni ko'rish
                 </button>
                 <button onClick={() => { setMenu(false); navigate('/profile#edit'); }}
-                  className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors">
+                  className="w-full text-left px-3 py-2 text-sm text-muted hover:bg-elevated rounded-lg transition-colors btn-soft">
                   Tahrirlash
                 </button>
                 <button onClick={() => { void signOut(); setMenu(false); }}
-                  className="w-full text-left px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-red-400 rounded-lg transition-colors">
+                  className="w-full text-left px-3 py-2 text-sm text-muted hover:bg-elevated hover:text-red-400 rounded-lg transition-colors btn-soft">
                   Chiqish
                 </button>
                 {import.meta.env.DEV && (
@@ -84,7 +84,7 @@ export default function AuthButton() {
                     setMenu(false);
                     window.location.reload();
                   }}
-                    className="w-full text-left px-3 py-2 text-sm text-emerald-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                    className="w-full text-left px-3 py-2 text-sm text-brand hover:bg-elevated rounded-lg transition-colors btn-soft">
                     Sign in as demo (DEV)
                   </button>
                 )}
@@ -99,7 +99,7 @@ export default function AuthButton() {
   return (
     <>
       <button onClick={() => setModal('signin')}
-        className="px-4 py-2 text-sm font-semibold text-zinc-200 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded-xl transition-colors">
+        className="px-4 py-2 text-sm font-semibold text-muted hover:text-ink border border-line-strong hover:border-line-strong rounded-xl transition-colors btn-soft">
         Kirish
       </button>
       {modal && <AuthModal initialMode={modal} onSuccess={() => setModal(null)} onClose={() => setModal(null)} />}
