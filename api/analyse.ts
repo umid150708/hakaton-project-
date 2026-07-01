@@ -12,6 +12,7 @@
  */
 
 import { withGemini } from './_gemini';
+import type { GenerationConfig } from '@google/generative-ai';
 
 export const config = { runtime: 'edge' };
 
@@ -54,12 +55,17 @@ async function callGroq(system: string, prompt: string, maxTokens: number): Prom
 
 async function callGemini(system: string, prompt: string, maxTokens: number): Promise<string> {
   return withGemini(async (genAI) => {
-    // gemini-1.5-flash is NON-thinking: the whole token budget goes to the
-    // visible answer. (gemini-2.5-flash spends the budget on hidden reasoning
-    // first, which truncated short briefs to a useless fragment.)
+    // gemini-2.5-flash is a THINKING model — by default it spends the token
+    // budget on hidden reasoning first, truncating short briefs to a useless
+    // fragment. thinkingBudget:0 disables that so the whole budget goes to the
+    // visible answer. (gemini-1.5-flash is 404 on the current API version.)
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.6 },
+      model: 'gemini-2.5-flash',
+      generationConfig: {
+        maxOutputTokens: maxTokens,
+        temperature: 0.6,
+        thinkingConfig: { thinkingBudget: 0 },
+      } as GenerationConfig,
       systemInstruction: system,
     });
     const result = await model.generateContent(prompt);
