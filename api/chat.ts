@@ -12,6 +12,7 @@
 
 import { withGemini } from './_gemini';
 import { sbSelect } from './_supabase';
+import type { GenerationConfig } from '@google/generative-ai';
 
 export const config = { runtime: 'edge' };
 
@@ -28,8 +29,9 @@ const cors = {
 const SYSTEM_PROMPT = `Siz O'zbekiston KOB tadbirkorlari uchun AI maslahatchiisiz. Faqat O'zbek tilida yozing.
 
 MAVZU TEKSHIRUVI (har bir xabarda birinchi shu tekshiruvni bajaring):
-• Agar xabar biznes, kredit, soliq, nogironlik imtiyozi, davlat dasturi, bozor narxlari, yoki tadbirkorlik bilan BOG'LIQ BO'LSA → yordam bering.
-• Agar xabar ushbu mavzular bilan bog'LIQ BO'LMASA (salomlashish, hazil, shaxsiy savol, siyosat, sport va h.k.) → qisqacha muloyimlik bilan tushuntiring: "Men faqat biznes maslahat beraman" va BIR MISOL savol bering. Boshqa hech narsa yozmang.
+• Agar xabar biznes, kredit, soliq, nogironlik imtiyozi, davlat dasturi, bozor narxlari, tadbirkorlik, YOKI foydalanuvchining O'ZI/biznesi/profili haqida ("men haqimda nima bilasan", "mening biznesim", "kim ekanligimni bilasanmi") bo'lsa → yordam bering.
+• Foydalanuvchi O'ZI haqida so'rasa — pastdagi "FOYDALANUVCHI HAQIDA" bo'limidagi ma'lumotlardan foydalanib, uni tanigan holda javob bering: nimalarni bilishingizni tabiiy tarzda sanab bering (biznes turi, hudud, ko'lami va h.k.). Ma'lumot bo'lmasa — profilni to'ldirishni yoki biznesini qisqacha tavsiflashni iltimos qiling. Bu savolni HECH QACHON rad etmang.
+• Faqat mutlaqo aloqasiz bo'lsa (siyosat, sport, hazil) → qisqacha: "Men faqat biznes maslahat beraman" va BIR misol savol bering.
 
 BITTA SAVOL QOIDASI (eng muhim qoida):
 Agar mavzu to'g'ri lekin ma'lumot yetarli emas — faqat BITTA aniqlovchi savol bering. Ro'yxat YOQILMAYDI. Bir savol — keyin kutasiz.
@@ -84,7 +86,9 @@ async function getMarketLine(): Promise<string> {
 function buildSystem(profile: string, marketLine: string): string {
   let s = SYSTEM_PROMPT;
   if (profile) {
-    s += `\n\nFOYDALANUVCHI HAQIDA (javobni shu kishiga moslang, qayta so'ramang): ${profile}.`;
+    s += `\n\nFOYDALANUVCHI HAQIDA (javobni shu kishiga moslang, qayta so'ramang; u o'zi haqida so'rasa AYNAN shulardan foydalaning): ${profile}.`;
+  } else {
+    s += `\n\nFOYDALANUVCHI HAQIDA: hozircha profil ma'lumoti yo'q. U o'zi haqida so'rasa — profilni to'ldirishni yoki biznesini qisqacha tavsiflashni iltimos qiling (rad etmang).`;
   }
   if (marketLine) {
     s += `\n\nBUGUNGI BOZOR NARXLARI (kerak bo'lsa maslahatda ishlating): ${marketLine}.`;
@@ -126,10 +130,17 @@ async function callGroq(history: Message[], system: string): Promise<string> {
 
 async function callGemini(history: Message[], system: string): Promise<string> {
   return withGemini(async (genAI) => {
+    // gemini-1.5-flash now 404s on the current API version. gemini-2.5-flash has
+    // quota; thinkingBudget:0 disables hidden reasoning so it answers directly
+    // (fast, strong instruction-following) instead of falling back to Groq 8b.
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',  // 1500 RPD free tier (vs 2.5-flash's 20 RPD)
+      model: 'gemini-2.5-flash',
       systemInstruction: system,
-      generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 512,
+        thinkingConfig: { thinkingBudget: 0 },
+      } as GenerationConfig,
     });
     const chat = model.startChat({
       history: history.slice(0, -1).map(m => ({
