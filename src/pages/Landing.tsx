@@ -244,17 +244,25 @@ export default function Landing() {
       <section className="py-12 px-6 border-t border-zinc-800/50">
         <div className="max-w-5xl mx-auto text-center">
           <p className="text-xs text-zinc-700 uppercase tracking-widest mb-8 font-medium">Ma'lumot manbalari</p>
-          <div className="flex items-center justify-center gap-10 flex-wrap">
+          <div className="flex items-center justify-center gap-8 flex-wrap">
             {[
-              { name: 'Lex.uz',    color: 'text-amber-500'  },
-              { name: 'Soliq.uz',  color: 'text-emerald-500'},
-              { name: 'Stat.uz',   color: 'text-blue-500'   },
+              { name: 'UzEx',     href: 'https://uzex.uz',   color: 'text-emerald-500' },
+              { name: 'Stat.uz',  href: 'https://stat.uz',   color: 'text-blue-500'    },
+              { name: 'Lex.uz',   href: 'https://lex.uz',    color: 'text-amber-500'   },
+              { name: 'Soliq.uz', href: 'https://soliq.uz',  color: 'text-emerald-400' },
             ].map(p => (
-              <span key={p.name} className={`font-bold text-sm ${p.color} opacity-50 hover:opacity-100 transition-opacity cursor-default`}>
+              <a key={p.name} href={p.href} target="_blank" rel="noopener noreferrer"
+                className={`font-bold text-sm ${p.color} opacity-60 hover:opacity-100 transition-opacity`}>
                 {p.name}
-              </span>
+              </a>
             ))}
           </div>
+          <p className="text-zinc-600 text-xs mt-6 max-w-2xl mx-auto leading-relaxed">
+            Yuqoridagi <span className="text-zinc-400">o'rtacha ulgurji narxlar</span> — indikativ qiymatlar bo'lib,{' '}
+            <a href="https://uzex.uz" target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:text-emerald-400">UzEx</a> birja
+            kotirovkalari va <a href="https://stat.uz" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-400">stat.uz</a>{' '}
+            narx monitoringi asosida shakllantiriladi. Rasmiy jonli ma'lumot emas — bitim narxi tomonlar kelishuviga bog'liq.
+          </p>
         </div>
       </section>
 

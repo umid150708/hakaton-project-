@@ -40,13 +40,15 @@ async function generatePrices(prev: Snapshot | null): Promise<{ prices: { key: s
     return `${p.key} | ${p.name} | ${p.unit} | oldingi narx: ${last} so'm`;
   }).join('\n');
 
-  const prompt = `Bugun ${todayUz()}. O'zbekiston ulgurji bozori uchun quyidagi mahsulotlarning bugungi o'rtacha narxini belgilang.
+  const prompt = `Bugun ${todayUz()}. O'zbekiston ulgurji (optom) bozori uchun quyidagi mahsulotlarning bugungi indikativ o'rtacha narxini belgilang.
+
+Manba sifatida UzEx (O'zbekiston respublika tovar-xom ashyo birjasi) birja kotirovkalari va stat.uz (Milliy statistika qo'mitasi) ulgurji narx monitoringi darajasiga tayaning.
 
 Mahsulotlar (kalit | nom | birlik | oldingi narx):
 ${list}
 
 QOIDALAR:
-- Har bir mahsulot uchun real bugungi O'zbekiston ulgurji narxini so'mda bering (oldingi narxdan kichik o'zgarish bilan, mavsum va jahon bozoriga mos)
+- Har bir mahsulot uchun UzEx/stat.uz darajasidagi real O'zbekiston ULGURJI narxini so'mda bering (chakana emas; oldingi narxdan kichik o'zgarish bilan, mavsum va jahon bozoriga mos)
 - "note" — qisqa (5-8 so'z) Markaziy Osiyo yoki jahon bozori konteksti (o'zbek tilida)
 - "analysis" — 2-3 jumlalik umumiy bozor sharhi (o'zbek tilida, professional, Reuters uslubida)
 

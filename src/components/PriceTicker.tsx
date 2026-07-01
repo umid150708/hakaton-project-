@@ -88,11 +88,12 @@ export default function PriceTicker() {
 
   return (
     <div className="w-full bg-zinc-950 border-b border-zinc-800 overflow-hidden flex items-stretch">
-      {/* Fixed label — makes clear these are AVERAGES, not ads */}
-      <div className="shrink-0 flex items-center gap-1.5 px-4 bg-zinc-900 border-r border-zinc-800 z-10">
+      {/* Fixed label — makes clear these are indicative AVERAGES, not ads */}
+      <div className="shrink-0 flex items-center gap-1.5 px-4 bg-zinc-900 border-r border-zinc-800 z-10"
+        title="Indikativ o'rtacha ulgurji narxlar — UzEx birja kotirovkalari va stat.uz monitoringi asosida (rasmiy jonli ma'lumot emas)">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
         <span className="text-emerald-400 text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
-          O'rtacha bozor narxlari
+          O'rtacha ulgurji narxlar
         </span>
       </div>
 
@@ -102,6 +103,13 @@ export default function PriceTicker() {
           {items.map((p, i) => <TickerItem key={`${p.key}-${i}`} p={p} />)}
         </div>
       </div>
+
+      {/* Pinned source — legitimacy + honesty */}
+      <a href="https://uzex.uz" target="_blank" rel="noopener noreferrer"
+        className="shrink-0 hidden md:flex items-center gap-1.5 px-3 bg-zinc-900 border-l border-zinc-800 text-zinc-500 hover:text-zinc-300 text-[10px] font-medium whitespace-nowrap transition-colors z-10"
+        title="Manba: UzEx (birja kotirovkalari) va stat.uz (narx monitoringi). Ko'rsatilgan narxlar indikativ o'rtacha qiymatlar.">
+        <span className="text-zinc-600">indikativ ·</span> Manba: UzEx · stat.uz
+      </a>
     </div>
   );
 }
