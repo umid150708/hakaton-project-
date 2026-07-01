@@ -15,7 +15,7 @@ import { CATEGORIES, SAMPLE_BUY, SAMPLE_SELL, loadUserAds, type Ad, type Categor
 import AdCard      from '../components/AdCard';
 import PostAdModal from '../components/PostAdModal';
 import AIStrip     from '../components/AIStrip';
-import SignUpModal from '../components/SignUpModal';
+import AuthModal    from '../components/AuthModal';
 
 // ─── Deal modal (terms → gated contact reveal) ─────────────────────────────────
 
@@ -353,7 +353,7 @@ export default function Bozor() {
 
       {/* ── Modals ── */}
       {showPostModal  && <PostAdModal type={tab} onClose={() => setShowPostModal(false)} onPost={() => setUserAds(loadUserAds())} />}
-      {showSignUp     && <SignUpModal onSuccess={onSignUpSuccess} onClose={() => { setShowSignUp(false); setPendingAd(null); }} />}
+      {showSignUp     && <AuthModal onSuccess={onSignUpSuccess} onClose={() => { setShowSignUp(false); setPendingAd(null); }} />}
       {dealAd         && <DealModal ad={dealAd} revealed={dealRevealed} mode={dealMode} freeLeft={freeLeft} onAgree={agreeDeal} onClose={() => setDealAd(null)} />}
 
       <footer className="border-t border-zinc-800 bg-zinc-900/40 px-4 py-2.5 text-center">

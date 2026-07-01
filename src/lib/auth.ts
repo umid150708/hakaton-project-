@@ -38,6 +38,10 @@ export function saveUser(u: UserProfile): void {
   localStorage.setItem(KEY, JSON.stringify(u));
 }
 
+export function signOut(): void {
+  localStorage.removeItem(KEY);
+}
+
 export function signUp(name: string, phone: string, bizType: BizType): UserProfile {
   const u: UserProfile = {
     name, phone, bizType,

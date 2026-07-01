@@ -11,7 +11,7 @@
  * of truth that follows the user across devices.
  */
 
-import { updateProfile, type UserProfile, BIZ_TYPE_LABELS, type BizType } from './auth';
+import { updateProfile, saveUser, type UserProfile, BIZ_TYPE_LABELS, type BizType } from './auth';
 
 // ── Known Uzbek regions for location detection ────────────────────────────────
 
@@ -109,6 +109,35 @@ export function syncProfile(u: UserProfile): void {
       employees:    u.employees ?? null,
     }),
   }).catch(() => { /* silent — localStorage is the working copy */ });
+}
+
+/**
+ * Sign in a returning user by phone: pull their profile from Supabase and
+ * restore it into localStorage. Returns the user, or null if not found.
+ */
+export async function signInByPhone(phone: string): Promise<UserProfile | null> {
+  try {
+    const res = await fetch(`/api/profile?phone=${encodeURIComponent(phone)}`);
+    if (!res.ok) return null;
+    const row = await res.json();
+    if (!row || !row.phone) return null;
+    const user: UserProfile = {
+      name:        row.name ?? '',
+      phone:       row.phone,
+      bizType:     (row.biz_type as UserProfile['bizType']) ?? 'savdo',
+      plan:        'free',
+      dealContactsUsed: 0,
+      joinedAt:    new Date().toISOString(),
+      disability:  row.disability ?? undefined,
+      location:    row.location ?? undefined,
+      revenueBand: row.revenue_band ?? undefined,
+      employees:   row.employees ?? undefined,
+    };
+    saveUser(user);
+    return user;
+  } catch {
+    return null;
+  }
 }
 
 /** Hydrate localStorage profile from Supabase (e.g. user on a new device). */
