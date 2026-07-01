@@ -11,12 +11,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconChartBar, IconSwords, IconBuildingSkyscraper, IconArrowRight, type Icon } from '@tabler/icons-react';
+import { IconChartBar, IconSwords, IconBuildingSkyscraper, IconArrowRight, IconFileText, type Icon } from '@tabler/icons-react';
 import { getUser, useAuth } from '../lib/auth';
 import { learnFromMessage, profileSummary } from '../lib/profile';
 import {
   ANALYSIS_META, analysisSystem, buildAnalysisPrompt, canAnalyse, type AnalysisType,
 } from '../lib/analysis';
+import BusinessPlanWizard from '../components/BusinessPlanWizard';
 
 const ANALYSIS_ICON: Record<AnalysisType, Icon> = {
   bozor:   IconChartBar,
@@ -110,6 +111,7 @@ export default function ChatBot() {
   const [input, setInput]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [chips, setChips]       = useState<string[]>(DEFAULT_CHIPS);
+  const [showPlan, setShowPlan] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
 
@@ -273,8 +275,14 @@ export default function ChatBot() {
             </div>
           </div>
           <button
+            onClick={() => setShowPlan(true)}
+            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors"
+          >
+            <IconFileText size={14} /> Biznes reja
+          </button>
+          <button
             onClick={() => navigate('/bozor')}
-            className="px-3 py-1.5 bg-blue-800 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+            className="hidden sm:block px-3 py-1.5 bg-blue-800 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
           >
             Bozor narxlari →
           </button>
@@ -419,6 +427,8 @@ export default function ChatBot() {
           Savdo-sanoat palatasi · soliq.uz · lex.uz · Ijtimoiy himoya milliy agentligi
         </p>
       </div>
+
+      {showPlan && <BusinessPlanWizard onClose={() => setShowPlan(false)} />}
     </div>
   );
 }
