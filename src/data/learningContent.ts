@@ -6,13 +6,28 @@
  * See LEARNING_README.md for the full lesson-to-channel mapping.
  */
 
+export interface LessonSection {
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface Source {
+  label: string;
+  url: string;
+}
+
 export interface Lesson {
   id: string;
   title: string;
   summary: string;
+  /** Khan Academy-style written lesson — always present, even without a video. */
+  body: LessonSection[];
   keyTakeaways: string[];
+  /** Cited references for the written lesson content. */
+  sources: Source[];
   channel: string;
   channelUrl: string;
+  /** 'TODO_VIDEO_ID' when no verified video exists yet — the video is optional. */
   videoId: string;
   durationNote: string;
   xp: number;
@@ -51,11 +66,24 @@ export interface Track {
 export const PASS_THRESHOLD = 70; // %
 export const LESSON_XP = 50;
 
+// ─── Shared, verifiable reference sources (base URLs only — no fabricated deep links)
+const SRC = {
+  finlit:    { label: "Finlit.uz — Markaziy bank moliyaviy savodxonlik portali", url: 'https://finlit.uz' },
+  soliq:     { label: "Soliq qo'mitasi — soliq.uz", url: 'https://soliq.uz' },
+  lex:       { label: "Lex.uz — O'zbekiston qonun hujjatlari bazasi", url: 'https://lex.uz' },
+  gsbe:      { label: "Biznes va tadbirkorlik oliy maktabi — gsbe.uz", url: 'https://gsbe.uz' },
+  cbu:       { label: "O'zbekiston Markaziy banki — cbu.uz", url: 'https://cbu.uz' },
+  stat:      { label: "Statistika agentligi — stat.uz", url: 'https://stat.uz' },
+  finlitYt:  { label: "Finlit.uz — YouTube kanali", url: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA' },
+  mfaktorYt: { label: "MFaktor Biznes Maktabi — YouTube kanali", url: 'https://www.youtube.com/@MfaktorBiznesMaktabi' },
+  gsbeYt:    { label: "Biznes va tadbirkorlik oliy maktabi — YouTube kanali", url: 'https://www.youtube.com/@gsbeuz' },
+} satisfies Record<string, Source>;
+
 // ─── TRACK ────────────────────────────────────────────────────────────────────
 
 export const track: Track = {
   id: 'biznes-moliya',
-  title: "O'quv markazi",
+  title: "O'quv dasturi",
   levels: [
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -80,6 +108,29 @@ export const track: Track = {
             "Barcha biznes kvitansiyalari va hujjatlarini alohida papkada saqlang.",
             "Oylik yakunlarda biznes va shaxsiy balansni alohida-alohida tekshiring.",
           ],
+          body: [
+            {
+              heading: 'Nega bu birinchi qadam?',
+              paragraphs: [
+                "Tasavvur qiling: do'koningiz kassasida 5 million so'm turibdi. Bu pul — biznesniki, sizniki yoki ikkalasiniki ekanini aniq ayta olasizmi? Agar yo'q bo'lsa, siz eng keng tarqalgan tadbirkorlik xatosiga yo'l qo'yayapsiz. Shaxsiy va biznes pulini aralashtirish biznesning haqiqiy foydasini yashiradi — yaxshi ko'rinayotgan biznes aslida zarar keltirayotgan bo'lishi mumkin.",
+                "Pul aralashganda uchta muammo kelib chiqadi: birinchidan, biznes rentabelligini o'lchab bo'lmaydi; ikkinchidan, soliq hisob-kitobi chalkashadi; uchinchidan, kredit olmoqchi bo'lganingizda bank sizning moliyaviy holatingizni tushunolmaydi.",
+              ],
+            },
+            {
+              heading: 'Amaliy tizim: uch qadam',
+              paragraphs: [
+                "1) Biznes uchun alohida bank hisob-raqami oching va barcha biznes tushum-chiqimini faqat shu hisob orqali o'tkazing. 2) Kassa va shaxsiy hamyonni hech qachon aralashtirmang — biznesdan pul olsangiz, buni yozib qo'ying. 3) Har oy oxirida biznes balansi va shaxsiy balansni alohida hisoblang.",
+                "Misol: oyiga biznesdan 3 mln so'm 'ish haqi' olib, uni shaxsiy hisobingizga o'tkazasiz. Shundan keyin shaxsiy xarajatlar — oziq-ovqat, ijara, kiyim — faqat shu 3 mln ichida bo'ladi. Biznes hisobi esa toza qoladi.",
+              ],
+            },
+            {
+              heading: "O'zingizga ish haqi belgilang",
+              paragraphs: [
+                "Ko'p tadbirkor 'biznes pulim — o'z pulim' deb o'ylaydi. Aslida siz biznesning xodimisiz ham. O'zingizga aniq oylik belgilang: bu ham biznes xarajati sifatida hisobga olinadi va sizga real foydani ko'rish imkonini beradi. Agar biznes sizga ish haqi to'lay olmasa — bu jiddiy signal.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.cbu, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -98,6 +149,29 @@ export const track: Track = {
             "Kutilmagan xarajatlar uchun 'qo'shimcha xarajatlar' rubrikasini kiriting.",
             "Faqat naqd pulni emas, naqdsiz to'lovlarni ham yozib boring.",
           ],
+          body: [
+            {
+              heading: "Nima uchun kuzatish kerak?",
+              paragraphs: [
+                "'Qancha ishlayapsan?' degan savolga aniq raqam bilan javob bera olasizmi? Ko'p tadbirkor faqat kassadagi pulga qarab baho beradi — bu esa chalg'ituvchi. Kassada pul ko'p bo'lishi mumkin, lekin u yetkazib beruvchiga qarz yoki ijara puli bo'lishi mumkin.",
+                "Har bir kirim va chiqimni yozib borish — moliyaviy nazoratning poydevori. Yozilmagan pul — nazoratsiz pul. Tadqiqotlar shuni ko'rsatadiki, xarajatlarini yozib boradigan odam o'rtacha 15–20% kam behuda sarflaydi, chunki har bir chiqim ko'z oldida bo'ladi.",
+              ],
+            },
+            {
+              heading: "Xarajatlarni toifalarga ajrating",
+              paragraphs: [
+                "Barcha chiqimni bir joyga yozish yetarli emas — ularni toifalarga bo'ling: tovar/xomashyo, ish haqi, ijara, kommunal, transport, marketing, boshqa. Shunda oy oxirida qaysi toifa ko'p 'yeyayotganini' aniq ko'rasiz. Ko'pincha eng katta tejash imkoniyati aynan shu tahlildan chiqadi.",
+                "Naqd va naqdsiz (plastik karta, o'tkazma) to'lovlarning hammasini yozing. Bugungi kunda operatsiyalarning yarmidan ko'pi naqdsiz — ularni unutish hisobni buzadi.",
+              ],
+            },
+            {
+              heading: "Qanday vosita bilan?",
+              paragraphs: [
+                "Boshlash uchun oddiy daftar ham yetadi. Keyinroq Excel jadvali yoki telefon ilovasi (masalan, xarajat kuzatuvchi ilovalar) qulayroq bo'ladi. Muhimi — vosita emas, muntazamlik: har kuni, kunning oxirida 5 daqiqa ajratib yozib boring.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -116,6 +190,29 @@ export const track: Track = {
             "Mavsumiy o'zgarishlarni hisobga oling — bahor va kuz ko'pincha moliyaviy jihatdan farq qiladi.",
             "Byudjet qat'iy qonun emas — vaziyatga qarab moslashtiring, lekin har doim yozma saqlang.",
           ],
+          body: [
+            {
+              heading: "Byudjet — kelajakni oldindan ko'rish",
+              paragraphs: [
+                "Agar oldingi darsda o'tgan bo'lsangiz — daromad-xarajatni kuzatish o'tmishni ko'rsatadi. Byudjet esa aksincha: kelajakni oldindan rejalashtiradi. 'Kelasi oy qancha pul kiradi va qayerga sarflanadi?' degan savolga oldindan javob berish — byudjetning mohiyati.",
+                "Byudjetsiz biznes — xaritasiz sayohat kabi. Kutilmagan xarajat chiqqanda (uskuna buzildi, ijara oshdi) tayyor bo'lmaysiz. Byudjet bu zarbalarni oldindan ko'rish va ularga pul ajratib qo'yish imkonini beradi.",
+              ],
+            },
+            {
+              heading: "Qanday tuziladi?",
+              paragraphs: [
+                "Eng ishonchli usul — o'tgan oyning haqiqiy raqamlaridan boshlash. O'tgan oyda qancha kirim bo'ldi, qayerga qancha ketdi? Shu asosda kelasi oyga reja tuzing va har bir xarajat toifasiga chegara (limit) belgilang. Masalan: marketing — 2 mln, transport — 1 mln.",
+                "Oy oxirida rejani haqiqat bilan solishtiring: qayerda oshib ketdingiz, qayerda tejadingiz? Bu farqni tahlil qilish — byudjetning eng qimmatli qismi.",
+              ],
+            },
+            {
+              heading: "Mavsumiylikni unutmang",
+              paragraphs: [
+                "O'zbekistonda ko'p biznes mavsumga bog'liq — masalan, qurilish yozda jonlanadi, kiyim savdosi bayramlar oldidan oshadi. Byudjetda bu tebranishlarni hisobga oling: kuchli oylarda zaxira yig'ing, sust oylarda undan foydalaning.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -134,6 +231,29 @@ export const track: Track = {
             "Yostiqdan faqat haqiqiy favqulodda hollarda foydalaning.",
             "Yostiqdan foydalangach, uni to'ldirish rejasini darhol tuzing.",
           ],
+          body: [
+            {
+              heading: "Moliyaviy yostiq nima?",
+              paragraphs: [
+                "Moliyaviy yostiq — bu biznesingizni kutilmagan zarbadan himoya qiladigan zaxira pul. Savdo birdan pasaysa, asosiy uskuna buzilsa yoki bozorda inqiroz bo'lsa — yostiq sizga panik qilmasdan, muammoni bosqichma-bosqich hal qilish vaqtini beradi.",
+                "Yostiqsiz biznes har qanday kichik zarbadan qulashi mumkin. Masalan, bitta yirik mijoz to'lovni kechiktirsa va sizda zaxira bo'lmasa — ish haqi to'lay olmaysiz, kredit olishga majbur bo'lasiz, qarz tuzog'iga tushasiz.",
+              ],
+            },
+            {
+              heading: "Qancha bo'lishi kerak?",
+              paragraphs: [
+                "Umumiy qoida: kamida 3 oylik doimiy xarajatlar. Ya'ni, hech qanday tushum bo'lmasa ham, biznesingiz 3 oy tirik qola olishi kerak. Barqarorroq biznes uchun 6 oylik yostiq yanada xavfsiz.",
+                "Uni yig'ish uchun har oylik sof daromadning kamida 10% ini ajrating. Bu pulni alohida, kundalik foydalanmaydigan hisobda saqlang — 'ko'zdan yiroq, ko'ngildan yiroq' tamoyili bu yerda foydali.",
+              ],
+            },
+            {
+              heading: "Qachon ishlatiladi?",
+              paragraphs: [
+                "Yostiq — favqulodda holatlar uchun, kundalik xarajat yoki yangi imkoniyatni moliyalash uchun emas. Undan foydalangan bo'lsangiz, keyingi maqsadingiz — uni imkon qadar tez qayta to'ldirish. To'ldirish rejasini darhol tuzing.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -152,6 +272,28 @@ export const track: Track = {
             "Maqsadlarga erishishni har oy tekshiring va kerak bo'lsa tuzating.",
             "Maqsadlaringizni yozib, ko'rinadigan joyga ilib qo'ying — bu motivatsiyani oshiradi.",
           ],
+          body: [
+            {
+              heading: "Noaniq maqsad — maqsad emas",
+              paragraphs: [
+                "'Ko'proq pul ishlash', 'biznesni kattalashtirish' — bular istak, maqsad emas. Ularni o'lchab bo'lmaydi, shu sababli ularga erishish yoki erishmaslikni ham bilib bo'lmaydi. Aniq maqsad esa harakatni yo'naltiradi va sizga to'g'ri yo'ldaligingizni tekshirish imkonini beradi.",
+              ],
+            },
+            {
+              heading: "SMART tamoyili",
+              paragraphs: [
+                "Yaxshi maqsad SMART bo'ladi: Specific (aniq), Measurable (o'lchanadigan), Achievable (erishsa bo'ladigan), Relevant (o'rinli), Time-bound (muddatli). Masalan, 'ko'proq sotaman' emas, balki '6 oy ichida oylik savdoni 30 mln so'mdan 45 mln so'mga yetkazaman' — bu SMART maqsad.",
+                "Har bir maqsadni muddat bo'yicha ajrating: qisqa (1–3 oy), o'rta (6–12 oy) va uzoq (1–3 yil). Katta maqsadni kichik oylik qadamlarga bo'ling — shunda u qo'rqinchli emas, bajarish mumkin bo'lib ko'rinadi.",
+              ],
+            },
+            {
+              heading: "Yozing va kuzating",
+              paragraphs: [
+                "Yozilmagan maqsad — orzu. Maqsadlaringizni qog'ozga tushiring, ko'rinadigan joyga iling va har oy ularga erishish darajasini tekshiring. Kerak bo'lsa tuzating — bozor o'zgaradi, maqsad ham moslashishi mumkin.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -272,6 +414,28 @@ export const track: Track = {
             "Qisqa muddatli (1 yil) va uzoq muddatli (3–5 yil) rejalarni alohida tuzing.",
             "Moliyaviy prognozni 3 stsenariyde hisoblang: pessimistik, real va optimistik.",
           ],
+          body: [
+            {
+              heading: "Biznes-reja — o'zingiz uchun",
+              paragraphs: [
+                "Ko'pchilik biznes-rejani faqat bankdan kredit olish uchun tuziladigan qog'oz deb o'ylaydi. Aslida bu — biznesingizning yo'lxaritasi. U sizga qayerga borayotganingizni, buning uchun qancha resurs kerakligini va yo'lda qanday to'siqlar kutayotganini oldindan ko'rsatadi.",
+                "Reja tuzish jarayonining o'zi qimmatli: u sizni har bir taxminni raqamlar bilan tekshirishga majbur qiladi. Ko'p 'ajoyib g'oya' aynan biznes-reja tuzayotganda, raqamlar mos kelmagani uchun barbod bo'ladi — bu esa yaxshi, chunki pulingizni saqlab qoladi.",
+              ],
+            },
+            {
+              heading: "Asosiy qismlar",
+              paragraphs: [
+                "To'liq biznes-reja quyidagilarni o'z ichiga oladi: kompaniya tavsifi (nima qilasiz), bozor tahlili (kimga sotasiz, raqobat qanday), mahsulot/xizmat, marketing strategiyasi (qanday sotasiz) va moliyaviy prognoz (raqamlar). Eng muhimi — moliyaviy qism: kirim, xarajat va foyda bashorati.",
+              ],
+            },
+            {
+              heading: "Uchta stsenariy hisoblang",
+              paragraphs: [
+                "Kelajakni aniq bilib bo'lmaydi, shu sababli moliyaviy prognozni uch xil hisoblang: pessimistik (hammasi yomon ketsa), real (ehtimoliy) va optimistik (hammasi yaxshi ketsa). Agar pessimistik stsenariyda ham biznes tirik qolsa — g'oyangiz mustahkam. Rejani yiliga kamida bir marta yangilab turing.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.gsbe, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -292,6 +456,29 @@ export const track: Track = {
             "Bozor hajmini hisoblang: potentsial mijozlar soni × o'rtacha xarid summasi.",
             "Mijozlarning asosiy 'og'riq nuqtasi' (muammosi)ni toping va uni hal qiling.",
           ],
+          body: [
+            {
+              heading: "Kimga sotayotganingizni bilasizmi?",
+              paragraphs: [
+                "Muvaffaqiyatli biznes mahsulot bilan emas, mijoz ehtiyoji bilan boshlanadi. 'Hammaga sotaman' degan yondashuv — hech kimga sotmaslikka olib keladi. Aniq mijozni tanlang: uning yoshi, joylashuvi, daromadi va eng muhimi — qanday muammosi bor?",
+                "Mijozning 'og'riq nuqtasi' — u hal qilmoqchi bo'lgan muammo. Odamlar mahsulotni emas, muammosining yechimini sotib oladi. Masalan, mijoz parmani emas, devordagi teshikni xohlaydi. Siz qanday muammoni hal qilayotganingizni bilsangiz, marketingingiz ham aniq bo'ladi.",
+              ],
+            },
+            {
+              heading: "Eng arzon tadqiqot — suhbat",
+              paragraphs: [
+                "Bozorni o'rganish uchun katta byudjet shart emas. Eng qimmatli ma'lumot — mijoz bilan bevosita suhbat. 10 ta potentsial mijoz bilan gaplashib, ular nimadan qiynalishini, hozir muammoni qanday hal qilishini so'rang. Bu — bepul va eng ishonchli tadqiqot.",
+                "Raqobatchilaringizni ham o'rganing: ular nima taklif qiladi, narxlari qanday, mijozlar ulardan nimadan norozi? Raqobatchining zaif tomoni — sizning imkoniyatingiz.",
+              ],
+            },
+            {
+              heading: "Bozor hajmini baholang",
+              paragraphs: [
+                "Oddiy hisob: potentsial mijozlar soni × o'rtacha xarid summasi = bozor hajmi. Bu raqam biznesingiz o'sish imkoniyatini ko'rsatadi. Agar bozor juda kichik bo'lsa, hatto eng yaxshi mahsulot ham katta daromad keltirmaydi.",
+              ],
+            },
+          ],
+          sources: [SRC.gsbe, SRC.gsbeYt, SRC.stat],
           channel: "Biznes va tadbirkorlik oliy maktabi",
           channelUrl: 'https://www.youtube.com/@gsbeuz',
           videoId: 'TODO_VIDEO_ID',
@@ -310,6 +497,28 @@ export const track: Track = {
             "Turli mijoz segmentlari uchun turli narx strategiyalarini ko'rib chiqing.",
             "10% chegirma ko'p hollarda 20–30% foyda yo'qotishini anglatadi — diqqatli bo'ling.",
           ],
+          body: [
+            {
+              heading: "Narx — muvozanat masalasi",
+              paragraphs: [
+                "Narx belgilash — biznesning eng nozik qarorlaridan biri. Juda past narx qo'ysangiz, har bir sotuvdan zarar ko'rasiz yoki foyda deyarli qolmaydi. Juda baland narx qo'ysangiz — mijoz raqobatchiga ketadi. To'g'ri narx — xarajat, foyda va bozor o'rtasidagi muvozanat.",
+              ],
+            },
+            {
+              heading: "Avval barcha xarajatni hisoblang",
+              paragraphs: [
+                "Narxni belgilashdan oldin, mahsulotning haqiqiy tannarxini biling. Bu ikki qismdan iborat: to'g'ri xarajatlar (xomashyo, tovar, ishlab chiqarish) va bilvosita xarajatlar (ijara, ish haqi, kommunal, transport). Ko'p tadbirkor faqat tovar narxini hisoblab, ijara va o'z mehnatini unutadi — natijada 'foyda' aslida zarar bo'lib chiqadi.",
+                "Formula oddiy: Narx = Tannarx + Foyda ustamasi. Keyin bu narxni bozor narxi bilan solishtiring. Agar sizning hisobingizdagi narx bozordan yuqori bo'lsa — yo xarajatni kamaytiring, yo qo'shimcha qiymat qo'shing.",
+              ],
+            },
+            {
+              heading: "Chegirmaning yashirin narxi",
+              paragraphs: [
+                "Chegirma jozibali ko'rinadi, lekin xavfli. Agar foyda ustamangiz 30% bo'lsa va siz 10% chegirma bersangiz, bu foydangizning uchdan birini yo'qotish demakdir. Chegirma berishdan oldin, uni qoplash uchun necha dona ko'proq sotish kerakligini hisoblang — ko'pincha bu raqam kutilganidan katta bo'ladi.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -328,6 +537,29 @@ export const track: Track = {
             "Muddatidan oldin to'lovga chegirma berib, pul oqimini yaxshilash mumkin.",
             "Mavsumiy biznesda past davrlar uchun moliyaviy yostiq saqlab turish shart.",
           ],
+          body: [
+            {
+              heading: "Foyda bor, lekin pul yo'q — qanday?",
+              paragraphs: [
+                "Bu ko'p tadbirkorni hayron qoldiradigan holat: hisobda foyda ko'rinadi, lekin qo'lda to'lovlarga pul yetmaydi. Sababi — foyda va pul oqimi (cash flow) boshqa-boshqa narsalar. Foyda hisob-kitob ko'rsatkichi; pul oqimi esa haqiqatan naqd pul harakati.",
+                "Misol: siz 50 mln so'mlik tovar sotdingiz — hisobda foyda bor. Lekin mijoz to'lovni 2 oydan keyin qiladi, ijara va ish haqi esa bugun kerak. Foydali biznes aynan shu 'vaqt tafovuti' sababli to'lovlarga qiynalib, hatto bankrot bo'lishi mumkin.",
+              ],
+            },
+            {
+              heading: "Pul oqimini boshqarish",
+              paragraphs: [
+                "Oylik pul oqimi prognozini tuzing: qaysi oy ko'p pul kiradi, qaysi oy kam chiqadi. Debitorlik (sizga qarzlar) va kreditorlik (sizning qarzlaringiz) muddatlarini nazorat qiling. Ideal holat — mijozdan tez olib, yetkazib beruvchiga kechroq to'lash.",
+                "Muddatidan oldin to'laganga kichik chegirma taklif qilib, pulni tezroq olishingiz mumkin. Bu foydani biroz kamaytiradi, lekin pul oqimini yaxshilaydi.",
+              ],
+            },
+            {
+              heading: "Mavsumiylikka tayyorlaning",
+              paragraphs: [
+                "Agar biznesingiz mavsumga bog'liq bo'lsa, kuchli oylardagi pulni sust oylarga taqsimlang. Yozda ko'p ishlaydigan biznes qish uchun zaxira yig'ishi kerak — aks holda past davrda pul oqimi salbiy bo'lib qoladi.",
+              ],
+            },
+          ],
+          sources: [SRC.gsbe, SRC.gsbeYt, SRC.finlit],
           channel: "Biznes va tadbirkorlik oliy maktabi",
           channelUrl: 'https://www.youtube.com/@gsbeuz',
           videoId: 'TODO_VIDEO_ID',
@@ -346,6 +578,28 @@ export const track: Track = {
             "Zararsizlik nuqtasidan oshgan har bir so'm — sof foyda.",
             "Yangi mahsulot yoki xizmat kiritganda, avval uning zararsizlik nuqtasini hisoblang.",
           ],
+          body: [
+            {
+              heading: "Zararsizlik nuqtasi nima?",
+              paragraphs: [
+                "Zararsizlik nuqtasi (break-even) — biznesingiz na foyda, na zarar ko'radigan sotuv hajmi. Ya'ni, shu miqdorda sotsangiz, barcha xarajatlaringiz aynan qoplanadi. Bundan kam sotsangiz — zarar; ko'p sotsangiz — foyda. Bu raqamni bilmasdan biznes yuritish — ko'zi yopiq mashina haydashga o'xshaydi.",
+              ],
+            },
+            {
+              heading: "Qanday hisoblanadi?",
+              paragraphs: [
+                "Formula: Zararsizlik nuqtasi = Doimiy xarajatlar ÷ (Bir dona narxi − Bir dona o'zgaruvchan xarajati). Doimiy xarajatlar (ijara, ish haqi) sotuvdan qat'iy nazar to'lanadi. O'zgaruvchan xarajatlar (xomashyo, paket) esa har bir sotilgan donaga bog'liq.",
+                "Misol: ijara + ish haqi = oyiga 10 mln so'm (doimiy). Bir mahsulotni 50 000 so'mga sotasiz, uning tannarxi 30 000 so'm. Demak, har donadan 20 000 so'm 'hissa' qoladi. 10 000 000 ÷ 20 000 = 500 dona. Ya'ni oyiga 500 dona sotsangiz — zararsizlik nuqtasiga yetasiz.",
+              ],
+            },
+            {
+              heading: "Nima uchun muhim?",
+              paragraphs: [
+                "Zararsizlik nuqtasidan oshgan har bir sotuv — sof foyda (o'zgaruvchan xarajatni chegirgan holda). Yangi mahsulot yoki xizmat kiritishdan oldin uning zararsizlik nuqtasini hisoblang: erishsa bo'ladiganmi yoki juda baland raqammi? Bu sizni pulni bekorga sarflashdan saqlaydi.",
+              ],
+            },
+          ],
+          sources: [SRC.gsbe, SRC.gsbeYt],
           channel: "Biznes va tadbirkorlik oliy maktabi",
           channelUrl: 'https://www.youtube.com/@gsbeuz',
           videoId: 'TODO_VIDEO_ID',
@@ -468,6 +722,28 @@ export const track: Track = {
             "Davlat dasturlari: imtiyozli foiz stavkasi bilan subsidiyalangan kreditlar.",
             "Lizing: uskunani sotib olmay, oylik to'lov evaziga ishlatish imkoniyati.",
           ],
+          body: [
+            {
+              heading: "Kredit — vosita, maqsad emas",
+              paragraphs: [
+                "To'g'ri ishlatilgan kredit biznesni o'stiradi, noto'g'ri ishlatilgani esa cho'ktiradi. Farq — maqsadda. Daromad keltiruvchi narsaga (tovar zaxirasi, uskuna, kengayish) olingan kredit — sarmoya. Iste'mol yoki eski qarzni yopish uchun olingan kredit — tuzoq. Shuning uchun avval 'bu kredit menga qancha qo'shimcha daromad keltiradi?' degan savolga javob bering.",
+              ],
+            },
+            {
+              heading: "O'zbekistondagi kredit turlari",
+              paragraphs: [
+                "Mikrokreditlar — odatda 200 mln so'mgacha, garovsiz yoki minimal garov bilan, kichik biznes uchun. Tadbirkorlik kreditlari — katta summalar, biznes-reja va garov asosida. Investitsion kreditlar — uskuna yoki infratuzilma uchun, uzoq muddatli (5–10 yil). Bulardan tashqari davlat imtiyozli dasturlari ham mavjud — past foiz bilan.",
+                "Lizing — alohida qulay variant: uskunani darhol sotib olmay, oylik to'lov evaziga ishlatasiz. Boshlang'ich kapital kam bo'lganda kerakli uskunaga ega bo'lishning yaxshi yo'li.",
+              ],
+            },
+            {
+              heading: "To'g'ri turni tanlash",
+              paragraphs: [
+                "Har bir kredit turi o'z maqsadiga mos. Qisqa muddatli tovar zaxirasi uchun uzoq muddatli investitsion kredit olish — noto'g'ri. Ehtiyojingizni aniq belgilang, keyin unga mos mahsulotni tanlang. AI maslahatchimiz sizga eng mos kredit turini tanlashda yordam bera oladi.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.lex, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -488,6 +764,28 @@ export const track: Track = {
             "'Kamayuvchi qoldiq' metodi: har oy foiz kamaygan asosiy qarzdan hisoblanadi — bu foydali.",
             "Kreditni muddatidan oldin to'lash foizni sezilarli kamaytiradi.",
           ],
+          body: [
+            {
+              heading: "Foiz — qarzning haqiqiy narxi",
+              paragraphs: [
+                "Kredit olayotganda e'lon qilingan foiz stavkasi hamma narsani ko'rsatmaydi. Haqiqiy narxni bilish uchun barcha to'lov va komissiyalarni hisobga olish kerak. 'Arzon' ko'ringan kredit yashirin to'lovlar bilan qimmatga tushishi mumkin.",
+              ],
+            },
+            {
+              heading: "Nominal va effektiv stavka",
+              paragraphs: [
+                "Nominal stavka — bankda e'lon qilingan foiz. Effektiv stavka (APR) — barcha komissiya, sug'urta va xizmat haqlarini qo'shgan haqiqiy yillik narx. Kreditlarni solishtirganda aynan APRga qarang, nominalga emas. Ikki bank bir xil nominal stavka e'lon qilib, effektiv stavkasi butunlay boshqacha bo'lishi mumkin.",
+                "To'lov usuli ham muhim. 'Kamayuvchi qoldiq' usulida foiz har oy qolgan asosiy qarzga hisoblanadi — bu odatda foydaliroq. 'Annuitet' usulida to'lov teng bo'ladi, lekin boshida foiz ulushi katta.",
+              ],
+            },
+            {
+              heading: "Muddatidan oldin to'lash",
+              paragraphs: [
+                "Agar imkoniyat bo'lsa, kreditni muddatidan oldin to'lash umumiy foizni sezilarli kamaytiradi — chunki foiz vaqtga bog'liq. Shartnoma tuzayotganda muddatidan oldin to'lash uchun jarima yo'qligiga ishonch hosil qiling.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.cbu, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -508,6 +806,28 @@ export const track: Track = {
             "Garovingizni baholating — bozor qiymatini bilish kerak.",
             "Kredit tarix tekshiruviga (NBKI) oldindan murojaat qiling va muammolarni hal qiling.",
           ],
+          body: [
+            {
+              heading: "Bank sizni qanday baholaydi?",
+              paragraphs: [
+                "Kredit berishdan oldin bank bir necha savolga javob izlaydi: bu odam qarzni qaytara oladimi (daromadi yetarlimi), qaytarmasa nima bo'ladi (garov bormi), ilgari qarzlarini qanday to'lagan (kredit tarixi) va biznesi puxta rejalanganmi (biznes-reja). Bu mezonlarga oldindan tayyorlanish — kredit olish ehtimolini keskin oshiradi.",
+              ],
+            },
+            {
+              heading: "Zarur hujjatlar",
+              paragraphs: [
+                "Odatiy ro'yxat: passport, STIR (soliq to'lovchi identifikatsiya raqami), biznes ro'yxatdan o'tganlik guvohnomasi, soliq deklaratsiyalari va oxirgi 6–12 oylik bank hisobvaraq ko'chirmasi (turnover). Bank hisobingizdagi muntazam aylanma — daromadingizni tasdiqlovchi eng kuchli dalil.",
+                "Biznes-reja va moliyaviy prognozni professional tarzda tayyorlang. Garovingiz bo'lsa, uning bozor qiymatini oldindan bilib qo'ying.",
+              ],
+            },
+            {
+              heading: "Kredit tarixini oldindan tekshiring",
+              paragraphs: [
+                "Bank sizning kredit tarixingizni Kredit axborot tahliliy markazi orqali tekshiradi. Siz ham uni oldindan tekshirib, agar xato yoki eski muammo bo'lsa, hal qiling. Kutilmagan 'yomon tarix' bilan ariza rad etilishidan ko'ra, oldindan tayyorlanish afzal.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.cbu, SRC.lex],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -526,6 +846,28 @@ export const track: Track = {
             "Bir vaqtda bir necha kredit olishdan saqlaning — 'kredit tuzog'i'dan ehtiyot bo'ling.",
             "Qarzingiz ortib ketayotganini sezsa, bankka murojaat qiling — qayta moliyalash imkonini so'rang.",
           ],
+          body: [
+            {
+              heading: "Kredit — mas'uliyat",
+              paragraphs: [
+                "Kredit olish oson, uni to'g'ri boshqarish qiyin. Qarzni noto'g'ri boshqarish nafaqat biznesni, balki shaxsiy hayotingizni ham xavf ostiga qo'yadi. Shuning uchun qarzni boshqarish strategiyasi kredit olishdan oldin belgilanishi kerak, keyin emas.",
+              ],
+            },
+            {
+              heading: "Oltin qoida: 30–35%",
+              paragraphs: [
+                "Oylik kredit to'lovi daromadingizning 30–35% idan oshmasligi kerak. Bu chegara sizga boshqa xarajatlar va zaxira uchun ham joy qoldiradi. Agar to'lov daromadning yarmini yeb qo'ysa — bir oy savdo pasaysa, darhol qiyinchilikka tushasiz.",
+                "Bir vaqtning o'zida bir necha kredit olishdan saqlaning — bu 'kredit tuzog'i'ning boshlanishi. Muddatli to'lovlarni avtomat to'lovga ulang, shunda kechikish va jarima bo'lmaydi.",
+              ],
+            },
+            {
+              heading: "Qiyinchilikni yashirmang",
+              paragraphs: [
+                "Agar to'lovlar og'irlashayotganini sezsangiz, bankdan qochmang — aksincha, o'zingiz murojaat qiling. Ko'p bank qayta moliyalash (refinancing) yoki to'lov jadvalini yumshatish imkonini beradi. Muammoni erta aytgan mijozga bank ko'proq yordam beradi.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.finlitYt],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -544,6 +886,28 @@ export const track: Track = {
             "Kredit tarixida xato bo'lsa, uni to'g'rilash uchun rasmiy ariza bering.",
             "Kredit tarixini yaxshilash uchun kichik limitli kredit kartadan boshlash mumkin.",
           ],
+          body: [
+            {
+              heading: "Kredit tarixi — moliyaviy obro'ingiz",
+              paragraphs: [
+                "Kredit tarixi — sizning oldingi qarzlarni qanday to'laganingiz haqidagi rasmiy yozuv. Bu — moliyaviy dunyodagi obro'ingiz. Yaxshi tarix kelajakda kredit olishni osonlashtiradi va past foiz stavkasi olishga yordam beradi. Yomon tarix esa eshiklarni yopadi.",
+                "O'zbekistonda kredit tarixi Kredit axborot tahliliy markazida saqlanadi va barcha banklar kredit berishdan oldin uni tekshiradi.",
+              ],
+            },
+            {
+              heading: "Tarixni nima buzadi va nima tuzatadi?",
+              paragraphs: [
+                "Har bir kechiktirilgan to'lov tarixni yomonlashtiradi — hatto kichik summa bo'lsa ham. Aksincha, hatto kichik kreditni o'z vaqtida to'lash tarixni yaxshilaydi. Ya'ni tarix o'z-o'zidan yaxshi bo'lmaydi — uni izchil, o'z vaqtidagi to'lovlar bilan quriladi.",
+              ],
+            },
+            {
+              heading: "Noldan tarix qurish",
+              paragraphs: [
+                "Agar sizda umuman kredit tarixi bo'lmasa, bank sizni baholay olmaydi — bu ham to'siq. Tarixni qurish uchun kichik limitli kredit karta yoki kichik kreditdan boshlang va uni intizom bilan to'lang. Tarixda xato ko'rsangiz, uni tuzatish uchun rasmiy ariza berish huquqingiz bor.",
+              ],
+            },
+          ],
+          sources: [SRC.finlit, SRC.cbu, SRC.lex],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -664,6 +1028,28 @@ export const track: Track = {
             "Xarajatlari past bo'lsa patent, xarajatlari ko'p bo'lsa SST foydali bo'lishi mumkin.",
             "Soliq rejimini yil boshida o'zgartirish mumkin — har yili tahlil qiling.",
           ],
+          body: [
+            {
+              heading: "To'g'ri rejim — katta tejamkorlik",
+              paragraphs: [
+                "O'zbekistonda tadbirkor bir necha soliq rejimidan birini tanlashi mumkin. To'g'ri tanlov soliq yukini sezilarli kamaytiradi va buxgalteriyani soddalashtiradi. Noto'g'ri tanlov esa ortiqcha soliq yoki keraksiz murakkablikka olib keladi. Shu sababli bu — har bir tadbirkor tushunishi shart bo'lgan mavzu.",
+              ],
+            },
+            {
+              heading: "Asosiy rejimlar",
+              paragraphs: [
+                "Patent — eng sodda: oylik yoki yillik belgilangan to'lov, minimal hisobot. Belgilangan faoliyat turlari uchun mos, daromad miqdoridan qat'iy nazar. Aylanma soliq (soddalashtirilgan tizim) — yillik aylanma 1 mlrd so'mgacha bo'lgan bizneslar uchun, daromadning ma'lum foizi to'lanadi. Umumiy tartib — QQS va foyda solig'i bilan, yirik korxonalar uchun.",
+                "Qaysi biri foydali? Bu sizning xarajat tuzilmangizga bog'liq. Xarajatlari kam bo'lgan oddiy savdo uchun ko'pincha patent qulay. Xarajatlari va aylanmasi katta biznes uchun aylanma soliq yoki umumiy tartib hisob-kitob qilinishi kerak.",
+              ],
+            },
+            {
+              heading: "Har yili qayta baholang",
+              paragraphs: [
+                "Soliq rejimini odatda yil boshida o'zgartirish mumkin. Biznesingiz o'sgani sari eng foydali rejim ham o'zgaradi. Shu sababli har yili tahlil qiling. Aniq hisob-kitob uchun soliq.uz rasmiy portalidan yoki AI maslahatchimizdan foydalaning — soliq stavkalari vaqti-vaqti bilan yangilanadi.",
+              ],
+            },
+          ],
+          sources: [SRC.soliq, SRC.lex, SRC.finlit],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -684,6 +1070,28 @@ export const track: Track = {
             "Mulk va er soliqlari — hududiy organlar belgilaydi.",
             "Soliq imtiyozlari: nogironligi bor tadbirkorlar, yangi korxonalar va sanoat zonalari uchun mavjud.",
           ],
+          body: [
+            {
+              heading: "Bilmaslik — jarimadan himoya emas",
+              paragraphs: [
+                "Soliq to'lamaslik yoki 'bilmay' xato qilish javobgarlikdan ozod qilmaydi — aksincha, jarima keltiradi. Shu sababli har bir tadbirkor o'z biznesiga tegishli asosiy soliqlarni bilishi shart. Bu murakkab ko'rinsa-da, aslida bir necha asosiy tur bilan cheklanadi.",
+              ],
+            },
+            {
+              heading: "Asosiy soliq turlari",
+              paragraphs: [
+                "Yakka tartibdagi tadbirkor (YaTT) va yuridik shaxs (masalan, MChJ) uchun soliqlar farq qiladi. Umuman olganda ular: daromad yoki foyda solig'i, ish haqiga bog'liq to'lovlar (jismoniy shaxs daromad solig'i va ijtimoiy sug'urta), hamda aylanma 1 mlrd so'mdan oshsa — qo'shilgan qiymat solig'i (QQS). Mulk va yer soliqlari hududiy organlar tomonidan belgilanadi.",
+                "Aniq stavkalar vaqti-vaqti bilan yangilanadi, shu sababli bu darsdagi tafsilotlarni yakuniy haqiqat deb qabul qilmang — har doim soliq.uz rasmiy portalidan joriy stavkalarni tekshiring yoki AI maslahatchimizdan so'rang.",
+              ],
+            },
+            {
+              heading: "Imtiyozlarni o'tkazib yubormang",
+              paragraphs: [
+                "O'zbekistonda ayrim toifalar uchun soliq imtiyozlari mavjud: nogironligi bor tadbirkorlar, yangi tashkil etilgan korxonalar, ayrim sanoat va hududiy zonalar. Ko'p tadbirkor o'ziga tegishli imtiyozdan xabarsizligi tufayli ortiqcha soliq to'laydi. O'z toifangizga mos imtiyozlarni aniqlab oling.",
+              ],
+            },
+          ],
+          sources: [SRC.soliq, SRC.lex],
           channel: 'MFaktor Biznes Maktabi',
           channelUrl: 'https://www.youtube.com/@MfaktorBiznesMaktabi',
           videoId: 'TODO_VIDEO_ID',
@@ -702,6 +1110,27 @@ export const track: Track = {
             "Kassir va buxgalter vazifasini ajrating — nazorat va xavfsizlik uchun muhim.",
             "Barcha hujjatlarni 5 yil saqlang — soliq tekshiruvi uchun zarur.",
           ],
+          body: [
+            {
+              heading: "Buxgalteriya nima uchun kerak?",
+              paragraphs: [
+                "Buxgalteriya hisobi — barcha moliyaviy operatsiyalarni tartibli yozib borish tizimi. U faqat soliq uchun emas: sizga biznesning haqiqiy holatini ko'rish, to'g'ri qaror qabul qilish va nizolarda o'zingizni himoya qilish imkonini beradi. Oddiy daftardan boshlanib, maxsus dasturlargacha kengayishi mumkin.",
+              ],
+            },
+            {
+              heading: "Asosiy tamoyillar",
+              paragraphs: [
+                "Har bir operatsiyani hujjat asosida yozing: kvitansiya, shartnoma, faktura. Hujjatsiz yozuv — ishonchsiz yozuv. Aktiv (biznesda nima bor) va passiv (nima qarz) balansini muntazam tekshiring. Muhim xavfsizlik qoidasi: kassa (pulni qabul qiluvchi) va buxgalter (hisobni yurituvchi) vazifalarini imkon qadar ajrating — bu nazoratni kuchaytiradi va suiiste'molning oldini oladi.",
+              ],
+            },
+            {
+              heading: "Vositalar va hujjatlarni saqlash",
+              paragraphs: [
+                "Sodda buxgalteriya uchun Excel yetarli; keyinroq 1C yoki soliq.uz platformasidagi elektron xizmatlar qulayroq. Qaysi vositani tanlasangiz ham, barcha buxgalteriya va soliq hujjatlarini kamida 5 yil saqlang — soliq tekshiruvi yoki nizo yuzaga kelsa, ular zarur bo'ladi.",
+              ],
+            },
+          ],
+          sources: [SRC.soliq, SRC.finlit, SRC.lex],
           channel: 'Finlit.uz',
           channelUrl: 'https://www.youtube.com/channel/UCNs4B8FabHPZVNwOkgWnthA',
           videoId: 'TODO_VIDEO_ID',
@@ -720,6 +1149,27 @@ export const track: Track = {
             "Har chorak moliyaviy hisobotni ko'rib chiqish tavsiya etiladi.",
             "Moliyaviy hisobotlarni banklar, investorlar va soliq organlari talab qilishi mumkin.",
           ],
+          body: [
+            {
+              heading: "Uchta asosiy hisobot",
+              paragraphs: [
+                "Moliyaviy hisobotlar — biznesingizning 'tibbiy tekshiruvi'. Uchta asosiy hisobot bor. Daromad-zarar hisoboti (P&L): ma'lum davrda daromad minus xarajat teng foyda yoki zarar. Balans: aktivlar teng passivlar plus kapital — biznesning muayyan paytdagi holati. Pul oqimi hisoboti: haqiqiy naqd pulning kirim-chiqimi.",
+              ],
+            },
+            {
+              heading: "Har biri nimani ko'rsatadi?",
+              paragraphs: [
+                "P&L — biznes foyda keltiryaptimi yoki yo'qmi, degan savolga javob beradi. Balans — biznes moliyaviy jihatdan barqarormi, qancha qarzi bor, degan savolga. Pul oqimi hisoboti — qo'lda to'lovlarga yetarli pul bormi, degan savolga. Uchalasi birga biznesning to'liq manzarasini beradi; faqat bittasiga qarab xulosa chiqarish xato.",
+              ],
+            },
+            {
+              heading: "Muntazam ko'rib chiqing",
+              paragraphs: [
+                "Moliyaviy hisobotlarni yiliga bir marta emas, kamida har chorakda ko'rib chiqish tavsiya etiladi. Bu sizga muammoni erta payqash imkonini beradi. Bundan tashqari, kredit olayotganda banklar, sarmoya izlaganda investorlar va tekshiruvda soliq organlari bu hisobotlarni talab qiladi — tayyor bo'lgan biznes ustunlikka ega.",
+              ],
+            },
+          ],
+          sources: [SRC.soliq, SRC.finlit, SRC.gsbe],
           channel: 'MFaktor Biznes Maktabi',
           channelUrl: 'https://www.youtube.com/@MfaktorBiznesMaktabi',
           videoId: 'TODO_VIDEO_ID',
@@ -821,6 +1271,28 @@ export const track: Track = {
             "Takroriy xarid uchun voronka tugamaydi — mijozni ushlab turish ham strategik muhim.",
             "Oddiy CRM (daftar ham bo'lsa) bilan mijoz bazangizni kuzating.",
           ],
+          body: [
+            {
+              heading: "Voronka nima?",
+              paragraphs: [
+                "Sotuv voronkasi — potentsial mijozning birinchi tanishuvdan xaridgacha bosib o'tadigan yo'li. U 'voronka' deb ataladi, chunki har bosqichda odamlar kamayadi: ko'p kishi mahsulotni ko'radi, kamrog'i qiziqadi, undan ozrog'i sotib oladi. Bu yo'lni tushunish — savdoni oshirishning kaliti.",
+                "Odatiy bosqichlar: Xabardorlik (bilib qoldi) → Qiziqish → Ko'rib chiqish (taqqoslaydi) → Qaror → Xarid. Ba'zan bunga sodiqlik (takroriy xarid) bosqichi ham qo'shiladi.",
+              ],
+            },
+            {
+              heading: "Qayerda mijoz yo'qolyapti?",
+              paragraphs: [
+                "Voronkaning kuchi — o'lchashda. Har bosqichda qancha odam keyingisiga o'tayotganini sanang. Masalan, 100 kishi do'konga kirsa, 40 tasi narx so'rasa, 10 tasi sotib olsa — konversiya darajangiz aniq bo'ladi. Eng ko'p 'tushish' qayerda bo'layotganini toping va aynan o'sha bosqichni yaxshilang. Ko'pincha kichik tuzatish katta natija beradi.",
+              ],
+            },
+            {
+              heading: "Mijoz bazangizni yuriting",
+              paragraphs: [
+                "Voronkani kuzatish uchun murakkab tizim shart emas — hatto oddiy daftar yoki Excel ham CRM vazifasini bajaradi. Muhimi — har bir mijoz va uning bosqichini yozib borish. Xarid tugagach voronka tugamaydi: mijozni ushlab turish va takroriy xaridga qaytarish ham strategik muhim.",
+              ],
+            },
+          ],
+          sources: [SRC.mfaktorYt, SRC.gsbe],
           channel: 'MFaktor Biznes Maktabi',
           channelUrl: 'https://www.youtube.com/@MfaktorBiznesMaktabi',
           videoId: 'TODO_VIDEO_ID',
@@ -839,6 +1311,28 @@ export const track: Track = {
             "Mijozdan fikr-mulohaza so'rang — bu mahsulot va xizmatni yaxshilashga yordam beradi.",
             "Vad berilgan muddatda yetkazib berish — oddiy lekin eng samarali marketing vositasi.",
           ],
+          body: [
+            {
+              heading: "Eski mijoz — oltin mijoz",
+              paragraphs: [
+                "Tadqiqotlar shuni ko'rsatadiki, mavjud mijozni saqlab qolish yangi mijoz jalb qilishdan 5–7 barobar arzon. Yangi mijoz uchun reklama, ishonch qozonish, tushuntirish kerak; eski mijoz esa sizni allaqachon biladi va ishonadi. Shu sababli mijoz munosabatlari — uzoq muddatli muvaffaqiyatning asosi.",
+              ],
+            },
+            {
+              heading: "Ishonchni qanday quriladi?",
+              paragraphs: [
+                "Har bir mijozni imkon qadar ism bilan biling — shaxsiy munosabat kuchli ta'sir qiladi. Shikoyatni tahdid emas, imkoniyat deb qarang: tez va adolatli hal qilingan shikoyat mijozni yanada sodiq qiladi. Va'da qilingan muddatda yetkazib berish — oddiy ko'rinsa-da, eng kuchli marketing: u so'zsiz ishonch quradi.",
+                "Mijozdan muntazam fikr-mulohaza so'rang. Bu nafaqat mahsulotni yaxshilaydi, balki mijozga 'fikrim muhim' degan tuyg'u beradi.",
+              ],
+            },
+            {
+              heading: "E'tirozlar bilan ishlash",
+              paragraphs: [
+                "'Qimmat', 'o'ylab ko'raman', 'keyinroq' — bu e'tirozlar sotuvning tabiiy qismi, rad javob emas. Ko'p sotuvchi aynan shu bosqichda taslim bo'ladi. Yaxshi sotuvchi esa e'tiroz ortidagi haqiqiy sababni tushunib, unga javob beradi. Ushbu darsning videosida e'tirozlar bilan ishlash amaliy misollar bilan ko'rsatilgan.",
+              ],
+            },
+          ],
+          sources: [SRC.mfaktorYt, SRC.gsbe],
           channel: 'MFaktor Biznes Maktabi',
           channelUrl: 'https://www.youtube.com/@MfaktorBiznesMaktabi',
           videoId: 'Wtd5XX4kzrY',
@@ -857,6 +1351,27 @@ export const track: Track = {
             "B2B uchun: shaxsiy muloqot va namoyish ko'pincha reklamadan samaraliroq.",
             "Har bir marketing kanaliga sarflangan pul qaytimini (ROI) hisoblang.",
           ],
+          body: [
+            {
+              heading: "Hamma joyda emas — to'g'ri joyda bo'ling",
+              paragraphs: [
+                "Marketing — mahsulotingiz haqida to'g'ri odamlarga xabar yetkazish. Ko'p tadbirkor 'hamma kanalda bo'lish kerak' deb o'ylab, kuch va pulini sochib yuboradi. Aslida muhimi — sizning mijozingiz qayerda bo'lsa, o'sha joyda faol bo'lish. Bir kuchli kanal o'nta zaif kanaldan yaxshiroq.",
+              ],
+            },
+            {
+              heading: "O'zbekistonda qaysi kanallar ishlaydi?",
+              paragraphs: [
+                "Ijtimoiy tarmoqlar (Instagram, Telegram) — O'zbek auditoriyasi uchun eng samarali va nisbatan arzon kanal. Og'zaki marketing (word of mouth) — eng ishonchli va bepul: u sifatli xizmatdan tug'iladi. Joylashuvga bog'liq bizneslar uchun mahalliy reklama, B2B bizneslar uchun esa shaxsiy muloqot va namoyish ko'pincha ommaviy reklamadan samaraliroq.",
+              ],
+            },
+            {
+              heading: "ROI — har bir so'mni o'lchang",
+              paragraphs: [
+                "Marketingda eng katta xato — natijani o'lchamaslik. Har bir kanalga sarflangan pulning qaytimini (ROI) hisoblang: (Kanaldan kelgan daromad − Kanal xarajati) ÷ Kanal xarajati. Qaysi kanal ko'p daromad keltirsa — unga ko'proq sarmoya kiriting, ishlamayotganini to'xtating. Bu oddiy intizom marketing byudjetingizni bir necha barobar samaraliroq qiladi.",
+              ],
+            },
+          ],
+          sources: [SRC.mfaktorYt, SRC.gsbe],
           channel: 'MFaktor Biznes Maktabi',
           channelUrl: 'https://www.youtube.com/@MfaktorBiznesMaktabi',
           videoId: '7u4hBlzqaH8',
@@ -875,6 +1390,28 @@ export const track: Track = {
             "Premium narxlash: yuqori sifat va xizmat bilan narxni oshirish mumkin.",
             "Dinamik narxlash: mavsumga, talab-taklifga qarab narxni o'zgartirish.",
           ],
+          body: [
+            {
+              heading: "Narx — bu ham xabar",
+              paragraphs: [
+                "Narx faqat xarajatni qoplaydigan raqam emas — u mijozga mahsulot haqida xabar beradi. Juda past narx 'sifatsiz' degan taassurot uyg'otishi, oqilona yuqori narx esa 'sifatli, ishonchli' degan signal berishi mumkin. Shuning uchun narx marketing strategiyasining ajralmas qismidir.",
+              ],
+            },
+            {
+              heading: "Narx strategiyalari",
+              paragraphs: [
+                "Qiymat asosli narxlash — mijoz uchun yaratgan qiymatga qarab narx qo'yish (nafaqat tannarxga). Psixologik narxlash — 50 000 o'rniga 49 900 so'm: farq kichik, lekin idrok boshqacha. Paket taklif — bir necha mahsulotni birlashtirib, alohidadan arzonroqqa taklif qilish. Premium narxlash — yuqori sifat va xizmat evaziga yuqori narx.",
+                "Dinamik narxlash — mavsum va talabga qarab narxni o'zgartirish. Masalan, talab yuqori davrda narx biroz oshadi, sust davrda chegirma bilan sotuv rag'batlantiriladi.",
+              ],
+            },
+            {
+              heading: "Qaysi birini tanlash?",
+              paragraphs: [
+                "Bitta 'to'g'ri' strategiya yo'q — u mahsulotingiz, mijoz segmentingiz va raqobat holatiga bog'liq. Ko'pincha bir biznes turli mahsulotlar uchun turli strategiyalarni birlashtiradi. Muhimi — narxni tasodifan emas, ongli ravishda tanlash va natijani kuzatib borish.",
+              ],
+            },
+          ],
+          sources: [SRC.mfaktorYt, SRC.finlit],
           channel: 'MFaktor Biznes Maktabi',
           channelUrl: 'https://www.youtube.com/@MfaktorBiznesMaktabi',
           videoId: 'TODO_VIDEO_ID',
@@ -976,6 +1513,27 @@ export const track: Track = {
             "Kengayish bosqichi: franchayzing, filiallar yoki yangi bozorlar orqali miqyoslashtirish.",
             "Har bosqichda liderlik uslubi ham o'zgarishi kerak — 'hamma narsani o'zim' dan 'tizim orqali' ga.",
           ],
+          body: [
+            {
+              heading: "Har biznes bosqichlardan o'tadi",
+              paragraphs: [
+                "Biznes tirik organizm kabi rivojlanadi va har bosqichda boshqacha muammoga duch keladi. To'rt asosiy bosqich: start-up (boshlanish), o'sish, yetuklik va kengayish. Bir bosqichda ishlagan yechim boshqasida ishlamaydi — shu sababli qaysi bosqichda ekaningizni bilish muhim.",
+              ],
+            },
+            {
+              heading: "Har bosqichning asosiy vazifasi",
+              paragraphs: [
+                "Start-up bosqichida asosiy vazifa — bozorda o'z o'rningizni topish va birinchi barqaror daromadga erishish. O'sish bosqichida — tizim va jarayonlar qurish, toki biznes faqat sizga bog'liq bo'lib qolmasin. Yetuklikda operatsiyalar barqarorlashadi, yangi mahsulot yoki bozor qidiriladi. Kengayishda — franchayzing, filiallar yoki yangi hududlar orqali miqyoslashtirish.",
+              ],
+            },
+            {
+              heading: "Liderlik ham o'zgaradi",
+              paragraphs: [
+                "Ko'p asoschi bir tuzoqqa tushadi: biznes o'sadi, lekin ular hali ham 'hamma narsani o'zim qilaman' deb ishlaydi. Natijada asoschi biznesning 'bo'g'zi' bo'lib qoladi — hamma qaror unga bog'liq. O'sish uchun liderlik uslubi 'o'zim qilaman'dan 'tizim va jamoa orqali qilaman'ga o'tishi shart.",
+              ],
+            },
+          ],
+          sources: [SRC.gsbe, SRC.gsbeYt],
           channel: "Biznes va tadbirkorlik oliy maktabi",
           channelUrl: 'https://www.youtube.com/@gsbeuz',
           videoId: 'TODO_VIDEO_ID',
@@ -994,6 +1552,27 @@ export const track: Track = {
             "Haftalik 15 daqiqalik team meeting — muammolarni erta aniqlash uchun.",
             "Xodimning kuchli tomonlaridan foydalaning — zaif tomonlarini tizim bilan yoping.",
           ],
+          body: [
+            {
+              heading: "Yolg'iz uzoqqa bora olmaysiz",
+              paragraphs: [
+                "Biznes ma'lum darajaga yetgach, bir kishi hamma ishni bajara olmaydi. O'sishning asosiy to'sig'i ko'pincha pul emas, balki to'g'ri jamoa yo'qligidir. Xodim yollash — xarajat emas, sarmoya: to'g'ri odam biznesga o'zi olayotgan maoshidan ko'proq qiymat qo'shadi.",
+              ],
+            },
+            {
+              heading: "Birinchi xodim — zaif tomoningizni to'ldirsin",
+              paragraphs: [
+                "Birinchi yollanadigan odam sizning eng zaif tomoningizni to'ldirishi kerak. Agar siz texnik mutaxassis bo'lsangiz-u, savdo qiyin bo'lsa — savdo insonini yollang. Yollashdan oldin lavozim tavsifini (job description) yozing: bu odam aniq nima qilishini oldindan belgilang, aks holda noto'g'ri odam yollash xavfi katta.",
+              ],
+            },
+            {
+              heading: "Boshqarish va rag'batlantirish",
+              paragraphs: [
+                "Xodimni faqat maosh ushlab turmaydi — o'sish imkoniyati, hurmat va yaxshi muhit ham muhim. Haftalik qisqa (15 daqiqalik) uchrashuv muammolarni erta aniqlashga yordam beradi. Har bir xodimning kuchli tomonidan foydalaning va zaif tomonini tizim yoki boshqa xodim bilan yoping — hech kim hamma narsada zo'r bo'lmaydi.",
+              ],
+            },
+          ],
+          sources: [SRC.gsbe, SRC.gsbeYt],
           channel: "Biznes va tadbirkorlik oliy maktabi",
           channelUrl: 'https://www.youtube.com/@gsbeuz',
           videoId: 'TODO_VIDEO_ID',
@@ -1012,6 +1591,28 @@ export const track: Track = {
             "Sifat va xizmat darajasini miqyosdayam saqlang — bu eng qiyin qism.",
             "Yaqin bozorlardan boshlang: O'zbekistonda boshqa viloyatlar, keyin Qozog'iston.",
           ],
+          body: [
+            {
+              heading: "O'sish emas — miqyoslashtirish",
+              paragraphs: [
+                "Oddiy o'sish — ko'proq xodim, ko'proq xarajat evaziga ko'proq daromad. Miqyoslashtirish (scaling) esa boshqacha: resurslarni proporsional oshirmay, daromad va foydani ko'paytirish. Ya'ni sotuvingiz ikki barobar oshsa-yu, xarajatingiz atigi 20% oshsa — bu miqyoslashtirish. Bunga tizim, texnologiya va to'g'ri jamoa orqali erishiladi.",
+              ],
+            },
+            {
+              heading: "Avval standartlashtiring, keyin avtomatlang",
+              paragraphs: [
+                "Tartibsiz jarayonni avtomatlashtirish — tartibsizlikni tezlashtirish. Shu sababli avval har bir jarayonni yozib, standartlashtiring: 'buni qanday qilamiz' aniq bo'lsin. Keyin texnologiyadan foydalaning — onlayn buyurtma, to'lov tizimlari, inventarizatsiya dasturlari. Standartlashtirilgan jarayon yangi xodimni tez o'rgatish imkonini ham beradi.",
+                "Miqyoslashtirish kapital talab qiladi. Uni qayerdan olishni (o'z foydangiz, kredit yoki investor) oldindan rejalashtiring — pul tugab qolgan o'rtada to'xtash xavflidir.",
+              ],
+            },
+            {
+              heading: "Sifatni saqlang, yaqindan boshlang",
+              paragraphs: [
+                "Miqyoslashtirishning eng qiyin qismi — o'sish paytida sifat va xizmat darajasini saqlash. Ko'p biznes tez o'sib, sifatni yo'qotib, mijozdan ayriladi. Yangi bozorlarni yaqindan boshlang: avval O'zbekistonning boshqa viloyatlari, keyin qo'shni davlatlar (Qozog'iston, Qirg'iziston). B2B bozorimizda yangi hududlarni o'rganib ko'rishingiz mumkin.",
+              ],
+            },
+          ],
+          sources: [SRC.mfaktorYt, SRC.gsbe],
           channel: 'MFaktor Biznes Maktabi',
           channelUrl: 'https://www.youtube.com/@MfaktorBiznesMaktabi',
           videoId: 'TODO_VIDEO_ID',
@@ -1032,6 +1633,28 @@ export const track: Track = {
             "Mijozlaringiz va yetkazib beruvchilaringiz bilan ochiq muloqotda bo'ling.",
             "Krizis innovatsiyaga majburlaydi — raqobatchilar to'xtaganda siz oldinga chiqishingiz mumkin.",
           ],
+          body: [
+            {
+              heading: "Krizis — 'agar' emas, 'qachon'",
+              paragraphs: [
+                "Har qanday biznes ertami-kechmi krizisga duch keladi: iqtisodiy pasayish, kuchli raqobatchi, tovar yetkazib berish uzilishi yoki kutilmagan voqea. Savol krizis bo'ladimi emas, qachon bo'ladi. Shuning uchun uni oldindan rejalashtirish — panik paytida emas, sovuqqonlik bilan — uni engishni ancha osonlashtiradi.",
+              ],
+            },
+            {
+              heading: "Krizis rejasini oldindan tuzing",
+              paragraphs: [
+                "'Agar X bo'lsa, biz Y qilamiz' shaklida stsenariylar tayyorlang. Masalan: 'Agar savdo 30% pasaysa, avval qaysi xarajatlarni qisqartiramiz?' Buning uchun xarajatlarni ikkiga ajrating: kesilishi mumkin bo'lganlar (o'zgaruvchan — marketing, qo'shimcha xizmatlar) va kesib bo'lmaydiganlar (doimiy — ijara, asosiy ish haqi).",
+                "Krizisda birinchi himoya qilinadigan narsa — naqd pul. Pul tugasa, hamma narsa to'xtaydi. Shu sababli krizis boshlanishi bilan xarajatni qisqartiring va pul oqimini nazoratga oling.",
+              ],
+            },
+            {
+              heading: "Ochiqlik va imkoniyat",
+              paragraphs: [
+                "Krizisda mijozlaringiz va yetkazib beruvchilaringiz bilan ochiq muloqotda bo'ling — yashirish ishonchni buzadi. Va shuni unutmang: krizis innovatsiyaga majburlaydi. Ko'p raqobatchi qo'rquvdan to'xtab qolganda, tayyor va epchil biznes aynan shu paytda oldinga chiqishi mumkin.",
+              ],
+            },
+          ],
+          sources: [SRC.gsbe, SRC.gsbeYt, SRC.finlit],
           channel: "Biznes va tadbirkorlik oliy maktabi",
           channelUrl: 'https://www.youtube.com/@gsbeuz',
           videoId: 'TODO_VIDEO_ID',
@@ -1050,6 +1673,28 @@ export const track: Track = {
             "Davlat siyosati va qonunlarni kuzating — ular biznesingizga to'g'ridan-to'g'ri ta'sir qiladi.",
             "Bozor tahlili natijalarini yozib, qarorlarga asoslang — his-tuyg'uga emas.",
           ],
+          body: [
+            {
+              heading: "Bozor to'xtab turmaydi",
+              paragraphs: [
+                "Bugun ishlagan strategiya ertaga ishlamasligi mumkin — bozor doimo o'zgaradi: raqobatchilar, iste'molchi didi, texnologiya va qonunlar. Doimiy bozor monitoringi sizni o'zgarishlarga tayyorlaydi va boshqalar ko'rmagan imkoniyatlarni payqash imkonini beradi. Tahlilsiz biznes — orqaga qaramay yo'l bosayotgan haydovchi kabi.",
+              ],
+            },
+            {
+              heading: "SWOT — sodda, kuchli vosita",
+              paragraphs: [
+                "SWOT tahlili to'rt tomonni ko'radi: Kuchli tomonlar (Strengths), Zaif tomonlar (Weaknesses), Imkoniyatlar (Opportunities), Tahdidlar (Threats). Birinchi ikkitasi ichki (siz nazorat qilasiz), oxirgi ikkitasi tashqi (bozordan keladi). Uni yiliga kamida bir marta o'tkazing — bu biznesingiz holatini bir sahifada ko'rsatadi.",
+                "Raqobatchilar narxi va mahsulotlarini muntazam kuzating; iste'molchi tendentsiyalarini ijtimoiy tarmoq va so'rovnomalar orqali o'rganing; davlat siyosati va qonunlarni nazoratda tuting — ular biznesingizga bevosita ta'sir qiladi.",
+              ],
+            },
+            {
+              heading: "Qaror — dalilga asoslansin",
+              paragraphs: [
+                "Bozor tahlili natijalarini yozib boring va qarorlarni his-tuyg'uga emas, dalilga asoslang. Bizning B2B bozorimizdagi real narx ma'lumotlari va AI tahlil vositalari sizga bozordagi holatni raqamlar bilan ko'rish imkonini beradi.",
+              ],
+            },
+          ],
+          sources: [SRC.mfaktorYt, SRC.stat, SRC.gsbe],
           channel: 'MFaktor Biznes Maktabi',
           channelUrl: 'https://www.youtube.com/@MfaktorBiznesMaktabi',
           videoId: 'TODO_VIDEO_ID',

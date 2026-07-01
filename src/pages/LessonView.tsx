@@ -68,51 +68,62 @@ export default function LessonView() {
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
 
-        {/* ── Video embed ── */}
-        <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 aspect-video flex items-center justify-center">
-          {isTodo ? (
-            <div className="text-center p-8">
-              <span className="text-4xl mb-4 block">🎬</span>
-              <p className="text-white font-semibold text-base">{S.videoPlaceholder}</p>
-              <p className="text-zinc-500 text-sm mt-2">{S.videoPlaceholderSub}</p>
-              <p className="text-zinc-600 text-xs mt-3">
-                {S.channel}: <span className="text-zinc-400">{lesson.channel}</span>
-              </p>
-            </div>
-          ) : (
-            <iframe
-              className="w-full h-full"
-              src={`https://www.youtube-nocookie.com/embed/${lesson.videoId}`}
-              title={lesson.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-            />
-          )}
-        </div>
-
-        {/* ── Channel attribution ── */}
+        {/* ── Meta row (duration + XP) ── */}
         <div className="flex items-center gap-3 text-xs text-zinc-500">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-          <span>{S.channel}:</span>
-          <a
-            href={lesson.channelUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-zinc-300 hover:text-white underline underline-offset-2 transition-colors"
-          >
-            {lesson.channel}
-          </a>
-          <span className="text-zinc-700">·</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
           <span>{lesson.durationNote}</span>
           <span className="text-zinc-700">·</span>
           <span className="text-emerald-500">+{lesson.xp} XP</span>
         </div>
 
-        {/* ── Summary ── */}
+        {/* ── Summary / lead paragraph ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-          <p className="text-zinc-400 text-sm leading-relaxed">{lesson.summary}</p>
+          <p className="text-zinc-300 text-base leading-relaxed">{lesson.summary}</p>
         </div>
+
+        {/* ── Written lesson (Khan Academy style) — always present ── */}
+        <article className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
+          {lesson.body.map((section, i) => (
+            <section key={i} className="space-y-3">
+              <h2 className="text-white font-bold text-lg tracking-tight flex items-center gap-2">
+                <span className="text-emerald-500 text-sm font-black">{String(i + 1).padStart(2, '0')}</span>
+                {section.heading}
+              </h2>
+              {section.paragraphs.map((p, j) => (
+                <p key={j} className="text-zinc-300 text-sm leading-relaxed">{p}</p>
+              ))}
+            </section>
+          ))}
+        </article>
+
+        {/* ── Video (optional — only when a verified video exists) ── */}
+        {!isTodo && (
+          <div className="space-y-2">
+            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">{S.videoOptional}</p>
+            <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 aspect-video">
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube-nocookie.com/embed/${lesson.videoId}`}
+                title={lesson.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+              />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+              <span>{S.channel}:</span>
+              <a
+                href={lesson.channelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-zinc-300 hover:text-white underline underline-offset-2 transition-colors"
+              >
+                {lesson.channel}
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* ── Key takeaways ── */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
@@ -124,6 +135,27 @@ export default function LessonView() {
                   {i + 1}
                 </span>
                 <span className="text-zinc-300 leading-relaxed">{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ── Sources / citations ── */}
+        <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
+          <p className="text-white font-semibold text-sm mb-1">{S.sources}</p>
+          <p className="text-zinc-500 text-xs mb-4">{S.sourcesNote}</p>
+          <ul className="space-y-2">
+            {lesson.sources.map((src, i) => (
+              <li key={i} className="flex gap-2.5 text-sm items-start">
+                <span className="text-zinc-600 shrink-0 mt-0.5">↗</span>
+                <a
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-400 hover:text-emerald-400 underline underline-offset-2 decoration-zinc-700 transition-colors leading-relaxed"
+                >
+                  {src.label}
+                </a>
               </li>
             ))}
           </ul>

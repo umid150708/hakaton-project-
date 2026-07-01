@@ -5,8 +5,8 @@
 
 export const S = {
   // Nav / page title
-  navLabel: "O'quv markazi",
-  pageTitle: "O'quv markazi",
+  navLabel: "O'quv dasturi",
+  pageTitle: "O'quv dasturi",
   pageSubtitle: "Moliyaviy savodxonlik yo'li — 6 ta daraja, amaliy bilim",
 
   // Progress dashboard
@@ -38,6 +38,11 @@ export const S = {
   channel: "Kanal",
   duration: "Davomiylik",
   keyTakeaways: "Asosiy tushunchalar",
+  lessonBody: "Dars matni",
+  sources: "Manbalar",
+  sourcesNote: "Ushbu dars quyidagi ochiq manbalar asosida tayyorlandi:",
+  videoOptional: "Video (ixtiyoriy)",
+  watchOnChannel: "Kanalda ko'rish →",
   markComplete: "Darsni tugatdim (+{xp} XP)",
   alreadyComplete: "✓ Bajarildi",
   askAI: "AI maslahatchi bilan muhokama qilish →",
