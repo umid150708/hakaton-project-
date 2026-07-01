@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Learning from './pages/Learning';
 import LessonView from './pages/LessonView';
 import QuizPage from './pages/QuizPage';
+import ApiDocs from './pages/ApiDocs';
 import PriceTicker from './components/PriceTicker';
 import { initAuth } from './lib/auth';
 
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/oqitish" element={<Learning />} />
         <Route path="/oqitish/dars/:lessonId" element={<LessonView />} />
         <Route path="/oqitish/test/:levelId" element={<QuizPage />} />
+        <Route path="/docs" element={<ApiDocs />} />
       </Routes>
     </BrowserRouter>
   );

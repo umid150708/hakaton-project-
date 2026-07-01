@@ -115,7 +115,9 @@ export function computeFee(
 
 // ── Backend client ─────────────────────────────────────────────────────────────
 
-interface RequestOpts { method?: 'GET' | 'POST'; body?: unknown; timeoutMs?: number; throwOnError?: boolean }
+interface RequestOpts { method?: 'GET' | 'POST' | 'PUT'; body?: unknown; timeoutMs?: number; throwOnError?: boolean }
+
+export type AdPatch = Partial<NewAdInput> & { status?: 'active' | 'inactive' | 'sold' };
 
 /**
  * MarketplaceClient — single object that owns all calls to the ads backend.
@@ -154,6 +156,14 @@ class MarketplaceClient {
       ad: rowToAd(data.ad),
       matches: (data.matches ?? []).map(m => ({ ad: rowToAd(m.ad), score: m.score })),
     };
+  }
+
+  /** Update an ad you own (price, quantity, status, etc.) — partial patch. */
+  async updateAd(adId: string, patch: AdPatch): Promise<Ad> {
+    const data = await this.request<{ ad: AdRowPublic }>(
+      '/api/ads', { method: 'PUT', body: { id: adId, ownerId: this.userId, patch } },
+    );
+    return rowToAd(data.ad);
   }
 
   /** Ask the server whether the current user may see this ad's contact. */
