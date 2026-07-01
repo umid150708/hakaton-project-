@@ -5,6 +5,9 @@ import Interview from './pages/Interview';
 import Bozor from './pages/Bozor';
 import Pricing from './pages/Pricing';
 import Profile from './pages/Profile';
+import Learning from './pages/Learning';
+import LessonView from './pages/LessonView';
+import QuizPage from './pages/QuizPage';
 import PriceTicker from './components/PriceTicker';
 import { initAuth } from './lib/auth';
 
@@ -22,6 +25,9 @@ export default function App() {
         <Route path="/bozor" element={<Bozor />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/oqitish" element={<Learning />} />
+        <Route path="/oqitish/dars/:lessonId" element={<LessonView />} />
+        <Route path="/oqitish/test/:levelId" element={<QuizPage />} />
       </Routes>
     </BrowserRouter>
   );

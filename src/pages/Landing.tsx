@@ -19,6 +19,7 @@ export default function Landing() {
           <div className="hidden lg:flex items-center gap-7">
             <Link to="/bozor"     className="link-quiet text-muted hover:text-ink text-sm font-medium">B2B Bozor</Link>
             <Link to="/interview" className="link-quiet text-muted hover:text-ink text-sm font-medium">AI Maslahat</Link>
+            <Link to="/oqitish"   className="link-quiet text-muted hover:text-ink text-sm font-medium">O'quv dasturi</Link>
             <Link to="/pricing"   className="link-quiet text-muted hover:text-ink text-sm font-medium">Narxlar</Link>
           </div>
 
@@ -71,11 +72,12 @@ export default function Landing() {
 
       {/* ── Stats strip ── */}
       <div className="border-y border-line bg-surface/50">
-        <div className="max-w-4xl mx-auto grid grid-cols-3 divide-x divide-[var(--line)] px-6">
+        <div className="max-w-5xl mx-auto grid grid-cols-4 divide-x divide-[var(--line)] px-6">
           {[
-            { value: '40+',  label: "Faol e'lonlar" },
-            { value: '8',    label: 'Kategoriya'    },
-            { value: 'AI',   label: 'Bozor tahlili' },
+            { value: '40+',  label: "Faol e'lonlar"    },
+            { value: '8',    label: 'Kategoriya'       },
+            { value: '6',    label: 'O\'quv darajasi'  },
+            { value: '27',   label: 'Video dars'       },
           ].map(s => (
             <div key={s.label} className="py-6 text-center">
               <p className="text-3xl md:text-4xl font-black text-ink tracking-tight">{s.value}</p>
@@ -85,13 +87,13 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* ── Two product cards — asymmetric 3:2 ── */}
+      {/* ── Three product cards ── */}
       <section className="py-16 px-6">
-        <div className="max-w-5xl mx-auto grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-          {/* B2B Bozor — big (3/5) */}
+          {/* B2B Bozor */}
           <Link to="/bozor" data-tap
-            className="card-tap card-buy group lg:col-span-3 relative flex flex-col bg-surface hover:bg-elevated border border-line rounded-3xl p-8 overflow-hidden">
+            className="card-tap card-buy group relative flex flex-col bg-surface hover:bg-elevated border border-line rounded-3xl p-8 overflow-hidden">
             {/* Subtle brand tint */}
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand-soft)] via-transparent to-transparent pointer-events-none" />
             <div className="relative flex flex-col flex-1">
@@ -126,9 +128,9 @@ export default function Landing() {
             </div>
           </Link>
 
-          {/* AI Maslahat — smaller (2/5) */}
+          {/* AI Maslahat */}
           <div onClick={() => navigate('/interview')} data-tap role="button"
-            className="card-tap card-sell group lg:col-span-2 relative flex flex-col bg-surface hover:bg-elevated border border-line rounded-3xl p-8 cursor-pointer overflow-hidden">
+            className="card-tap card-sell group relative flex flex-col bg-surface hover:bg-elevated border border-line rounded-3xl p-8 cursor-pointer overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--gold-soft)] via-transparent to-transparent pointer-events-none" />
             <div className="relative flex flex-col flex-1">
               <div className="flex items-start justify-between mb-8">
@@ -160,6 +162,41 @@ export default function Landing() {
               </div>
             </div>
           </div>
+
+          {/* O'quv dasturi */}
+          <Link to="/oqitish" data-tap
+            className="card-tap group relative flex flex-col bg-surface hover:bg-elevated border border-line rounded-3xl p-8 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-transparent to-transparent pointer-events-none" />
+            <div className="relative flex flex-col flex-1">
+              <div className="flex items-start justify-between mb-8">
+                <span className="text-4xl">🎓</span>
+                <span className="text-[11px] text-gold border border-gold/50 rounded-full px-3 py-1 font-medium">Yangi</span>
+              </div>
+
+              <h2 className="text-2xl font-black text-ink mb-3 tracking-tight">O'quv dasturi</h2>
+              <p className="text-muted text-sm leading-relaxed mb-8 flex-1">
+                6 darajali moliyaviy savodxonlik kursi. Video darslar, testlar va XP tizimi bilan o'rganing.
+              </p>
+
+              <div className="space-y-3 mb-8">
+                {[
+                  '6 daraja · 27 video dars',
+                  'Har daraja uchun test',
+                  'XP va nishon tizimi',
+                  'AI maslahatchi ulanishi',
+                ].map(f => (
+                  <div key={f} className="flex items-center gap-2.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+                    <span className="text-muted text-xs">{f}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-purple-400 font-semibold text-sm group-hover:gap-3 transition-all">
+                O'qitishni boshlash <span className="text-base">→</span>
+              </div>
+            </div>
+          </Link>
         </div>
       </section>
 
@@ -168,7 +205,7 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto">
           <p className="text-xs text-faint uppercase tracking-widest text-center mb-12 font-medium">Qanday ishlaydi</p>
 
-          <div className="grid sm:grid-cols-2 gap-12">
+          <div className="grid sm:grid-cols-3 gap-12">
 
             {/* B2B steps */}
             <div>
@@ -204,6 +241,29 @@ export default function Landing() {
                   { n: '01', title: "Savolingizni erkin yozing",     desc: "Kredit, soliq, imtiyoz yoki biznes — istalgan mavzuda" },
                   { n: '02', title: "AI tahlil qiladi",              desc: "O'zbek qonunlari, bank talablari va davlat dasturlarini biladi" },
                   { n: '03', title: "Aniq maslahat oling",           desc: "Hujjatlar, muddatlar, miqdorlar — batafsil va aniq" },
+                ].map(s => (
+                  <div key={s.n} className="flex gap-5">
+                    <span className="text-3xl font-black text-line-strong shrink-0 leading-none mt-0.5 select-none">{s.n}</span>
+                    <div>
+                      <p className="text-ink font-semibold text-sm mb-1.5 tracking-tight">{s.title}</p>
+                      <p className="text-muted text-xs leading-relaxed">{s.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* O'quv dasturi steps */}
+            <div>
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-8 h-8 rounded-full bg-purple-950 border border-line flex items-center justify-center text-xs font-bold text-purple-300">🎓</div>
+                <h3 className="text-ink font-bold tracking-tight">O'quv dasturi</h3>
+              </div>
+              <div className="space-y-8">
+                {[
+                  { n: '01', title: "Darajani tanlang",          desc: "Daraja 1 dan boshlang — har biri 3–5 video darsdan iborat" },
+                  { n: '02', title: "Dars ko'ring va o'rganing", desc: "Video, xulosa va asosiy tushunchalar bilan bilim oling" },
+                  { n: '03', title: "Test topshirib oching",     desc: "70% dan oshirsangiz — nishon olib, keyingi darajani oching" },
                 ].map(s => (
                   <div key={s.n} className="flex gap-5">
                     <span className="text-3xl font-black text-line-strong shrink-0 leading-none mt-0.5 select-none">{s.n}</span>
@@ -274,9 +334,10 @@ export default function Landing() {
             <Logo size={26} />
             <span className="text-muted text-sm font-medium">Bozorboy · 2026</span>
           </div>
-          <Link to="/pricing" className="link-quiet text-muted hover:text-ink text-sm font-medium">
-            Narxlar →
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link to="/oqitish" className="link-quiet text-muted hover:text-ink text-sm font-medium">O'quv dasturi</Link>
+            <Link to="/pricing" className="link-quiet text-muted hover:text-ink text-sm font-medium">Narxlar →</Link>
+          </div>
         </div>
       </footer>
 
