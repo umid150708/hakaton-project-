@@ -3,7 +3,6 @@
  *
  * To add a real video ID: find the lesson by id and replace "TODO_VIDEO_ID"
  * with the 11-character YouTube video ID (e.g. "dQw4w9WgXcQ").
- * See LEARNING_README.md for the full lesson-to-channel mapping.
  */
 
 export interface LessonSection {
