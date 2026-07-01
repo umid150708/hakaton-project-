@@ -85,8 +85,19 @@ async function generate(userPrompt: string, examples: MatchRow[]): Promise<strin
         thinkingConfig: { thinkingBudget: 0 },
       } as GenerationConfig,
     });
-    const r = await model.generateContent(userPrompt);
-    return r.response.text();
+    // Retry transient overloads (503 "high load") — the plan is a one-shot call.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const r = await model.generateContent(userPrompt);
+        return r.response.text();
+      } catch (e) {
+        if (attempt < 2 && /503|overload|unavailable|high load/i.test(String(e))) {
+          await new Promise(res => setTimeout(res, 1500));
+          continue;
+        }
+        throw e;
+      }
+    }
   });
 }
 
