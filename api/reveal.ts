@@ -50,7 +50,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (plan === 'deal_fee') {
       const paid = await sbSelect<{ id: string }>('deal_fees', `user_id=eq.${userId}&ad_id=eq.${adId}&limit=1`);
       if (paid.length) return json({ contact: ad.contact ?? '' });
-      return json({ paywall: 'payfee', fee: dealFee(ad.price_value, ad.quantity_value) });
+      return json({ paywall: 'payfee', fee: dealFee(ad) });
     }
 
     // Free plan: 3 reveals, then paywall.

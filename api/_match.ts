@@ -12,13 +12,15 @@ export interface AdRow {
   type: 'buy' | 'sell';
   category: string;
   product: string;
-  quantity_value: number | null;
+  quantity_value: number | null;   // low end of the quantity range
+  quantity_max: number | null;     // high end (null = single value)
   quantity_unit: string | null;
   quantity_freq: string | null;
   region: string | null;
   district: string | null;
   location: string | null;
-  price_value: number | null;
+  price_value: number | null;      // low end of the price range
+  price_max: number | null;        // high end (null = single value)
   price_unit: string | null;
   contact: string | null;
   status: string;
@@ -73,12 +75,14 @@ export function matchScore(a: AdRow, b: AdRow): number {
   if (ad && bd && ad === bd) score += 20;
   else if (ar && br && (ar === br || ar.includes(br) || br.includes(ar))) score += 12;
 
-  // Price: does the seller's price fit the buyer's target?
+  // Price: can the buyer's top budget cover the seller's cheapest offer?
   const buyer  = a.type === 'buy'  ? a : b;
   const seller = a.type === 'sell' ? a : b;
-  if (buyer.price_value && seller.price_value) {
-    if (seller.price_value <= buyer.price_value)        score += 10;
-    else if (seller.price_value <= buyer.price_value * 1.1) score += 5;
+  const buyerTop  = buyer.price_max ?? buyer.price_value;   // most the buyer will pay
+  const sellerLow = seller.price_value ?? seller.price_max; // least the seller accepts
+  if (buyerTop && sellerLow) {
+    if (sellerLow <= buyerTop)          score += 10;   // ranges can meet
+    else if (sellerLow <= buyerTop * 1.1) score += 5;  // close
   } else {
     score += 4; // unknown price — small benefit of the doubt
   }
@@ -86,10 +90,15 @@ export function matchScore(a: AdRow, b: AdRow): number {
   return Math.round(Math.min(score, 100));
 }
 
-/** Platform fee for a deal, from the ad's price × quantity (clamped). */
-export function dealFee(priceValue: number | null, quantityValue: number | null): number {
-  const value = (priceValue ?? 0) * (quantityValue ?? 0);
+/** Midpoint of a [low, high] range (or the single value). */
+function mid(low: number | null, high: number | null): number {
+  if (low && high) return (low + high) / 2;
+  return low ?? high ?? 0;
+}
+
+/** Platform fee for a deal, from mid(price) × mid(quantity), clamped. */
+export function dealFee(ad: Pick<AdRow, 'price_value' | 'price_max' | 'quantity_value' | 'quantity_max'>): number {
+  const value = mid(ad.price_value, ad.price_max) * mid(ad.quantity_value, ad.quantity_max);
   if (!value) return DEAL_FEE_MIN;
-  const raw = value * DEAL_FEE_PCT;
-  return Math.round(Math.min(Math.max(raw, DEAL_FEE_MIN), DEAL_FEE_MAX));
+  return Math.round(Math.min(Math.max(value * DEAL_FEE_PCT, DEAL_FEE_MIN), DEAL_FEE_MAX));
 }

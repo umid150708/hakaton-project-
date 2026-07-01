@@ -33,7 +33,7 @@ export default async function handler(req: Request): Promise<Response> {
     const [ad] = await sbSelect<AdRow>('ads', `id=eq.${adId}&limit=1`);
     if (!ad) return json({ error: 'ad not found' }, 404);
 
-    const amount = dealFee(ad.price_value, ad.quantity_value);
+    const amount = dealFee(ad);
     await sbUpsert('deal_fees', { user_id: userId, ad_id: adId, amount, method: 'mock' });
 
     return json({ ok: true, amount });

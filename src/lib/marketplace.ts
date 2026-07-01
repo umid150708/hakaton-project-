@@ -24,12 +24,14 @@ export interface AdRowPublic {
   category: string;
   product: string;
   quantity_value: number | null;
+  quantity_max: number | null;
   quantity_unit: string | null;
   quantity_freq: string | null;
   region: string | null;
   district: string | null;
   location: string | null;
   price_value: number | null;
+  price_max: number | null;
   price_unit: string | null;
   status: string;
   created_at: string;
@@ -40,12 +42,14 @@ export interface NewAdInput {
   category: Category;
   product: string;
   quantityValue: number | null;
+  quantityMax: number | null;
   quantityUnit: string;
   quantityFreq: string;
   region: string;
   district: string;
   location: string;
   priceValue: number | null;
+  priceMax: number | null;
   priceUnit: string;
   contact: string;
 }
@@ -58,16 +62,23 @@ export type RevealResult =
 
 // ── Row → display Ad ───────────────────────────────────────────────────────────
 
+/** "20" or "20–22" (localized), with an optional suffix. */
+function range(low: number | null, high: number | null, suffix = ''): string {
+  if (!low && !high) return '';
+  const f = (n: number) => n.toLocaleString('ru-RU');
+  const lo = low ?? high!;
+  const body = (high && high !== low) ? `${f(lo)}–${f(high)}` : f(lo);
+  return `${body}${suffix}`;
+}
+
 export function rowToAd(r: AdRowPublic): Ad {
-  const quantity = r.quantity_value
-    ? `${r.quantity_value} ${r.quantity_unit ?? ''}${r.quantity_freq ?? ''}`.trim()
-    : '';
+  const unitSuffix = ` ${r.quantity_unit ?? ''}${r.quantity_freq ?? ''}`.replace(/\s+$/, '');
+  const quantity = range(r.quantity_value, r.quantity_max, unitSuffix);
   const location = r.district
     ? `${r.district}${r.region ? ', ' + r.region : ''}`
     : (r.region ?? r.location ?? '');
-  const price = r.price_value
-    ? `${r.price_value.toLocaleString('ru-RU')} so'm/${r.price_unit ?? 'dona'}`
-    : '';
+  const priceRange = range(r.price_value, r.price_max);
+  const price = priceRange ? `${priceRange} so'm/${r.price_unit ?? 'dona'}` : '';
   return {
     id: r.id,
     type: r.type,
@@ -88,8 +99,16 @@ function fmtDate(iso: string): string {
 
 // ── Fee (client mirror of api/_match.dealFee) ─────────────────────────────────
 
-export function computeFee(priceValue: number | null, quantityValue: number | null): number {
-  const value = (priceValue ?? 0) * (quantityValue ?? 0);
+function mid(low: number | null, high: number | null): number {
+  if (low && high) return (low + high) / 2;
+  return low ?? high ?? 0;
+}
+
+export function computeFee(
+  priceValue: number | null, quantityValue: number | null,
+  priceMax: number | null = null, quantityMax: number | null = null,
+): number {
+  const value = mid(priceValue, priceMax) * mid(quantityValue, quantityMax);
   if (!value) return DEAL_FEE_MIN;
   return Math.round(Math.min(Math.max(value * DEAL_FEE_PCT, DEAL_FEE_MIN), DEAL_FEE_MAX));
 }

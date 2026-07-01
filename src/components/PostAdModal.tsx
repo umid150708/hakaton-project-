@@ -18,11 +18,13 @@ export default function PostAdModal({ type, onClose, onPosted }: Props) {
   const [category, setCategory] = useState<Category>('grain');
   const [product, setProduct]   = useState('');
   const [amount, setAmount]     = useState('');
+  const [amountMax, setAmountMax] = useState('');
   const [unit, setUnit]         = useState('kg');
   const [freq, setFreq]         = useState('');
   const [region, setRegion]     = useState('');
   const [district, setDistrict] = useState('');
   const [price, setPrice]       = useState('');
+  const [priceMax, setPriceMax] = useState('');
   const [priceUnit, setPriceUnit] = useState('kg');
   const [contact, setContact]   = useState('');
   const [done, setDone]         = useState(false);
@@ -33,8 +35,14 @@ export default function PostAdModal({ type, onClose, onPosted }: Props) {
   const [hintLoading, setHintLoading] = useState(false);
 
   const isBuy = type === 'buy';
-  const quantityStr = amount.trim() ? `${amount.trim()} ${unit}${freq}` : '';
-  const canSubmit = category !== 'all' && product.trim() && quantityStr && region.trim() && !posting;
+  // "20" or "20–22" for display / local fallback.
+  const rangeText = (lo: string, hi: string) => {
+    const l = lo.trim(), h = hi.trim();
+    return l && h && h !== l ? `${l}–${h}` : l;
+  };
+  const quantityStr = amount.trim() ? `${rangeText(amount, amountMax)} ${unit}${freq}` : '';
+  const priceStr    = price.trim() ? `${rangeText(price, priceMax)} so'm/${priceUnit}` : '';
+  const canSubmit = category !== 'all' && product.trim() && amount.trim() && region.trim() && !posting;
 
   const ring = isBuy ? 'focus:border-blue-500' : 'focus:border-emerald-500';
   const inputCls = `w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm placeholder-zinc-500 outline-none transition-colors`;
@@ -73,13 +81,15 @@ export default function PostAdModal({ type, onClose, onPosted }: Props) {
     const input: NewAdInput = {
       type, category,
       product: product.trim(),
-      quantityValue: amount.trim() ? Number(amount) : null,
+      quantityValue: amount.trim()    ? Number(amount)    : null,
+      quantityMax:   amountMax.trim() ? Number(amountMax) : null,
       quantityUnit: unit,
       quantityFreq: freq,
       region: region.trim(),
       district: district.trim(),
       location: locationStr,
-      priceValue: price.trim() ? Number(price) : null,
+      priceValue: price.trim()    ? Number(price)    : null,
+      priceMax:   priceMax.trim() ? Number(priceMax) : null,
       priceUnit,
       contact: contact.trim(),
     };
@@ -94,7 +104,7 @@ export default function PostAdModal({ type, onClose, onPosted }: Props) {
         product: product.trim(),
         quantity: quantityStr,
         location: locationStr,
-        price: price.trim() ? `${price.trim()} so'm/${priceUnit}` : '',
+        price: priceStr,
         contact: contact.trim(),
         date: new Date().toLocaleDateString('uz-UZ'),
       };
@@ -149,21 +159,28 @@ export default function PostAdModal({ type, onClose, onPosted }: Props) {
               placeholder={isBuy ? "Sement, un, armitura, go'sht..." : "Kartoshka, gazlama, yog'och..."} className={inputCls} />
           </div>
 
-          {/* Quantity */}
+          {/* Quantity (with optional range) */}
           <div>
             <label className="text-zinc-400 text-xs font-medium mb-1.5 block">Miqdor <span className="text-red-400">*</span></label>
-            <div className="flex gap-2">
-              <input type="number" min="0" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Raqam"
-                className={`w-24 shrink-0 px-3 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm placeholder-zinc-500 outline-none transition-colors`} />
+            <div className="flex gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <input type="number" min="0" value={amount} onChange={e => setAmount(e.target.value)} placeholder="20"
+                  className={`w-20 px-2.5 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm text-center placeholder-zinc-500 outline-none transition-colors`} />
+                <span className="text-zinc-600 text-sm">–</span>
+                <input type="number" min="0" value={amountMax} onChange={e => setAmountMax(e.target.value)} placeholder="22"
+                  title="Ixtiyoriy: oraliq uchun"
+                  className={`w-20 px-2.5 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm text-center placeholder-zinc-600 outline-none transition-colors`} />
+              </div>
               <select value={unit} onChange={e => setUnit(e.target.value)}
-                className={`flex-1 px-3 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm outline-none`}>
+                className={`flex-1 min-w-[90px] px-3 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm outline-none`}>
                 {UNIT_GROUPS.map(g => <optgroup key={g.label} label={g.label}>{g.units.map(u => <option key={u} value={u}>{u}</option>)}</optgroup>)}
               </select>
               <select value={freq} onChange={e => setFreq(e.target.value)}
-                className={`w-28 shrink-0 px-2 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm outline-none`}>
+                className={`w-24 shrink-0 px-2 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm outline-none`}>
                 {FREQ_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
               </select>
             </div>
+            {quantityStr && <p className="text-xs text-zinc-500 mt-1.5">📦 <span className={`font-semibold ${isBuy ? 'text-blue-400' : 'text-emerald-400'}`}>{quantityStr}</span></p>}
           </div>
 
           {/* Location: region + district (district powers near-me matching) */}
@@ -192,15 +209,20 @@ export default function PostAdModal({ type, onClose, onPosted }: Props) {
                 {hintLoading ? 'Tekshirilmoqda…' : '🤖 Adolatli narxni tekshirish'}
               </button>
             </div>
-            <div className="flex gap-2 items-center">
-              <input value={price} onChange={e => setPrice(e.target.value)} placeholder={isBuy ? 'Maks: 9 000' : 'Narx: 9 500'}
-                className={`flex-1 px-3 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm placeholder-zinc-500 outline-none`} />
+            <div className="flex gap-1.5 items-center flex-wrap">
+              <input type="number" min="0" value={price} onChange={e => setPrice(e.target.value)} placeholder={isBuy ? 'dan' : '100000'}
+                className={`w-24 px-2.5 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm text-center placeholder-zinc-500 outline-none`} />
+              <span className="text-zinc-600 text-sm">–</span>
+              <input type="number" min="0" value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="120000"
+                title="Ixtiyoriy: narx oralig'i"
+                className={`w-24 px-2.5 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm text-center placeholder-zinc-600 outline-none`} />
               <span className="text-zinc-500 text-sm shrink-0">so'm /</span>
               <select value={priceUnit} onChange={e => setPriceUnit(e.target.value)}
-                className={`w-24 shrink-0 px-2 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm outline-none`}>
+                className={`flex-1 min-w-[70px] px-2 py-2.5 bg-zinc-800 border border-zinc-700 ${ring} rounded-xl text-white text-sm outline-none`}>
                 {ALL_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
+            {priceStr && <p className="text-xs text-zinc-500 mt-1.5">💵 <span className="font-semibold text-zinc-300">{priceStr}</span></p>}
             {priceHint && (
               <div className="mt-2 rounded-xl border border-purple-800/40 bg-purple-950/20 px-3 py-2 text-purple-200 text-xs leading-relaxed">
                 🤖 {priceHint}
