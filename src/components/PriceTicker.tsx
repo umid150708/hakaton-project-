@@ -1,12 +1,6 @@
 /**
- * PriceTicker.tsx — Top-of-site scrolling strip of AVERAGE market prices.
- *
- * Shows the daily market snapshot (generated server-side, refreshed by a
- * cron job). These are *average wholesale prices* for the whole market —
- * deliberately styled differently from seller/buyer ad prices so the two
- * are never confused.
- *
- * Data: GET /api/market-prices (latest snapshot), cached 1h in localStorage.
+ * PriceTicker.tsx — Scrolling strip of average wholesale market prices (not ad prices).
+ * Data: GET /api/market-prices (latest daily snapshot), cached 1h in localStorage.
  */
 
 import { useEffect, useState } from 'react';

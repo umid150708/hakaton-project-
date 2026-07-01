@@ -1,14 +1,7 @@
 /**
- * api/analyse.ts — AI market analysis endpoint
- *
- * Provider priority:
- *   1. Groq  (free, 14,400 req/day, llama-3.3-70b) — if GROQ_API_KEY is set
- *   2. Gemini (free, ~500 req/day per key)          — automatic fallback
- *
- * Accepts an optional `system` field so the caller can teach the model
- * writing style before passing market data, and an optional `maxTokens`
- * so deep multi-section analyses can request a longer answer than the
- * short market brief.
+ * api/analyse.ts — AI market analysis endpoint.
+ * Groq (llama-3.3-70b) primary, Gemini fallback. Accepts optional `system`
+ * and `maxTokens` so deep analyses can override the default short brief.
  */
 
 import { withGemini } from './_gemini';
@@ -19,10 +12,19 @@ export const config = { runtime: 'edge' };
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
 };
 
-// ── Groq ──────────────────────────────────────────────────────────────────────
+function getApiKeyFromReq(req: Request): string | null {
+  const auth = req.headers.get('authorization') || req.headers.get('Authorization');
+  if (auth && auth.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim();
+  const x = req.headers.get('x-api-key') || req.headers.get('X-API-Key');
+  return x ? x.trim() : null;
+}
+
+function unauthorizedResponse() {
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...cors } });
+}
 
 async function callGroq(system: string, prompt: string, maxTokens: number): Promise<string> {
   const key = process.env.GROQ_API_KEY;
@@ -51,14 +53,10 @@ async function callGroq(system: string, prompt: string, maxTokens: number): Prom
   return text;
 }
 
-// ── Gemini fallback ───────────────────────────────────────────────────────────
-
 async function callGemini(system: string, prompt: string, maxTokens: number): Promise<string> {
   return withGemini(async (genAI) => {
-    // gemini-2.5-flash is a THINKING model — by default it spends the token
-    // budget on hidden reasoning first, truncating short briefs to a useless
-    // fragment. thinkingBudget:0 disables that so the whole budget goes to the
-    // visible answer. (gemini-1.5-flash is 404 on the current API version.)
+    // thinkingBudget:0 disables hidden reasoning so the whole budget goes to
+    // the visible answer. gemini-1.5-flash 404s on the current API version.
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
       generationConfig: {
@@ -73,11 +71,16 @@ async function callGemini(system: string, prompt: string, maxTokens: number): Pr
   });
 }
 
-// ── Handler ───────────────────────────────────────────────────────────────────
-
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-  if (req.method !== 'POST')   return new Response('Method not allowed', { status: 405 });
+  if (req.method !== 'POST')   return new Response('Method not allowed', { status: 405, headers: cors });
+
+  // Accept `Authorization: Bearer <key>` or `x-api-key`.
+  const provided = getApiKeyFromReq(req);
+  const serverKey = process.env.SERVER_API_KEY;
+  if (serverKey) {
+    if (!provided || provided !== serverKey) return unauthorizedResponse();
+  }
 
   let prompt: string;
   let system: string;

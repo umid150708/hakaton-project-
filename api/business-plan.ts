@@ -1,11 +1,7 @@
 /**
  * api/business-plan.ts — Generate a structured business plan (biznes reja).
- *
- * POST { profile, answers } → { plan: { title, sections:[{heading, body}] } }
- *
- * Uses gemini-2.5-flash (thinking off) to write a full plan tailored to the
- * entrepreneur's profile + interview answers. RAG grounding on the ingested
- * `business_plans` corpus can be layered in later (retrieve → prepend examples).
+ * POST { profile, answers } → { plan: { title, sections:[{heading, body}] } }.
+ * Uses gemini-2.5-flash with RAG grounding on the ingested business_plans corpus.
  */
 
 import { withGemini } from './_gemini';
@@ -32,8 +28,7 @@ Aynan shu 9 bo'limni shu tartibda yozing:
 
 QOIDALAR: har bir "body" — 2-4 abzas yoki "•" bilan punktlar. Professional o'zbek tilida. Raqamlarni aniq va real O'zbekiston sharoitiga mos bering. Umumiy bo'sh gaplardan qoching.`;
 
-// ── RAG: retrieve excerpts from the ingested real business plans ──────────────
-
+// RAG: retrieve excerpts from the ingested real business plans.
 interface MatchRow { title: string; content: string; similarity: number }
 
 async function retrieveExamples(queryText: string): Promise<MatchRow[]> {

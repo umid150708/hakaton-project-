@@ -1,13 +1,7 @@
 /**
- * marketplace.ts — Client wrappers for the Supabase-backed ads bridge.
- *
- * Talks to /api/ads, /api/reveal, /api/deal. Ads come back WITHOUT contact
- * numbers; the phone is fetched separately via reveal() only when the user is
- * eligible (free limit / subscription / paid deal fee).
- *
- * Every read/write degrades gracefully: callers catch failures and fall back to
- * the local sample data, so the marketplace keeps working before the Supabase
- * tables (scripts/002_marketplace.sql) are created.
+ * marketplace.ts — Client for the ads backend (/api/ads, /api/reveal, /api/deal).
+ * Ads return without contact numbers; the phone is fetched via reveal() only
+ * when the user is eligible. Callers catch failures and fall back to local sample data.
  */
 
 import { getUser } from './auth';
@@ -60,8 +54,6 @@ export type RevealResult =
   | { contact: string; freeLeft?: number }
   | { paywall: 'signup' | 'subscribe' | 'payfee'; fee?: number };
 
-// ── Row → display Ad ───────────────────────────────────────────────────────────
-
 /** "20" or "20–22" (localized), with an optional suffix. */
 function range(low: number | null, high: number | null, suffix = ''): string {
   if (!low && !high) return '';
@@ -97,8 +89,7 @@ function fmtDate(iso: string): string {
   try { return new Date(iso).toLocaleDateString('uz-UZ'); } catch { return ''; }
 }
 
-// ── Fee (client mirror of api/_match.dealFee) ─────────────────────────────────
-
+// Fee: client mirror of api/_match.dealFee.
 function mid(low: number | null, high: number | null): number {
   if (low && high) return (low + high) / 2;
   return low ?? high ?? 0;
@@ -113,17 +104,11 @@ export function computeFee(
   return Math.round(Math.min(Math.max(value * DEAL_FEE_PCT, DEAL_FEE_MIN), DEAL_FEE_MAX));
 }
 
-// ── Backend client ─────────────────────────────────────────────────────────────
-
 interface RequestOpts { method?: 'GET' | 'POST' | 'PUT'; body?: unknown; timeoutMs?: number; throwOnError?: boolean }
 
 export type AdPatch = Partial<NewAdInput> & { status?: 'active' | 'inactive' | 'sold' };
 
-/**
- * MarketplaceClient — single object that owns all calls to the ads backend.
- * The one private request() method centralises fetch/JSON/timeout handling
- * (DRY), so each endpoint method stays a one-liner.
- */
+/** MarketplaceClient — owns all calls to the ads backend via one request() helper. */
 class MarketplaceClient {
   private async request<T>(path: string, opts: RequestOpts = {}): Promise<T> {
     const { method = 'GET', body, timeoutMs = 12_000, throwOnError = true } = opts;

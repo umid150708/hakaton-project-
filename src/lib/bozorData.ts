@@ -1,10 +1,4 @@
-/**
- * bozorData.ts — All static data for the B2B marketplace
- *
- * Keeps Bozor.tsx free of data so it only handles UI logic.
- */
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
+/** bozorData.ts — Static data (types, categories, units, sample ads) for the B2B marketplace. */
 
 export type Category =
   | 'all'
@@ -30,8 +24,6 @@ export interface Ad {
   sample?: boolean;
 }
 
-// ─── Categories ────────────────────────────────────────────────────────────────
-
 export const CATEGORIES: { id: Category; label: string; icon: string }[] = [
   { id: 'all',     label: 'Barchasi',        icon: '🗂️' },
   { id: 'grain',   label: "Don & Un",        icon: '🌾' },
@@ -43,8 +35,6 @@ export const CATEGORIES: { id: Category; label: string; icon: string }[] = [
   { id: 'agri',    label: "Qishloq xo'j.",   icon: '🌱' },
   { id: 'other',   label: 'Boshqa',          icon: '📦' },
 ];
-
-// ─── Unit selectors ────────────────────────────────────────────────────────────
 
 export const UNIT_GROUPS: { label: string; units: string[] }[] = [
   { label: "⚖️ Og'irlik", units: ['kg', 'tonna', 'gramm', 'sentner', 'kvintal'] },
@@ -64,8 +54,6 @@ export const FREQ_OPTIONS: { value: string; label: string }[] = [
   { value: '/yil',   label: '/yil' },
 ];
 
-// ─── LocalStorage ──────────────────────────────────────────────────────────────
-
 const ADS_KEY = 'b2b_user_ads_v2';
 
 export function loadUserAds(): Ad[] {
@@ -78,8 +66,6 @@ export function saveUserAd(ad: Ad): void {
   all.unshift(ad);
   localStorage.setItem(ADS_KEY, JSON.stringify(all.slice(0, 200)));
 }
-
-// ─── Sample ads ────────────────────────────────────────────────────────────────
 
 export const SAMPLE_BUY: Ad[] = [
   { id:'b1',  type:'buy', category:'grain',   product:"Bug'doy uni (1-nav)",   quantity:'20 tonna',     location:'Toshkent',          price:'',                 contact:'+998 90 123 45 67', date:'30.06.2026', sample:true },

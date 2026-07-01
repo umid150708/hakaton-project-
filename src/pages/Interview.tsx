@@ -1,12 +1,6 @@
 /**
- * Interview.tsx — AI Business Advisor Chatbot
- *
- * A conversational chatbot that helps Uzbekistan entrepreneurs with:
- *  - Getting bank credit (documents, requirements, best bank)
- *  - Disability benefits & tax incentives
- *  - Tax regime advice (Patent vs SST)
- *  - Government programs
- *  - General business questions
+ * Interview.tsx — AI business advisor chatbot for Uzbekistan entrepreneurs
+ * (credit, disability/tax incentives, tax regimes, government programs).
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -258,7 +252,7 @@ export default function ChatBot() {
   return (
     <div className="min-h-screen bg-page flex flex-col">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header className="sticky top-0 z-40 bg-page/95 backdrop-blur border-b border-line px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <button
@@ -291,7 +285,7 @@ export default function ChatBot() {
         </div>
       </header>
 
-      {/* ── Messages ── */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
           {messages.map(msg => (
@@ -355,7 +349,7 @@ export default function ChatBot() {
         </div>
       </div>
 
-      {/* ── AI analysis modes ── */}
+      {/* AI analysis modes */}
       <div className="px-4 pt-2">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-2">
@@ -384,7 +378,7 @@ export default function ChatBot() {
         </div>
       </div>
 
-      {/* ── Quick question chips (always visible) ── */}
+      {/* Quick question chips (always visible) */}
       <div className="px-4 pb-2 pt-3">
         <div className="max-w-2xl mx-auto">
           <p className="text-faint text-xs mb-2">Tez savollar:</p>
@@ -403,7 +397,7 @@ export default function ChatBot() {
         </div>
       </div>
 
-      {/* ── Input ── */}
+      {/* Input */}
       <div className="border-t border-line bg-page px-4 py-3">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto flex gap-2">
           <input

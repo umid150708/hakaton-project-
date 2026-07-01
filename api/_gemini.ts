@@ -1,16 +1,6 @@
 /**
- * _gemini.ts — Gemini client with automatic key rotation
- *
- * Strategy:
- *  1. Shuffle all configured keys randomly (distributes load evenly)
- *  2. On rate limit (429 / quota) errors, instantly try the next key
- *  3. If all keys fail, throw the last error
- *
- * Effective capacity (3 keys):
- *  - Key 1 (GEMINI_API_KEY):   ~250 req/day, 10 RPM
- *  - Key 2 (GEMINI_API_KEY_2): ~250 req/day, 15 RPM
- *  - Key 3 (GEMINI_API_KEY_3): ~250 req/day, 10 RPM
- *  - Combined: ~750 req/day, up to 35 RPM effective
+ * _gemini.ts — Gemini client with automatic key rotation.
+ * Shuffles configured keys and rotates to the next on rate-limit errors.
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -24,7 +14,7 @@ function getKeys(): string[] {
   return keys;
 }
 
-/** Fisher-Yates shuffle — distributes load evenly across all keys */
+/** Fisher-Yates shuffle. */
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -62,11 +52,10 @@ export async function withGemini<T>(fn: GeminiCallFn<T>): Promise<T> {
     } catch (err) {
       lastError = err;
       if (isRateLimitError(err) && i < keys.length - 1) {
-        // Rate limited on this key — try the next one
         console.warn(`Gemini key ${keys[i].slice(0, 8)}... rate limited, switching to key ${i + 2}`);
         continue;
       }
-      // Non-rate-limit error — don't retry with other keys
+      // Non-rate-limit error — don't retry with other keys.
       throw err;
     }
   }

@@ -1,15 +1,10 @@
 /**
- * profile.ts — Per-user context learned from the chatbot conversation.
- *
- * As the user answers the bot (or clicks chips), we pattern-match facts about
- * them — disability group, location, revenue, employees, business type — and
- * merge them onto their profile via updateProfile(), which persists to the
- * user's RLS-protected Supabase row. This context powers tailored AI answers.
+ * profile.ts — Learns per-user context from chatbot messages by pattern-matching
+ * facts (disability, location, revenue, employees, business type) and merging
+ * them onto the profile via updateProfile(). Powers tailored AI answers.
  */
 
 import { updateProfile, type UserProfile, BIZ_TYPE_LABELS, COLLATERAL_LABELS, type BizType } from './auth';
-
-// ── Known Uzbek regions for location detection ────────────────────────────────
 
 const REGIONS = [
   'Toshkent', 'Samarqand', "Farg'ona", 'Andijon', 'Namangan', 'Buxoro',

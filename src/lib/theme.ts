@@ -1,18 +1,11 @@
 /**
  * theme.ts — day/night theme state.
  *
- * The initial class is set by an inline script in index.html (before first
- * paint) to avoid a flash. This hook mirrors that class into React state and
- * persists changes to localStorage under `bb-theme`.
- *
- * Switching themes uses the View Transitions API (Chrome/Edge/Safari 18+):
- * it snapshots the page before/after and cross-fades pixels, which is what
- * makes the flip feel smooth even though the page has gradients, box-shadows,
- * and pseudo-elements that a plain `transition: background-color` can't
- * animate (those simply snap, which reads as janky). We drive it with a
- * circular "reveal" wipe from the toggle button so the motion feels
- * deliberate rather than a flat cross-fade. Browsers without support (or
- * with reduced-motion) fall back to a plain color-transition class.
+ * The initial class is set by an inline script in index.html before first paint
+ * to avoid a flash; this hook mirrors it into React state and persists to
+ * localStorage under `bb-theme`. Toggling uses the View Transitions API for a
+ * circular reveal wipe, falling back to a plain color fade where unsupported
+ * or under reduced-motion.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -36,7 +29,7 @@ function applyClasses(theme: Theme) {
   try { localStorage.setItem(KEY, theme); } catch { /* private mode */ }
 }
 
-/** Fallback for browsers without the View Transitions API: a plain color cross-fade. */
+/** Fallback for browsers without the View Transitions API. */
 function applyWithColorFade(theme: Theme) {
   const root = document.documentElement;
   root.classList.add('theme-anim');

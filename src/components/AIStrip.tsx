@@ -1,12 +1,7 @@
 /**
- * AIStrip.tsx — AI market analysis banner above the ads grid
- *
- * Sends two things to the API:
- *   system — teaches Groq the Reuters/Bloomberg style (once, as a style guide)
- *   prompt — the actual ad data to analyze in that style
- *
- * Caching: localStorage per (tab, category), valid 1 hour.
- * Manual ↻ bypasses cache.
+ * AIStrip.tsx — AI market analysis banner above the ads grid.
+ * Sends a style-guide `system` + the ad data `prompt` to /api/analyse.
+ * Cached in localStorage per (tab, category) for 1h; manual ↻ bypasses cache.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -19,13 +14,7 @@ interface Props {
   ads:  Ad[];
 }
 
-// ── Style guide — teaches Groq HOW to write, not what to say ─────────────────
-// Based on Reuters/Bloomberg commodity brief format:
-//   1. Specific product + price figure in first sentence
-//   2. Cause → effect in second sentence
-//   3. One clear actionable conclusion in third sentence
-//   No generic disclaimers. No filler. Numbers required.
-
+// Style guide: teaches the model how to write (Reuters/Bloomberg commodity brief), not what to say.
 const ANALYST_SYSTEM = `Siz O'zbekiston ulgurji bozori bo'yicha mutaxassis analitiksiz — Reuters va Bloomberg tovar bozori tahlilchilari kabi yozasiz.
 
 Yozish qoidalari (BU QOIDALARDAN HECH QACHON CHETGA CHIQMA):
@@ -41,8 +30,6 @@ YOMON MISOL (bunday YOZMA):
 
 YAXSHI MISOL (mana SHUNDAY yoz):
 "Sement M400 Samarqand omborlarida 950 so'm/kg bilan taklif etilmoqda — bu fevralga nisbatan 3% past, ishlab chiqarish ortishi baho bosimini kamaytirdi. Armitura (d12) esa 9 200 so'm/kg atrofida barqaror, yozgi qurilish mavsumi talabni ushlab turibdi. Xaridorlar uchun hozir qurilish materiallari olish foydali — kuz boshida narx oshishi kutilmoqda."`;
-
-// ── Cache helpers ─────────────────────────────────────────────────────────────
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -62,13 +49,10 @@ function cacheSet(tab: string, cat: string, text: string) {
   } catch { /* storage full — ignore */ }
 }
 
-// A real brief is a full sentence. A token-truncated fragment is short and
-// ends mid-word/number (e.g. "...Namanganda 75") — reject those.
+// Reject token-truncated fragments that end mid-word/number; a valid brief is a full sentence.
 function isComplete(text: string): boolean {
   return text.length >= 60 && /[.!?…»)"']$/.test(text.trim());
 }
-
-// ── Prompt builder — passes real ad data for analysis ────────────────────────
 
 function buildPrompt(tab: 'buy' | 'sell', catLabel: string, ads: Ad[]): string {
   const today = new Date().toLocaleDateString('uz-UZ', {
@@ -95,8 +79,6 @@ ${adLines}
 
 Ushbu ma'lumotlar asosida ${tab === 'buy' ? 'xaridorlar' : 'sotuvchilar'} uchun bozor tahlilini yoz. Yuqoridagi qoidalarga qat'iy amal qil.`;
 }
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function AIStrip({ tab, cat, ads }: Props) {
   const [text, setText]             = useState('');

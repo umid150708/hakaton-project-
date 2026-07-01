@@ -18,7 +18,8 @@ import { json, preflight, methodNotAllowed } from './_http';
 
 export const config = { runtime: 'edge' };
 
-const AD_STATUSES = ['active', 'inactive', 'sold'];
+// Must match the DB CHECK constraint on ads.status (scripts/002_marketplace.sql).
+const AD_STATUSES = ['active', 'closed'];
 
 /** Public view of an ad — everything except the phone number. */
 function publicAd(a: AdRow) {

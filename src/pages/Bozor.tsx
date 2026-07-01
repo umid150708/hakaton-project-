@@ -1,11 +1,7 @@
 /**
- * Bozor.tsx — B2B Marketplace page (Muammo 14)
- *
- * Ads come from the shared Supabase backend (/api/ads) so buyers and sellers see
- * each other. If that backend isn't reachable yet (tables not created), it falls
- * back to local + sample ads so the page keeps working. Sample ads carry their
- * own contact and use the simple free-limit gate; real backend ads reveal their
- * contact only via /api/reveal (free limit / subscription / paid deal fee).
+ * Bozor.tsx — B2B marketplace page. Ads come from the shared backend (/api/ads),
+ * falling back to local + sample ads when it's unreachable. Sample ads carry their
+ * own contact; real ads reveal contact only via /api/reveal.
  */
 
 import { useState, useEffect } from 'react';
@@ -23,7 +19,7 @@ import AuthModal        from '../components/AuthModal';
 import NotificationBell from '../components/NotificationBell';
 import ThemeToggle      from '../components/ThemeToggle';
 
-// ─── Deal modal (terms → gated contact reveal, incl. pay-per-deal) ─────────────
+// Deal modal: terms → gated contact reveal (incl. pay-per-deal).
 
 function DealModal({
   ad, isSignedIn, plan, freeLeft, onNeedSignup, onClose,
@@ -114,7 +110,7 @@ function DealModal({
             <p className="text-faint text-xs text-center">Kontakt ochildi. Bevosita bog'laning.</p>
           </>
         ) : phase === 'payfee' ? (
-          /* ── Pay-per-deal: fee, then reveal ── */
+          /* Pay-per-deal: fee, then reveal */
           <>
             <div className="rounded-xl border border-purple-700/40 bg-purple-950/20 p-4 text-center space-y-1">
               <p className="text-muted text-xs">Platforma xizmat haqi (1.5%)</p>
@@ -127,7 +123,7 @@ function DealModal({
             <p className="text-faint text-[11px] text-center">Demo to'lov — haqiqiy pul yechilmaydi</p>
           </>
         ) : (
-          /* ── Terms + gated action ── */
+          /* Terms + gated action */
           <>
             <div className="rounded-xl border border-line-strong/60 p-3 space-y-1.5">
               <p className="text-muted text-xs font-semibold mb-1">Bitim shartlari</p>
@@ -166,7 +162,7 @@ function DealModal({
   );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+// Page
 
 export default function Bozor() {
   const navigate = useNavigate();
@@ -200,7 +196,7 @@ export default function Bozor() {
     return () => { cancelled = true; };
   }, [tab, reloadKey]);
 
-  // ── Derived ad lists ──────────────────────────────────────────────────────────
+  // Derived ad lists
 
   const samples: Ad[] = isBuy ? SAMPLE_BUY : SAMPLE_SELL;
   const baseAds: Ad[] = remoteAds != null
@@ -248,12 +244,12 @@ export default function Bozor() {
   const totalBuy  = (remoteAds != null && isBuy  ? remoteAds : (isBuy  ? localAds.filter(a => a.type === 'buy')  : [])).length + SAMPLE_BUY.length;
   const totalSell = (remoteAds != null && !isBuy ? remoteAds : (!isBuy ? localAds.filter(a => a.type === 'sell') : [])).length + SAMPLE_SELL.length;
 
-  // ── Render ────────────────────────────────────────────────────────────────────
+  // Render
 
   return (
     <div className="min-h-screen bg-page text-ink flex flex-col">
 
-      {/* ── Sticky header ── */}
+      {/* Sticky header */}
       <header className="sticky top-0 z-40 bg-page/95 backdrop-blur border-b border-line">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={() => navigate('/')} className="text-faint hover:text-ink text-xl leading-none shrink-0 btn-icon">←</button>
@@ -335,7 +331,7 @@ export default function Bozor() {
         </div>
       </header>
 
-      {/* ── Content ── */}
+      {/* Content */}
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-4 space-y-4">
 
         <AIStrip key={`${tab}-${cat}`} tab={tab} cat={cat} ads={visibleAds} />
@@ -365,7 +361,7 @@ export default function Bozor() {
         )}
       </div>
 
-      {/* ── Match toast (after posting) ── */}
+      {/* Match toast (after posting) */}
       {matchToast && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4">
           <div className="bg-surface border border-brand rounded-2xl shadow-2xl p-4">
@@ -389,7 +385,7 @@ export default function Bozor() {
         </div>
       )}
 
-      {/* ── Modals ── */}
+      {/* Modals */}
       {showPostModal && <PostAdModal type={tab} onClose={() => setShowPostModal(false)} onPosted={onPosted} />}
       {showSignUp    && <AuthModal onSuccess={onSignUpSuccess} onClose={() => { setShowSignUp(false); setPendingAd(null); }} />}
       {dealAd        && (

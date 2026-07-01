@@ -1,31 +1,12 @@
-/**
- * pricingConfig.ts — All pricing constants and plan metadata
- *
- * SOURCES:
- *  Average deal ~34M sum:
- *    stat.uz / invexi.org — Jan–Feb 2025 wholesale data
- *    46,477 small wholesale firms · 46,819B sum / 2 months
- *    → ~508M sum/month per firm ÷ ~15 deals = ~34M sum/deal
- *
- *  Deal fee 1.5%:
- *    UzEx official exchange: 0.18% (uzex.uz/en/pages/online-exchange-trades-tariff)
- *    Informal brokers (dallol): 3–5% (widely documented in UZ)
- *    We sit between both: cheaper than broker, adds AI value over exchange
- *
- *  Subscription benchmarks: OLX Pro UZ ~150k/month; annual -17–26% (SaaS standard)
- */
+/** pricingConfig.ts — Pricing constants and plan metadata. */
 
 import type { Plan } from './auth';
-
-// ─── Deal fee constants ────────────────────────────────────────────────────────
 
 export const DEAL_FEE_PCT = 1.5;           // % of deal value
 export const DEAL_FEE_MIN = 50_000;        // minimum fee per deal (sum)
 export const DEAL_FEE_MAX = 5_000_000;     // maximum fee per deal (sum)
 export const AVG_DEAL_SUM = 34_000_000;    // stat.uz derived average (sum)
 export const AVG_DEALS_PER_MONTH = 15;     // stat.uz derived average
-
-// ─── Plan metadata ─────────────────────────────────────────────────────────────
 
 export interface PlanMeta {
   id: Plan;
@@ -102,8 +83,6 @@ export const PLANS: PlanMeta[] = [
     ],
   },
 ];
-
-// ─── Color helpers ─────────────────────────────────────────────────────────────
 
 type ColorVariant = 'bg' | 'border' | 'text';
 

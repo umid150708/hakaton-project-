@@ -1,11 +1,5 @@
 /**
- * Logo.tsx — Bozorboy brand mark.
- *
- * A "bozorboy" (market lad): the classic silhouette avatar wearing an Uzbek
- * Chust do'ppi cocked to one side. The cap is embroidered the traditional way —
- * shaded navy dome, cream qalampir (pepper) almonds with gold veins, and a
- * tumor-arch band — on a dark circular badge with a warm gold ring.
- *
+ * Logo.tsx — Bozorboy brand mark: silhouette avatar in an Uzbek Chust do'ppi.
  * NOTE: keep public/bozorboy.svg (the favicon) in sync with this SVG.
  */
 

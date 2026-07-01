@@ -1,10 +1,7 @@
 /**
- * _market-products.ts — Curated headline commodities tracked by the daily
- * market snapshot. These are the products shown in the top-of-site ticker
- * as *average market prices* (distinct from individual seller/buyer ads).
- *
- * `anchor` is a realistic mid-2026 Uzbek wholesale price in so'm, used to
- * ground the AI on day one and as a fallback if generation drifts.
+ * _market-products.ts — Headline commodities tracked by the daily market
+ * snapshot, shown in the ticker as average market prices. `anchor` is a
+ * baseline Uzbek wholesale price (so'm) used to ground the AI and as fallback.
  */
 
 export interface TrackedProduct {

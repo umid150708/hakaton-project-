@@ -1,13 +1,6 @@
 /**
- * _supabase.ts — Minimal server-side Supabase REST client (PostgREST)
- *
- * Uses plain fetch (no SDK) to stay consistent with how we call Groq/Gemini
- * and to keep the edge bundle tiny. The service_role key is server-only —
- * it bypasses RLS, so this file must NEVER be imported into client code.
- *
- * Exposes the two operations we actually need:
- *   • sbSelect  — read rows (optionally filtered)
- *   • sbUpsert  — insert or merge rows by primary key
+ * _supabase.ts — Minimal server-side Supabase REST (PostgREST) client via fetch.
+ * Uses the service_role key, which bypasses RLS — never import into client code.
  */
 
 const URL = process.env.SUPABASE_URL;

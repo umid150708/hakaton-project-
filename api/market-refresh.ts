@@ -1,15 +1,9 @@
 /**
- * api/market-refresh.ts — Daily market analysis job (runs via Vercel Cron)
- *
- * Once a day it:
- *   1. Loads the previous snapshot (for real day-over-day change)
- *   2. Asks Groq for today's Uzbek wholesale prices for tracked commodities,
- *      grounded in Central Asia + world market context
- *   3. Computes % change & trend vs the previous snapshot
- *   4. Upserts one row into market_snapshots keyed by today's date
- *
- * Secured: only Vercel Cron (sends Authorization: Bearer $CRON_SECRET) or a
- * manual call with ?key=$CRON_SECRET may trigger it.
+ * api/market-refresh.ts — Daily market snapshot job (Vercel Cron).
+ * Asks Groq for today's Uzbek wholesale prices for tracked commodities,
+ * computes change/trend vs the previous snapshot, and upserts one row into
+ * market_snapshots keyed by today's date.
+ * Auth: Vercel Cron (Bearer $CRON_SECRET) or a manual call with ?key=$CRON_SECRET.
  */
 
 import { sbSelect, sbUpsert } from './_supabase';
@@ -24,11 +18,9 @@ interface Snapshot {
 }
 
 function todayUz(): string {
-  // Uzbekistan is UTC+5; use that day boundary
+  // Uzbekistan is UTC+5; use that day boundary.
   return new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10);
 }
-
-// ── Ask Groq for today's prices + context ─────────────────────────────────────
 
 async function generatePrices(prev: Snapshot | null): Promise<{ prices: { key: string; uzPrice: number; note: string }[]; analysis: string }> {
   const key = process.env.GROQ_API_KEY;
@@ -59,8 +51,8 @@ Faqat JSON qaytaring:
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      // 8b-instant: separate 500k/day token pool from the 70b AIStrip analysis,
-      // and JSON mode constrains output so the smaller model is reliable here
+      // 8b-instant: separate token pool from the 70b AIStrip analysis; JSON
+      // mode keeps the smaller model reliable here.
       model: 'llama-3.1-8b-instant',
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
@@ -75,8 +67,6 @@ Faqat JSON qaytaring:
   return JSON.parse(raw);
 }
 
-// ── Build snapshot with computed change/trend ─────────────────────────────────
-
 function buildSnapshot(
   gen: { prices: { key: string; uzPrice: number; note: string }[]; analysis: string },
   prev: Snapshot | null,
@@ -87,7 +77,7 @@ function buildSnapshot(
   const data: PriceEntry[] = TRACKED_PRODUCTS.map(p => {
     const g = genMap.get(p.key);
     const uzPrice = Math.round(g?.uzPrice ?? prevMap.get(p.key) ?? p.anchor);
-    // Compare to previous snapshot; on day 1 (no prev) compare to baseline anchor
+    // On day 1 (no prev) compare to the baseline anchor.
     const last = prevMap.get(p.key) ?? p.anchor;
     const changePct = last > 0 ? +(((uzPrice - last) / last) * 100).toFixed(1) : 0;
     const trend: PriceEntry['trend'] = changePct > 0.05 ? 'up' : changePct < -0.05 ? 'down' : 'flat';
@@ -106,10 +96,7 @@ function buildSnapshot(
   return { date: todayUz(), data, analysis: gen.analysis ?? '' };
 }
 
-// ── Handler ───────────────────────────────────────────────────────────────────
-
 export default async function handler(req: Request): Promise<Response> {
-  // Auth: Vercel cron header OR ?key=CRON_SECRET
   const secret = process.env.CRON_SECRET;
   const url = new URL(req.url);
   const authHeader = req.headers.get('authorization') ?? '';

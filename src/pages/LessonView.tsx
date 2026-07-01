@@ -9,6 +9,7 @@ import {
 } from '../lib/learnProgress';
 import { S } from '../lib/learnStrings';
 import { PASS_THRESHOLD } from '../data/learningContent';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function LessonView() {
   const { lessonId } = useParams<{ lessonId: string }>();
@@ -18,10 +19,10 @@ export default function LessonView() {
   const lesson = getLessonById(lessonId ?? '');
   if (!lesson) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-page text-ink flex items-center justify-center">
         <div className="text-center">
-          <p className="text-zinc-400">Dars topilmadi.</p>
-          <button onClick={() => navigate('/oqitish')} className="mt-4 text-emerald-400 text-sm">← Orqaga</button>
+          <p className="text-muted">Dars topilmadi.</p>
+          <button onClick={() => navigate('/oqitish')} className="mt-4 text-brand text-sm">← Orqaga</button>
         </div>
       </div>
     );
@@ -50,47 +51,48 @@ export default function LessonView() {
   const isTodo = lesson.videoId === 'TODO_VIDEO_ID';
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex flex-col">
+    <div className="min-h-screen bg-page text-ink flex flex-col">
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur border-b border-zinc-800 px-4 py-3">
+      <header className="sticky top-0 z-40 bg-page/95 backdrop-blur border-b border-line px-4 py-3">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <Link to="/oqitish" className="text-zinc-500 hover:text-white text-xl leading-none">{S.backToRoadmap}</Link>
+          <Link to="/oqitish" className="text-faint hover:text-ink text-xl leading-none">{S.backToRoadmap}</Link>
           <div className="flex-1 min-w-0">
-            <p className="text-zinc-400 text-xs truncate">Daraja {lesson.levelId} · {level?.title}</p>
-            <p className="text-white font-semibold text-sm truncate">{lesson.title}</p>
+            <p className="text-muted text-xs truncate">Daraja {lesson.levelId} · {level?.title}</p>
+            <p className="text-ink font-semibold text-sm truncate">{lesson.title}</p>
           </div>
           {done && (
-            <span className="text-emerald-400 text-xs font-medium shrink-0">✓ Bajarildi</span>
+            <span className="text-brand text-xs font-medium shrink-0">✓ Bajarildi</span>
           )}
+          <ThemeToggle />
         </div>
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-6 space-y-6">
 
         {/* ── Meta row (duration + XP) ── */}
-        <div className="flex items-center gap-3 text-xs text-zinc-500">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+        <div className="flex items-center gap-3 text-xs text-faint">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
           <span>{lesson.durationNote}</span>
-          <span className="text-zinc-700">·</span>
-          <span className="text-emerald-500">+{lesson.xp} XP</span>
+          <span className="text-faint">·</span>
+          <span className="text-brand">+{lesson.xp} XP</span>
         </div>
 
         {/* ── Summary / lead paragraph ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-          <p className="text-zinc-300 text-base leading-relaxed">{lesson.summary}</p>
+        <div className="bg-surface border border-line rounded-2xl p-5">
+          <p className="text-muted text-base leading-relaxed">{lesson.summary}</p>
         </div>
 
         {/* ── Written lesson (Khan Academy style) — always present ── */}
-        <article className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
+        <article className="bg-surface border border-line rounded-2xl p-6 space-y-6">
           {lesson.body.map((section, i) => (
             <section key={i} className="space-y-3">
-              <h2 className="text-white font-bold text-lg tracking-tight flex items-center gap-2">
-                <span className="text-emerald-500 text-sm font-black">{String(i + 1).padStart(2, '0')}</span>
+              <h2 className="text-ink font-bold text-lg tracking-tight flex items-center gap-2">
+                <span className="text-brand text-sm font-black">{String(i + 1).padStart(2, '0')}</span>
                 {section.heading}
               </h2>
               {section.paragraphs.map((p, j) => (
-                <p key={j} className="text-zinc-300 text-sm leading-relaxed">{p}</p>
+                <p key={j} className="text-muted text-sm leading-relaxed">{p}</p>
               ))}
             </section>
           ))}
@@ -99,8 +101,8 @@ export default function LessonView() {
         {/* ── Video (optional — only when a verified video exists) ── */}
         {!isTodo && (
           <div className="space-y-2">
-            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">{S.videoOptional}</p>
-            <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 aspect-video">
+            <p className="text-xs text-faint font-medium uppercase tracking-wider">{S.videoOptional}</p>
+            <div className="rounded-2xl overflow-hidden bg-surface border border-line aspect-video">
               <iframe
                 className="w-full h-full"
                 src={`https://www.youtube-nocookie.com/embed/${lesson.videoId}`}
@@ -110,14 +112,14 @@ export default function LessonView() {
                 loading="lazy"
               />
             </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <div className="flex items-center gap-2 text-xs text-faint">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
               <span>{S.channel}:</span>
               <a
                 href={lesson.channelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-zinc-300 hover:text-white underline underline-offset-2 transition-colors"
+                className="text-muted hover:text-ink underline underline-offset-2 transition-colors"
               >
                 {lesson.channel}
               </a>
@@ -126,33 +128,33 @@ export default function LessonView() {
         )}
 
         {/* ── Key takeaways ── */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-          <p className="text-white font-semibold text-sm mb-4">{S.keyTakeaways}</p>
+        <div className="bg-surface border border-line rounded-2xl p-5">
+          <p className="text-ink font-semibold text-sm mb-4">{S.keyTakeaways}</p>
           <ul className="space-y-3">
             {lesson.keyTakeaways.map((t, i) => (
               <li key={i} className="flex gap-3 text-sm">
-                <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                <span className="w-5 h-5 rounded-full bg-brand-soft text-brand flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
                   {i + 1}
                 </span>
-                <span className="text-zinc-300 leading-relaxed">{t}</span>
+                <span className="text-muted leading-relaxed">{t}</span>
               </li>
             ))}
           </ul>
         </div>
 
         {/* ── Sources / citations ── */}
-        <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5">
-          <p className="text-white font-semibold text-sm mb-1">{S.sources}</p>
-          <p className="text-zinc-500 text-xs mb-4">{S.sourcesNote}</p>
+        <div className="bg-surface/60 border border-line rounded-2xl p-5">
+          <p className="text-ink font-semibold text-sm mb-1">{S.sources}</p>
+          <p className="text-faint text-xs mb-4">{S.sourcesNote}</p>
           <ul className="space-y-2">
             {lesson.sources.map((src, i) => (
               <li key={i} className="flex gap-2.5 text-sm items-start">
-                <span className="text-zinc-600 shrink-0 mt-0.5">↗</span>
+                <span className="text-faint shrink-0 mt-0.5">↗</span>
                 <a
                   href={src.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-zinc-400 hover:text-emerald-400 underline underline-offset-2 decoration-zinc-700 transition-colors leading-relaxed"
+                  className="text-muted hover:text-brand underline underline-offset-2 decoration-zinc-700 transition-colors leading-relaxed"
                 >
                   {src.label}
                 </a>
@@ -163,15 +165,15 @@ export default function LessonView() {
 
         {/* ── Tool CTA (if applicable) ── */}
         {lesson.toolLink && lesson.toolCta && (
-          <div className="bg-zinc-900 border border-zinc-700/60 rounded-2xl p-5 flex items-center gap-4">
+          <div className="bg-surface border border-line-strong rounded-2xl p-5 flex items-center gap-4">
             <span className="text-2xl shrink-0">🛠️</span>
             <div className="flex-1">
-              <p className="text-xs text-zinc-500 mb-1">{S.practiceTitle}</p>
-              <p className="text-zinc-200 text-sm font-medium">{lesson.toolCta}</p>
+              <p className="text-xs text-faint mb-1">{S.practiceTitle}</p>
+              <p className="text-ink text-sm font-medium">{lesson.toolCta}</p>
             </div>
             <Link
               to={lesson.toolLink}
-              className="shrink-0 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-xs font-semibold rounded-xl transition-colors"
+              className="shrink-0 px-4 py-2 bg-elevated hover:bg-elevated text-brand text-xs font-semibold rounded-xl transition-colors"
             >
               Ochish →
             </Link>
@@ -181,14 +183,14 @@ export default function LessonView() {
         {/* ── AI advisor button ── */}
         <button
           onClick={handleAskAI}
-          className="w-full flex items-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 hover:border-emerald-700 text-white rounded-2xl px-5 py-4 transition-all text-left"
+          className="w-full flex items-center gap-3 bg-surface hover:bg-elevated border border-line-strong hover:border-brand text-ink rounded-2xl px-5 py-4 transition-all text-left"
         >
-          <span className="w-9 h-9 bg-emerald-600 rounded-full flex items-center justify-center text-sm shrink-0">🤖</span>
+          <span className="w-9 h-9 bg-brand rounded-full flex items-center justify-center text-sm shrink-0">🤖</span>
           <div className="flex-1">
             <p className="text-sm font-semibold">{S.askAI}</p>
-            <p className="text-zinc-500 text-xs">{lesson.title} haqida savol bering</p>
+            <p className="text-faint text-xs">{lesson.title} haqida savol bering</p>
           </div>
-          <span className="text-zinc-600 text-lg">→</span>
+          <span className="text-faint text-lg">→</span>
         </button>
 
         {/* ── Mark complete ── */}
@@ -196,12 +198,12 @@ export default function LessonView() {
           {!done ? (
             <button
               onClick={handleComplete}
-              className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all active:scale-95 text-sm"
+              className="flex-1 py-3.5 bg-brand hover:bg-brand-hover text-white font-bold rounded-2xl transition-all active:scale-95 text-sm"
             >
               {S.markComplete.replace('{xp}', String(lesson.xp))}
             </button>
           ) : (
-            <div className="flex-1 py-3.5 bg-zinc-800 text-emerald-400 font-semibold rounded-2xl text-sm text-center">
+            <div className="flex-1 py-3.5 bg-elevated text-brand font-semibold rounded-2xl text-sm text-center">
               {S.alreadyComplete}
             </div>
           )}
@@ -209,7 +211,7 @@ export default function LessonView() {
           {nextLesson && nextLesson.levelId === lesson.levelId && (
             <Link
               to={`/oqitish/dars/${nextLesson.id}`}
-              className="flex-1 py-3.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-2xl transition-all text-sm text-center"
+              className="flex-1 py-3.5 bg-elevated hover:bg-elevated text-ink font-semibold rounded-2xl transition-all text-sm text-center"
             >
               {S.nextLesson}
             </Link>
@@ -226,7 +228,7 @@ export default function LessonView() {
           </Link>
         )}
         {quizPassed && (
-          <div className="text-center text-emerald-400 text-sm font-medium py-2">
+          <div className="text-center text-brand text-sm font-medium py-2">
             {S.quizPassed} — Daraja {lesson.levelId + 1} ochildi 🎉
           </div>
         )}

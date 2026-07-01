@@ -1,9 +1,6 @@
 /**
- * NotificationBell.tsx — bell + dropdown of match notifications.
- *
- * Personalized-marketplace payoff: when someone posts an ad that matches one of
- * yours ≥85%, it shows up here ("Bu bitim sizni qiziqtiradimi?"). Hidden when
- * signed out or when the backend has no notifications table yet.
+ * NotificationBell.tsx — bell + dropdown of match notifications. Shows ads that
+ * match one of yours ≥85%. Hidden when signed out.
  */
 
 import { useState, useEffect, useRef } from 'react';

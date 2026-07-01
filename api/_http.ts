@@ -1,9 +1,4 @@
-/**
- * _http.ts — Shared HTTP helpers for the edge API endpoints (DRY).
- *
- * Every endpoint used to redeclare the same cors block + json() responder +
- * OPTIONS/405 handling. This centralises them so they exist in exactly one place.
- */
+/** _http.ts — Shared CORS + JSON response helpers for the edge API endpoints. */
 
 export const cors = {
   'Access-Control-Allow-Origin': '*',

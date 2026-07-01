@@ -1,11 +1,7 @@
 /**
- * AuthButton.tsx — navbar auth control.
- *
- * Signed out → "Kirish" button that opens the AuthModal.
- * Signed in  → name/email chip with a dropdown to sign out.
- *
- * Reacts to the auth store, so it updates instantly on sign in/out
- * (including after a Google OAuth redirect).
+ * AuthButton.tsx — navbar auth control. Signed out shows a "Kirish" button that
+ * opens the AuthModal; signed in shows a name chip with a sign-out dropdown.
+ * Reacts to the auth store, updating instantly on sign in/out.
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -80,7 +76,6 @@ export default function AuthButton() {
                       disability: 'II', location: 'Toshkent', revenueBand: '<500mln', employees: '1-5', businessName: 'Jasur Novvoyxonasi', regType: 'mchj', yearsInBiz: '1-3', collateral: 'real_estate', bio: 'Novvoyxona egasi, 3 yillik tajriba.'
                     };
                     saveUser(demo as any);
-                    // reflect immediately
                     setMenu(false);
                     window.location.reload();
                   }}

@@ -1,9 +1,7 @@
 /**
- * _match.ts — Server-side deal matching + fee math (shared by the ad endpoints).
- *
- * A buy ad and a sell ad "match" when they're the same category and their
- * product, location and price line up. Score is 0–100; ≥ MATCH_THRESHOLD is a
- * notify-worthy match ("Bu bitim sizni qiziqtiradimi?").
+ * _match.ts — Deal matching + fee math (shared by the ad endpoints).
+ * A buy and sell ad match on category + product/location/price; score is
+ * 0–100 and ≥ MATCH_THRESHOLD is notify-worthy.
  */
 
 export interface AdRow {

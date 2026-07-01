@@ -1,17 +1,8 @@
 /**
- * analysis.ts — Three structured market-analysis modes for the AI maslahatchi.
- *
- * Each mode is a real analytical framework taught to the model as a system
- * prompt, plus a per-user prompt that injects the signed-in entrepreneur's
- * profile (business type, region, scale, finances). The AI then produces a
- * sectioned analysis tailored to *that* business — not a generic essay.
- *
- *   bozor   — Market analysis   (demand, price, segments, opportunity/risk)
- *   raqobat — Competition analysis (rivals, positioning, your edge, strategy)
- *   sanoat  — Industry analysis  (Porter's five forces, regulation, outlook)
- *
- * Results are rendered by the chat; keep the output in markdown-ish form
- * (## section headings, "•" bullets, **bold**) that Interview.formatText renders.
+ * analysis.ts — Three market-analysis modes for the AI maslahatchi. Each is a
+ * system-prompt framework plus a per-user prompt injecting the entrepreneur's
+ * profile: bozor (market), raqobat (competition), sanoat (industry).
+ * Output is markdown-ish (## headings, "•" bullets) that Interview.formatText renders.
  */
 
 import {
@@ -27,8 +18,7 @@ export const ANALYSIS_META: Record<AnalysisType, { label: string; sub: string; i
   sanoat:  { label: 'Sanoat tahlili',  sub: '5 kuch, tartibga solish',     icon: 'building'   },
 };
 
-// ── Expert frameworks (teach the model HOW each analysis is done) ──────────────
-
+// Expert frameworks: teach the model how each analysis is done.
 const COMMON_RULES = `
 UMUMIY QOIDALAR:
 • Faqat O'zbek tilida yoz.
@@ -87,8 +77,6 @@ const SYSTEMS: Record<AnalysisType, string> = {
 export function analysisSystem(type: AnalysisType): string {
   return SYSTEMS[type];
 }
-
-// ── Per-user prompt (inject who this entrepreneur is) ──────────────────────────
 
 /** A labelled dump of everything we know about the user, for the analysis. */
 function profileBlock(u: UserProfile): string {

@@ -1,10 +1,6 @@
 /**
- * supabaseClient.ts — browser Supabase client (auth + own-row data access).
- *
- * Uses the publishable/anon key, which is safe to expose to the browser.
- * Row-level security on user_profiles ensures a signed-in user can only
- * read/write their own row. Sessions are persisted and auto-refreshed by
- * the SDK.
+ * supabaseClient.ts — browser Supabase client using the anon key (safe to expose).
+ * RLS on user_profiles restricts users to their own row.
  */
 
 import { createClient } from '@supabase/supabase-js';

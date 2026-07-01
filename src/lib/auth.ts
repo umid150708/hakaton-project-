@@ -1,13 +1,9 @@
 /**
  * auth.ts — Supabase Auth (Google + email/password) + profile store.
  *
- * Identity is a Supabase auth user; the app's working profile (plan, business
- * type, learned context) lives in the RLS-protected `user_profiles` row keyed
- * by the auth user id. We keep an in-memory + localStorage mirror so the UI
- * can read the current user synchronously, and expose a subscribe()/useAuth()
- * store so components re-render on sign in/out.
- *
- * Mutations are mirror-first (instant UI) then persisted to the row async.
+ * Profile lives in the RLS-protected `user_profiles` row, mirrored in-memory +
+ * localStorage so the UI reads the current user synchronously. useAuth() re-renders
+ * on sign in/out. Mutations are mirror-first, then persisted to the row async.
  */
 
 import { useSyncExternalStore } from 'react';
@@ -29,7 +25,7 @@ export interface UserProfile {
   dealContactsUsed: number;
   joinedAt: string;
 
-  // Structured context (powers tailored AI advice)
+  // Structured context (powers tailored AI advice).
   disability?: 'I' | 'II' | 'III';
   location?: string;
   revenueBand?: '<500mln' | '500mln-1mlrd' | '>1mlrd';
@@ -44,8 +40,6 @@ export interface UserProfile {
 }
 
 const KEY = 'biznesplan_user_v1';
-
-// ── Reactive store ─────────────────────────────────────────────────────────────
 
 function readCache(): UserProfile | null {
   try { return JSON.parse(localStorage.getItem(KEY) ?? 'null'); }
@@ -75,8 +69,6 @@ export function useAuth(): UserProfile | null {
   return useSyncExternalStore(subscribe, getUser, getUser);
 }
 
-// ── Auth actions ───────────────────────────────────────────────────────────────
-
 export async function signUpEmail(email: string, password: string) {
   return supabase.auth.signUp({ email, password });
 }
@@ -96,8 +88,6 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
   setMirror(null);
 }
-
-// ── Profile row <-> mirror ───────────────────────────────────────────────────────
 
 interface Row {
   id: string;
@@ -176,8 +166,7 @@ export function initAuth(): void {
   });
 }
 
-// ── Mutations (mirror-first, async row persist) ──────────────────────────────────
-
+// Mutations: mirror-first, async row persist.
 function patchRow(patch: Record<string, unknown>): void {
   const id = _current?.id;
   if (!id) return;
@@ -226,8 +215,6 @@ export function upgradePlan(plan: Plan): void {
   setMirror({ ..._current, plan });
   patchRow({ plan });
 }
-
-// ── Constants ────────────────────────────────────────────────────────────────
 
 export const FREE_LIMIT = 3;
 

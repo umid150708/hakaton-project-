@@ -1,10 +1,6 @@
 /**
- * ApiDocs.tsx — REST API reference for developers integrating with Bozorboy.
- *
- * Lists every /api/* edge endpoint with its HTTP method(s), request body,
- * and response shape, so an external client can call the API directly
- * (marketplace ads, contact reveal, deal fees, AI chat/analysis, market
- * prices) without reading the source.
+ * ApiDocs.tsx — REST API reference page: lists each /api/* endpoint with its
+ * method, request body, and response shape for external integrators.
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -70,7 +66,7 @@ const ENDPOINTS: Endpoint[] = [
     path: '/api/ads',
     summary: "O'z e'loningizni yangilash (narx, miqdor, holat) — faqat egasi",
     request: `{ "id": "uuid", "ownerId": "uuid", "patch": {
-  "status": "sold",        // "active" | "inactive" | "sold"
+  "status": "closed",      // "active" | "closed"
   "priceValue": 3300000,
   "quantityValue": 18
   // faqat o'zgartirmoqchi bo'lgan maydonlarni yuboring
