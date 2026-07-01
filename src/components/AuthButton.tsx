@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, signOut } from '../lib/auth';
+import { useAuth, signOut, getUser, saveUser } from '../lib/auth';
 import AuthModal from './AuthModal';
 
 export default function AuthButton() {
@@ -31,30 +31,67 @@ export default function AuthButton() {
     const label = user.name?.trim().split(' ')[0] || user.email?.split('@')[0] || 'Hisob';
     const initial = label.charAt(0).toUpperCase();
     return (
-      <div className="relative" ref={menuRef}>
-        <button onClick={() => setMenu(m => !m)}
-          className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-zinc-500 transition-colors">
-          <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">{initial}</span>
-          <span className="text-white text-sm font-medium max-w-[100px] truncate">{label}</span>
-          <span className="text-zinc-500 text-xs">▾</span>
-        </button>
-        {menu && (
-          <div className="absolute right-0 mt-2 w-52 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-50">
-            <div className="px-3 py-2.5 border-b border-zinc-800">
-              {user.name && <p className="text-white text-sm font-medium truncate">{user.name}</p>}
-              <p className="text-zinc-500 text-xs truncate">{user.email || user.phone}</p>
+      <div className="flex items-center gap-1.5">
+        {/* Chip → opens profile popover (shows details) */}
+        <div className="relative" ref={menuRef}>
+          <button onClick={() => setMenu(m => !m)}
+            className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-emerald-500 transition-colors">
+            <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center justify-center">{initial}</span>
+            <span className="text-white text-sm font-medium max-w-[100px] truncate">{label}</span>
+            <span className="text-zinc-500 text-xs">▾</span>
+          </button>
+
+          {menu && (
+            <div className="absolute right-0 mt-2 w-72 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden z-50">
+              <div className="px-4 py-3 border-b border-zinc-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold">{label.charAt(0)}</div>
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-semibold truncate">{user.name || label}</p>
+                    <p className="text-zinc-500 text-xs truncate">{user.email || user.phone}</p>
+                  </div>
+                </div>
+                <div className="mt-3 text-zinc-400 text-xs space-y-1">
+                  {user.businessName && <div><strong className="text-zinc-300">Tashkilot:</strong> {user.businessName}</div>}
+                  {user.bizType && <div><strong className="text-zinc-300">Biznes turi:</strong> {user.bizType}</div>}
+                  {user.disability && <div><strong className="text-zinc-300">Nogironlik:</strong> {user.disability}</div>}
+                  {user.location && <div><strong className="text-zinc-300">Hudud:</strong> {user.location}</div>}
+                  {user.revenueBand && <div><strong className="text-zinc-300">Tushum:</strong> {user.revenueBand}</div>}
+                  {user.employees && <div><strong className="text-zinc-300">Xodimlar:</strong> {user.employees}</div>}
+                </div>
+              </div>
+              <div className="px-3 py-2 grid gap-1">
+                <button onClick={() => { setMenu(false); navigate('/profile'); }}
+                  className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors">
+                  Profilni ko'rish
+                </button>
+                <button onClick={() => { setMenu(false); navigate('/profile#edit'); }}
+                  className="w-full text-left px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors">
+                  Tahrirlash
+                </button>
+                <button onClick={() => { void signOut(); setMenu(false); }}
+                  className="w-full text-left px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-red-400 rounded-lg transition-colors">
+                  Chiqish
+                </button>
+                {import.meta.env.DEV && (
+                  <button onClick={() => {
+                    const demo = {
+                      name: 'Jasur Karimov', phone: '+998901234567', email: 'jasur@example.uz', bizType: 'savdo', plan: 'free', dealContactsUsed: 0, joinedAt: new Date().toISOString(),
+                      disability: 'II', location: 'Toshkent', revenueBand: '<500mln', employees: '1-5', businessName: 'Jasur Novvoyxonasi', regType: 'mchj', yearsInBiz: '1-3', collateral: 'real_estate', bio: 'Novvoyxona egasi, 3 yillik tajriba.'
+                    };
+                    saveUser(demo as any);
+                    // reflect immediately
+                    setMenu(false);
+                    window.location.reload();
+                  }}
+                    className="w-full text-left px-3 py-2 text-sm text-emerald-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                    Sign in as demo (DEV)
+                  </button>
+                )}
+              </div>
             </div>
-            <button onClick={() => { navigate('/profile'); setMenu(false); }}
-              className="w-full text-left px-3 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors flex items-center gap-2">
-              <span className="text-zinc-500">👤</span> Profil
-            </button>
-            <div className="border-t border-zinc-800" />
-            <button onClick={() => { void signOut(); setMenu(false); }}
-              className="w-full text-left px-3 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-red-400 transition-colors">
-              Chiqish
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
